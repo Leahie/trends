@@ -1,0 +1,39 @@
+[
+  {
+    "id": "0",
+    "type": "base_page",
+    "properties":
+    { "title": "Title" }, 
+    "content": [
+      "1",
+      "2",
+      "3" ], 
+    "parent":"none"
+  }, 
+  {
+    "id": "1",
+    "type": "text",
+    "properties":
+    { "title": "Flying",
+      "body": "Today I felt like flying, really really high! I think I can fly like 10 inches now!!! I'm so close to 20 feet. SO excited."
+    }, 
+    "parent":"0"
+  },
+  {
+    "id": "2",
+    "type": "image",
+    "properties":
+    { "title": "Excited",
+      "url": "/Excited.jpg"
+    }, 
+    "parent":"0"
+  }, 
+  {
+    "id": "3",
+    "type": "diary_entry",
+    "properties":
+    { "title": "Sad Day"}, 
+    "content": [],
+    "parent":"0"
+  }
+]
