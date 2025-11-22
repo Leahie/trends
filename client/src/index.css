@@ -71,7 +71,7 @@ button:focus-visible {
 
 .resize-handle {
   position: absolute;
-  
+  z-index: 1000;
 }
 
 .diagonal{
