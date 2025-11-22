@@ -1,0 +1,19 @@
+Idea: Amping up my personal website! 
+Goals: 
+1. Display all projects 
+2. Use Rest apis with "open library" to let users see my current reading list. 
+3. Make a fun front end animation for the home page and logo. 
+
+XXXXXXXXXXXXX
+11/14/2025 
+NEW IDEA!! Decided that the first idea wouldn't be able to support a firebase website. For milestone 1 I mainly focused on creating the API routes. Currently the actually frontend is very minimal. I'm on the plane right now so I don't even know if it works, but it will be fleshed out by the next milestone.
+
+Idea: Photo App 
+Goals: 
+1. 3 pages, first the gallery tab, second the add tab, third the additional information tab 
+2. use firebase to add and remove the images 
+3. create a nicely styled app! 
+4. have a tab that switches the order of the images, good application to actual products 
+ - sort by alphabetical order
+ - sort by date last added 
+
