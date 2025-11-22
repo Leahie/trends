@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 # Secrets 
-firebase-service-key.json
+server/firebase-service-key.json
