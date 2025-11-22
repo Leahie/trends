@@ -1,5 +1,6 @@
 // Convention: 
 // - Everything that ends in Block represents a block within my code
+// - Everything that ends in Size represents the sizing
 
 export type BlockType = "base_page" | "text" | "image" | "diary_entry"
 
@@ -41,5 +42,14 @@ export interface DiaryBlock extends BaseBlock{
     }
     content: string[];
 }
+
+export interface BlockSize {
+    x: number;
+    y: number;
+    width:  number;
+    height: number;
+    zIndex: number;
+}
+
 
 export type Block = BasePageBlock | TextBlock | ImageBlock | DiaryBlock;
