@@ -90,22 +90,22 @@ export default function({node, dataMap}: {node: BasePageBlockType, dataMap: Reco
                 <div className="absolute top-9 right-4 z-50 flex gap-2">
                     <button 
                         onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
-                        className="px-3 py-1 bg-[#3C423F] text-white rounded hover:bg-gray-600"
+                        className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
                     >
                         −
                     </button>
-                    <span className="px-3 py-1 bg-[#3C423F] text-white rounded">
+                    <span className="px-3 py-1 bg-highlight text-white rounded">
                         {(scale * 100).toFixed(0)}%
                     </span>
                     <button 
                         onClick={() => setScale(s => Math.min(s * 1.2, 5))} 
-                        className="px-3 py-1 bg-[#3C423F] text-white rounded hover:bg-gray-600"
+                        className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
                     >
                         +
                     </button>
                     <button 
                         onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
-                        className="px-3 py-1 bg-[#3C423F] text-white rounded hover:bg-gray-600"
+                        className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
                     >
                         Reset
                     </button>

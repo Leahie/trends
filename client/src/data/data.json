@@ -33,6 +33,16 @@
     "type": "diary_entry",
     "properties":
     { "title": "Sad Day"}, 
+    "content": [4],
+    "parent":"0"
+  },
+   {
+    "id": "4",
+    "type": "text",
+    "properties":
+    { "title": "My dog died", 
+      "body": "Today I am sad because my dog died"
+    }, 
     "content": [],
     "parent":"0"
   }

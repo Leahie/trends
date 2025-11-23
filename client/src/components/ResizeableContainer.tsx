@@ -20,6 +20,7 @@ interface MoveTypes{
 
 export default function ResizeableContainer({node, blockLocation, selected, onSelected}: {node: Block, blockLocation: BlockSizeType, selected: boolean, onSelected: () => void}){
     const [dims, setDims] = useState<BlockSizeType>(blockLocation);
+    const [isEditMode, setIsEditMode] = useState(true);
 
     const [drag, setDrag] = useState<DragTypes>({
         active: false,
@@ -34,8 +35,33 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
         y: 0
     })
 
+    // Track modifier key state
     useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey || e.metaKey) { // Ctrl on Windows/Linux, Cmd on Mac
+                setIsEditMode(false);
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (!e.ctrlKey && !e.metaKey) {
+                setIsEditMode(true);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+        
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+        };
+    }, []);
+
+    useEffect(() => {
+        
     const handleMouseUp = () => {
+        
         setDrag(d => ({ ...d, active: false, handle: null }));
         setMove(m => ({...m, active: false}));
         console.log("mouse up");
@@ -61,6 +87,7 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
 
     // MOVING !! 
     const startMove = (e: React.MouseEvent) => {
+        if (!isEditMode) return;
         e.stopPropagation();
         onSelected();
         setMove({
@@ -71,6 +98,7 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
     }
 
     const moveFrame = (e: React.MouseEvent) => {
+        if (!isEditMode) return;
         if (!move.active) return; 
         const dx = e.clientX - move.x;
         const dy = e.clientY - move.y;
@@ -202,11 +230,14 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
 
 
     return(     
-    <div className={`resizeable bg-slate-100 absolute p-5 ${ selected ? "border-2 border-blue-500 shadow-lg" : ""}`} 
+    <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
         style={boxStyle} onMouseMove={handleMouseMove} 
-        onClick={(e)=>{e.stopPropagation(); onSelected();}}>
+        onClick={(e)=>{e.stopPropagation(); if (isEditMode) {
+            // In edit mode, just select
+            onSelected();
+        } }}>
         <div
-            className="absolute inset-0 m-5 cursor-move flex items-center justify-center "
+            className="absolute inset-0 "
             onMouseDown={startMove}
         >
             <Container node={node} />
