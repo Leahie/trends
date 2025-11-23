@@ -11,7 +11,7 @@ export interface BaseBlock{
     parent: string;
 }
 
-export interface BasePageBlock extends BaseBlock{
+export interface BasePageBlockType extends BaseBlock{
     type: "base_page";
     properties: {
         title: string;
@@ -19,7 +19,7 @@ export interface BasePageBlock extends BaseBlock{
     content: string[];
 }
 
-export interface TextBlock extends BaseBlock{
+export interface TextBlockType extends BaseBlock{
     type: "text"; 
     properties: {
         title: string;
@@ -27,7 +27,7 @@ export interface TextBlock extends BaseBlock{
     }
 }
 
-export interface ImageBlock extends BaseBlock{
+export interface ImageBlockType extends BaseBlock{
     type: "image";
     properties: {
         title: string; 
@@ -35,7 +35,7 @@ export interface ImageBlock extends BaseBlock{
     }
 }
 
-export interface DiaryBlock extends BaseBlock{
+export interface DiaryBlockType extends BaseBlock{
     type: "diary_entry";
     properties: {
         title: string;
@@ -43,7 +43,7 @@ export interface DiaryBlock extends BaseBlock{
     content: string[];
 }
 
-export interface BlockSize {
+export interface BlockSizeType {
     x: number;
     y: number;
     width:  number;
@@ -52,4 +52,4 @@ export interface BlockSize {
 }
 
 
-export type Block = BasePageBlock | TextBlock | ImageBlock | DiaryBlock;
+export type Block = BasePageBlockType | TextBlockType | ImageBlockType | DiaryBlockType;

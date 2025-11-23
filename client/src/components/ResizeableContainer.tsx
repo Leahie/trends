@@ -1,4 +1,4 @@
-import type {Block, BlockSize} from "../types"
+import type {Block, BlockSizeType} from "../types"
 import {useState, useEffect} from "react";
 import Container from "./Container";
 
@@ -18,8 +18,8 @@ interface MoveTypes{
     y: number
 }
 
-export default function ResizeableContainer({node, blockLocation, selected, onSelected}: {node: Block, blockLocation: BlockSize, selected: boolean, onSelected: () => void}){
-    const [dims, setDims] = useState<BlockSize>(blockLocation);
+export default function ResizeableContainer({node, blockLocation, selected, onSelected}: {node: Block, blockLocation: BlockSizeType, selected: boolean, onSelected: () => void}){
+    const [dims, setDims] = useState<BlockSizeType>(blockLocation);
 
     const [drag, setDrag] = useState<DragTypes>({
         active: false,
@@ -194,7 +194,9 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
         height: `${dims.height}px`,
         top: `${dims.y}px`, 
         left: `${dims.x}px`,
-        zIndex: selected ? 1000 : dims.zIndex
+        zIndex: selected ? 1000 : dims.zIndex, 
+        overflow: "hidden",
+        userSelect: "none"
     };
 
 

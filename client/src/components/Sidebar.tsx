@@ -22,7 +22,7 @@ function SidebarNode({node, dataMap}: SidebarNodeProps){
 export default function Sidebar({node, dataMap}: {node: Block, dataMap: Record<string, Block>}){
 
     return(
-        <div className="absolute left-0 px-5 text-left bg-indigo-50 ">
+        <div className="fixed left-0 px-5 text-left bg-indigo-50 ">
         <ol>
             <SidebarNode key={node.id} node={node} dataMap={dataMap}/>
         </ol>

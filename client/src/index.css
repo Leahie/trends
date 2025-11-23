@@ -1,101 +1,73 @@
-@import "tailwindcss";
+  @import "tailwindcss";
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #242424;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
   }
-  a:hover {
-    color: #747bff;
+
+
+  body {
+    background-color: #1D1F20;
+    margin: 0;
+    display: flex;
+    place-items: center;
+    min-width: 320px;
+    min-height: 100vh;
+    overflow:hidden;
+    position: fixed;
   }
-  button {
-    background-color: #f9f9f9;
+
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      color: #213547;
+      background-color: #ffffff;
+    }
+    button {
+      background-color: #f9f9f9;
+    }
   }
-}
 
-.resize-handle {
-  position: absolute;
-  z-index: 1000;
-}
+  .resize-handle {
+    position: absolute;
+    z-index: 1000;
+  }
 
-.diagonal{
-  width: 10px;
-  height: 10px;
-}
+  .diagonal{
+    width: 10px;
+    height: 10px;
+  }
 
-.top-bottom{
-  width: 100%; 
-  height: 10px;
-}
+  .top-bottom{
+    width: 100%; 
+    height: 10px;
+  }
 
-.left-right{
-  height: 100%; 
-  width: 10px;
-}
+  .left-right{
+    height: 100%; 
+    width: 10px;
+  }
 
-.top-left { top: -5px; left: -5px; cursor: nwse-resize; }
-.top-right { top: -5px; right: -5px; cursor: nesw-resize; }
-.bottom-left { bottom: -5px; left: -5px; cursor: nesw-resize; }
-.bottom-right { bottom: -5px; right: -5px; cursor: nwse-resize; }
+  .top-left { top: -5px; left: -5px; cursor: nwse-resize; }
+  .top-right { top: -5px; right: -5px; cursor: nesw-resize; }
+  .bottom-left { bottom: -5px; left: -5px; cursor: nesw-resize; }
+  .bottom-right { bottom: -5px; right: -5px; cursor: nwse-resize; }
 
 
-.top{top: -5px; cursor: ns-resize;}
-.bottom{bottom: -5px; cursor: ns-resize;}
-.left{left: -5px; cursor: ew-resize;}
-.right{right: -5px; cursor: ew-resize;}
+  .top{top: -5px; cursor: ns-resize;}
+  .bottom{bottom: -5px; cursor: ns-resize;}
+  .left{left: -5px; cursor: ew-resize;}
+  .right{right: -5px; cursor: ew-resize;}
