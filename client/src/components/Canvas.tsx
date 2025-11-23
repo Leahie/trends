@@ -133,11 +133,11 @@ export default function({node, dataMap}: {node: BasePageBlockType, dataMap: Reco
                     <div
                         style={{
                             transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-                            transformOrigin: '0 0',
-                            position: 'absolute',
-                            // Don't set width/height to 100% - let it be as big as needed
-                            pointerEvents: 'none', // Prevent this div from blocking clicks
-                        }}
+                            transformOrigin: "0 0",
+                            position: "absolute",
+                            width: "4000px",
+                            height: "4000px",
+                            }}
                     >
                         {/* Re-enable pointer events for actual content */}
                         <div style={{ pointerEvents: 'auto' }}>
@@ -146,6 +146,7 @@ export default function({node, dataMap}: {node: BasePageBlockType, dataMap: Reco
                                     key={e}
                                     node={dataMap[e]} 
                                     blockLocation={blockStates[e]} 
+                                    scale = {scale}
                                     selected={selectedBlockId === e} 
                                     onSelected={() => setSelectedBlockId(e)}
                                 />

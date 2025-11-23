@@ -4,7 +4,6 @@ import ImageBlock from "./ImageBlock";
 import TextBlock from "./TextBlock";
 
 export default function Container({node} : {node: BaseBlock}){
-    console.log(node["type"]);
     return(
     <div className="h-full w-full">
         {node["type"] === "text" && <TextBlock id = {node.id} type={node.type} properties={(node as TextBlockType).properties} parent={node.parent} />}

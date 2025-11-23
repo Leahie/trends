@@ -18,7 +18,7 @@ interface MoveTypes{
     y: number
 }
 
-export default function ResizeableContainer({node, blockLocation, selected, onSelected}: {node: Block, blockLocation: BlockSizeType, selected: boolean, onSelected: () => void}){
+export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected}: {node: Block, blockLocation: BlockSizeType, scale: number, selected: boolean, onSelected: () => void}){
     const [dims, setDims] = useState<BlockSizeType>(blockLocation);
     const [isEditMode, setIsEditMode] = useState(true);
 
@@ -59,30 +59,29 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
     }, []);
 
     useEffect(() => {
-        
-    const handleMouseUp = () => {
-        
-        setDrag(d => ({ ...d, active: false, handle: null }));
-        setMove(m => ({...m, active: false}));
-        console.log("mouse up");
-    };
+        const handleMouseUp = () => {
+            setDrag((d) => ({ ...d, active: false, handle: null }));
+            setMove((m) => ({ ...m, active: false }));
+            };
 
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (drag.active) {
-            resizeFrame(e);
-        } else if (move.active) {
-            resizeFrame(e);
+        const handleMouseMove = (e: MouseEvent) => {
+            if (drag.active) {
+                resizeFrame(e);
+            } else if (move.active) {
+                moveFrame(e);
+            }
+        };
+
+        if (drag.active || move.active) {
+        window.addEventListener("mouseup", handleMouseUp);
+        window.addEventListener("mousemove", handleMouseMove);
+
+        return () => {
+            window.removeEventListener("mouseup", handleMouseUp);
+            window.removeEventListener("mousemove", handleMouseMove);
+        };
         }
-    };
-
-    window.addEventListener("mouseup", handleMouseUp);
-    window.addEventListener("mousemove", handleMouseMove);
-    
-    return () => {
-        window.removeEventListener("mouseup", handleMouseUp);
-        window.removeEventListener("mousemove", handleMouseMove);
-    };
-}, [drag.active, move.active, drag.handle, drag.x, drag.y, move.x, move.y]);
+  }, [drag.active, move.active, drag.handle, drag.x, drag.y, move.x, move.y, dims, node.id]);
 
 
     // MOVING !! 
@@ -97,11 +96,14 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
         })
     }
 
-    const moveFrame = (e: React.MouseEvent) => {
+    const moveFrame = (e: MouseEvent) => {
         if (!isEditMode) return;
         if (!move.active) return; 
-        const dx = e.clientX - move.x;
-        const dy = e.clientY - move.y;
+        console.log(scale);
+        const dx = (e.clientX - move.x)/scale;
+        const dy = (e.clientY - move.y)/scale;
+
+        console.log(dx, dy);
 
         setDims(prev => { 
             const newX = Math.max(0, prev.x+dx);
@@ -130,11 +132,11 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
         });
     };
     
-    const resizeFrame = (e: React.MouseEvent) => {
+    const resizeFrame = (e: MouseEvent) => {
         const {active, handle, x, y} = drag;
         if (!active) return; 
-        const dx = e.clientX - x;
-        const dy = e.clientY - y;
+        const dx = (e.clientX - drag.x) / scale;
+        const dy = (e.clientY - drag.y) / scale;
 
         setDims(prev => {
             let x = prev.x;
@@ -206,7 +208,8 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
         }))
 
     }
-    const handleMouseMove = (e: React.MouseEvent) =>{
+
+    const handleMouseMove = (e: MouseEvent) =>{
 
         if (drag.active){
             resizeFrame(e);
@@ -230,8 +233,8 @@ export default function ResizeableContainer({node, blockLocation, selected, onSe
 
 
     return(     
-    <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
-        style={boxStyle} onMouseMove={handleMouseMove} 
+    <div className={`absolute resizeable hover:cursor-grab ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
+        style={boxStyle} onMouseMove={() => handleMouseMove} 
         onClick={(e)=>{e.stopPropagation(); if (isEditMode) {
             // In edit mode, just select
             onSelected();
