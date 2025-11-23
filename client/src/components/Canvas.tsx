@@ -85,72 +85,76 @@ export default function({node, dataMap}: {node: BasePageBlockType, dataMap: Reco
     };
     return(
         
-        <div className="fixed inset-0 bg-gray-900 overflow-hidden">            
-            {/* Zoom controls */}
-            <div className="absolute top-4 right-4 z-50 flex gap-2">
-                <button 
-                    onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
-                    className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
-                >
-                    −
-                </button>
-                <span className="px-3 py-1 bg-gray-700 text-white rounded">
-                    {(scale * 100).toFixed(0)}%
-                </span>
-                <button 
-                    onClick={() => setScale(s => Math.min(s * 1.2, 5))} 
-                    className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
-                >
-                    +
-                </button>
-                <button 
-                    onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
-                    className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
-                >
-                    Reset
-                </button>
-            </div>
+        <div className="fixed inset-0 flex flex-col">        
+            <div className="">
+                <div className="absolute top-9 right-4 z-50 flex gap-2">
+                    <button 
+                        onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
+                        className="px-3 py-1 bg-[#3C423F] text-white rounded hover:bg-gray-600"
+                    >
+                        −
+                    </button>
+                    <span className="px-3 py-1 bg-[#3C423F] text-white rounded">
+                        {(scale * 100).toFixed(0)}%
+                    </span>
+                    <button 
+                        onClick={() => setScale(s => Math.min(s * 1.2, 5))} 
+                        className="px-3 py-1 bg-[#3C423F] text-white rounded hover:bg-gray-600"
+                    >
+                        +
+                    </button>
+                    <button 
+                        onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
+                        className="px-3 py-1 bg-[#3C423F] text-white rounded hover:bg-gray-600"
+                    >
+                        Reset
+                    </button>
+                </div>
+            </div>    
+            
 
-            <h1 className="absolute top-4 left-4 z-50 text-slate-50">
-                {node.properties.title}
-            </h1>
+            
+
             {/* Canvas - this is the infinite canvas area */}
-            <div
-                ref={canvasRef}
-                className={`absolute inset-0 overflow-hidden ${
-                    isPanning || spacePressed ? 'cursor-grab' : ''
-                } ${isPanning ? 'cursor-grabbing' : ''}`}
-                onWheel={handleWheel}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onClick={() => setSelectedBlockId(null)}
-            >
-                {/* Transform container - this gets scaled and panned */}
+            <div className="flex-1 relative overflow-hidden">
                 <div
-                    style={{
-                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-                        transformOrigin: '0 0',
-                        position: 'absolute',
-                        // Don't set width/height to 100% - let it be as big as needed
-                        pointerEvents: 'none', // Prevent this div from blocking clicks
-                    }}
+                    ref={canvasRef}
+                    className={`absolute inset-0 overflow-hidden ${
+                        isPanning || spacePressed ? 'cursor-grab' : ''
+                    } ${isPanning ? 'cursor-grabbing' : ''}`}
+                    onWheel={handleWheel}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onClick={() => setSelectedBlockId(null)}
                 >
-                    {/* Re-enable pointer events for actual content */}
-                    <div style={{ pointerEvents: 'auto' }}>
-                        {node.content.map((e: string) => (
-                            <ResizeableContainer 
-                                key={e}
-                                node={dataMap[e]} 
-                                blockLocation={blockStates[e]} 
-                                selected={selectedBlockId === e} 
-                                onSelected={() => setSelectedBlockId(e)}
-                            />
-                        ))}
+                    {/* Transform container - this gets scaled and panned */}
+                    <div
+                        style={{
+                            transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+                            transformOrigin: '0 0',
+                            position: 'absolute',
+                            // Don't set width/height to 100% - let it be as big as needed
+                            pointerEvents: 'none', // Prevent this div from blocking clicks
+                        }}
+                    >
+                        {/* Re-enable pointer events for actual content */}
+                        <div style={{ pointerEvents: 'auto' }}>
+                            {node.content.map((e: string) => (
+                                <ResizeableContainer 
+                                    key={e}
+                                    node={dataMap[e]} 
+                                    blockLocation={blockStates[e]} 
+                                    selected={selectedBlockId === e} 
+                                    onSelected={() => setSelectedBlockId(e)}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
-             </div>
+            </div>
+            
         </div>
         
     )

@@ -13,10 +13,16 @@ function App() {
   const root:BasePageBlock = data.find(id => id.parent === "none");
 
   return (
-    <>
-    <Sidebar node = {root} dataMap={dataMap}/>
-    <Canvas node = {root} dataMap={dataMap} />
-    </>
+    <div className='flex flex-col fixed inset-0'>
+      {/* <div className="h-7 flex items-center px-6 bg-[#3C423F] text-white z-50 shadow-lg">
+          <h1 className="text-xl font-semibold">{root.properties.title}</h1>
+      </div> */}
+      <div className='flex flex-1'>
+        <Sidebar node = {root} dataMap={dataMap}/>
+        <Canvas node = {root} dataMap={dataMap} />
+      </div>
+    
+    </div>
   )
 }
 

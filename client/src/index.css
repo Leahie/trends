@@ -7,7 +7,7 @@
 
     color-scheme: light dark;
     color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
+    background-color: #141613;
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -20,7 +20,7 @@
 
 
   body {
-    background-color: #1D1F20;
+    background-color: #141613;
     margin: 0;
     display: flex;
     place-items: center;
@@ -31,19 +31,18 @@
   }
 
 
-  @media (prefers-color-scheme: light) {
+  /* @media (prefers-color-scheme: light) {
     :root {
-      color: #213547;
+      color: #21201E;
       background-color: #ffffff;
     }
     button {
       background-color: #f9f9f9;
     }
-  }
+  } */
 
   .resize-handle {
     position: absolute;
-    z-index: 1000;
   }
 
   .diagonal{
