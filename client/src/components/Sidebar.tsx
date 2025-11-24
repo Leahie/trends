@@ -1,21 +1,20 @@
 import type {Block} from "../types.ts";
 import {useState, useEffect} from 'react';  // will be used later when we fetch data 
+import { useData } from "../context/data.tsx";
+import { useLocation } from "react-router-dom";
 
-interface SidebarNodeProps{
-    node: Block;
-    dataMap:  Record<string, Block>
-}
 
-function SidebarNode({node, dataMap}: SidebarNodeProps){
+function SidebarNode({node}:{node:Block}){
+    const {dataMap} = useData();
     return(
-        <div className="flex-col">
+        <div className="flex-col"> 
         <li></li>
         <li>
 
-            <div
-                className={`flex items-center gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  ${node.type == "diary_entry" && "hover:bg-highlight cursor-pointer"}`}
+            <a href={`/blocks/${node.id}`}
+                className={`flex items-center gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
             >
-                {node.properties.title} 
+                {node.properties.title}  
                 {node.type == "diary_entry" && 
                 <svg width="12px" height="12px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3 8C3 5.17157 3 3.75736 3.87868 2.87868C4.75736 2 6.17157 2 9 2H15C17.8284 2 19.2426 2 20.1213 2.87868C21 3.75736 21 5.17157 21 8V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H9C6.17157 22 4.75736 22 3.87868 21.1213C3 20.2426 3 18.8284 3 16V8Z" stroke="#F5F1ED" stroke-width="1.5"/>
@@ -26,29 +25,50 @@ function SidebarNode({node, dataMap}: SidebarNodeProps){
                     <path d="M11.5 6.5H16.5" stroke="#F5F1ED" stroke-width="1.5" stroke-linecap="round"/>
                     <path d="M11.5 10H16.5" stroke="#F5F1ED" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>}
-            </div>
+            </a>
         </li>
 
         { "content" in node && node.content.length > 0 && (
         <ol className="pl-2">
-            {node.content.map((childId:string) => <SidebarNode node={dataMap[childId]} dataMap={dataMap} />)}
+            {node.content.map((childId:string) => <SidebarNode node={dataMap[childId]}  />)}
         </ol>)
         }
         </div>
     )
 }
 
-export default function Sidebar({node, dataMap}: {node: Block, dataMap: Record<string, Block>}){
+function useIsCanvasLayout():boolean{
+  const location = useLocation();
+  const {dataMap} = useData();
+  if (location.pathname === "/") {
+        return true;
+  }
+  const blockId = location.pathname.split('/blocks/')[1];
+  if (!blockId) return false;
+  
+  const block = dataMap[blockId];
+  
+  return block?.type === "base_page" || block?.type === "diary_entry";
+}
+
+export default function Sidebar(){
+    const {root, dataMap} = useData();
     const [open, setOpen] = useState<boolean>(true); // sets the Sidebar 
+    const isCanvasLayout = useIsCanvasLayout();
+    console.log(isCanvasLayout);
 
     return(
         <div
       id="hs-sidebar-basic-usage"
       className={`
+        h-full
+        ${isCanvasLayout ? 'fixed top-0 start-0 bottom-0 z-60 w-64'// fixed
+          : 'relative w-64 flex-shrink-0'
+        }
         hs-overlay [--auto-close:lg] lg:block lg:translate-x-0 lg:end-auto lg:bottom-0
-        w-64 hs-overlay-open:translate-x-0 -translate-x-full
-        transition-all duration-300 transform h-full hidden
-        fixed top-0 start-0 bottom-0 z-60
+         hs-overlay-open:translate-x-0 -translate-x-full
+        transition-all duration-300 transform hidden
+        
        ${open ? "bg-dark" : "bg-transparent"}
       `}
       role="dialog"
@@ -84,10 +104,10 @@ export default function Sidebar({node, dataMap}: {node: Block, dataMap: Record<s
         <header className="p-4 flex justify-between items-center gap-x-2">
           <a
             className="flex-none font-semibold text-xl text-white focus:outline-hidden focus:opacity-80"
-            href="#"
+            href="/ "
             aria-label="Brand"
           >
-            {node.properties.title}
+            {root.properties.title}
           </a>
         </header>
         
@@ -95,10 +115,10 @@ export default function Sidebar({node, dataMap}: {node: Block, dataMap: Record<s
         {/* End Header */}
 
         {/* Body */}
-        <nav className="h-full overflow-y-auto ">
+        <nav className="mt-6 h-full overflow-y-auto ">
           <div className="pb-0 px-2 w-full flex flex-col flex-wrap">
             <ul className="space-y-1">
-                {node.content.map((childId:string) => <SidebarNode node={dataMap[childId]} dataMap={dataMap} />)}
+                {root.content.map((childId:string) => <SidebarNode node={dataMap[childId]}/>)}
            
             </ul>
           </div>

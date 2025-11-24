@@ -1,11 +1,13 @@
 import type {Block, BasePageBlockType, BlockSizeType} from "../types";
 import ResizeableContainer from "./ResizeableContainer.tsx"
-import rawBlockStates from "../data/block_states.json"
 import {useState, useRef, useEffect} from 'react';
+import { useData } from "../context/data.tsx";
 
-export default function({node, dataMap}: {node: BasePageBlockType, dataMap: Record<string, Block>}){
+
+export default function(){
+    const {root, dataMap, locations} = useData();
+
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-    const blockStates = rawBlockStates as Record<string, BlockSizeType>;
     // Zoom and pan state
     const [scale, setScale] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -141,11 +143,11 @@ export default function({node, dataMap}: {node: BasePageBlockType, dataMap: Reco
                     >
                         {/* Re-enable pointer events for actual content */}
                         <div style={{ pointerEvents: 'auto' }}>
-                            {node.content.map((e: string) => (
+                            {root.content.map((e: string) => (
                                 <ResizeableContainer 
                                     key={e}
                                     node={dataMap[e]} 
-                                    blockLocation={blockStates[e]} 
+                                    blockLocation={locations[e]} 
                                     scale = {scale}
                                     selected={selectedBlockId === e} 
                                     onSelected={() => setSelectedBlockId(e)}

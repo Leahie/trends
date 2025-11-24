@@ -233,7 +233,7 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
 
 
     return(     
-    <div className={`absolute resizeable hover:cursor-grab ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
+    <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
         style={boxStyle} onMouseMove={() => handleMouseMove} 
         onClick={(e)=>{e.stopPropagation(); if (isEditMode) {
             // In edit mode, just select
