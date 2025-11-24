@@ -68,6 +68,7 @@ export function DataProvider({children} : {children : ReactNode}){
 
     // UPDATING THE BLOCK
     const updateBlock = (id: string, updates: Partial<Block>) => {
+        console.log(id, updates)
         setBlocks(prev => 
             prev.map( b => {
                 if (b.id !== id) return b;

@@ -1,7 +1,46 @@
-export default function TextInfo(){
-    return(
-        <div className="">
+import { useEffect, useState } from "react";
+import type { Block, TextBlockType } from "../../types"; 
+import { useData } from "../../context/data";
 
-        </div>
+export default function TextInfo({node}:{node: TextBlockType}){
+    const [title, setTitle] = useState<string>(node.properties.title);
+    const [body, setBody] = useState<string>(node.properties.body);
+    const { updateBlock } = useData();
+
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (title !== node.properties.title || body !== node.properties.body) {
+                updateBlock(node.id, {
+                    properties: {
+                        ...node.properties,
+                        title,
+                        body
+                    }
+                });
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [title, body, node.id]);
+
+
+    return(
+            <div className="text-left ">
+                <input 
+                    type="text"
+                    value={title} 
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Title"
+                    className = "outline-none text-3xl font-bold mb-5"
+                />                    
+                <textarea
+                    value={body} 
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="Start writing. . ."
+                    className = "block leading-relaxed min-h-[400px] w-full outline-none bg-transparent border-none "
+                />
+            </div>
+            
     )
 }

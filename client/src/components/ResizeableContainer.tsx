@@ -1,6 +1,7 @@
 import type {Block, BlockSizeType} from "../types"
 import {useState, useEffect} from "react";
 import Container from "./Container";
+import { useNavigate } from "react-router-dom";
 
 type HandleType = "right" | "left" | "bottom" | "top" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | null;
 
@@ -19,6 +20,7 @@ interface MoveTypes{
 }
 
 export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected}: {node: Block, blockLocation: BlockSizeType, scale: number, selected: boolean, onSelected: () => void}){
+    const navigate = useNavigate();
     const [dims, setDims] = useState<BlockSizeType>(blockLocation);
     const [isEditMode, setIsEditMode] = useState(true);
 
@@ -238,7 +240,9 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
         onClick={(e)=>{e.stopPropagation(); if (isEditMode) {
             // In edit mode, just select
             onSelected();
-        } }}>
+        } else{
+            navigate(`/blocks/${node.id}`)
+        }}}>
         <div
             className="absolute inset-0 "
             onMouseDown={startMove}
