@@ -105,6 +105,31 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
     }
 
     // Z INDEX HANDLING 
+    const bringToFront = (id: string) => {
+        console.log(locations)
+        const entries = Object.entries(locations);
+        entries.sort((a, b) => a[1].zIndex - b[1].zIndex)
+
+        const others = entries.filter(entry => entry[0] != id);
+        const one = entries.find((entry) => entry[0] == id);
+
+        if (!one){ 
+            return; }
+
+        const updated:Record<string, BlockSizeType> = {};
+        others.forEach((elem, ind) => 
+            updated[elem[0]] = {...elem[1], zIndex: ind + 1}
+        )
+
+        updated[id] = {...one[1], zIndex: others.length+1}
+
+        setLocations(updated);
+
+    }
+
+    useEffect(() =>{
+        if (selectedBlockId!=null) bringToFront(selectedBlockId)
+    }, [selectedBlockId])
 
     return(
         

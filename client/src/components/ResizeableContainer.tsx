@@ -2,6 +2,7 @@ import type {Block, BlockSizeType} from "../types"
 import {useState, useEffect} from "react";
 import Container from "./Container";
 import { useNavigate } from "react-router-dom";
+import {useData} from "../context/data.tsx"
 
 type HandleType = "right" | "left" | "bottom" | "top" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | null;
 
@@ -20,10 +21,11 @@ interface MoveTypes{
 }
 
 export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected}: {node: Block, blockLocation: BlockSizeType, scale: number, selected: boolean, onSelected: () => void}){
+    const {updateLocation} = useData();
     const navigate = useNavigate();
     const [dims, setDims] = useState<BlockSizeType>(blockLocation);
     const [isEditMode, setIsEditMode] = useState(true);
-
+    console.log("INSIDE RESIZABLE CONTAINER", node.id, dims);  
     const [drag, setDrag] = useState<DragTypes>({
         active: false,
         handle: null,
@@ -62,6 +64,9 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
 
     useEffect(() => {
         const handleMouseUp = () => {
+            if (drag.active || move.active) {
+                updateLocation(node.id, dims); // Save to context when done
+            }
             setDrag((d) => ({ ...d, active: false, handle: null }));
             setMove((m) => ({ ...m, active: false }));
             };
@@ -232,6 +237,11 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
         userSelect: "none"
     };
 
+    // Location Syncing 
+
+    useEffect(() => {
+        setDims(blockLocation);
+    }, [blockLocation]);
 
 
     return(     
@@ -264,3 +274,4 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
     </div>
     )
 }
+

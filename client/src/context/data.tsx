@@ -46,7 +46,7 @@ export function DataProvider({children} : {children : ReactNode}){
     const updateLocation = (id: string, updates: Partial<BasePageBlockType>) => {
         setLocations( (prev) => ({
             ...prev, 
-            id:{ ...prev.id, ...updates}
+            [id]:{ ...prev.id, ...updates}
             })
         )
     }
@@ -54,7 +54,7 @@ export function DataProvider({children} : {children : ReactNode}){
     const addLocation = (size: BlockSizeType, id:string) => {
         setLocations((prev) => ({
             ...prev, 
-            id: {...size}
+            [id]: {...size}
             
         }))
     }
@@ -62,7 +62,7 @@ export function DataProvider({children} : {children : ReactNode}){
     const removeLocation = (blockId:string) => {
         setLocations((prev) => {
             const save = {...prev};
-            delete save.blockId;
+            delete save[blockId];
             return save;
         });
     }
