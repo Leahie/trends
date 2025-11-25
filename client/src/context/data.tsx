@@ -10,6 +10,7 @@ interface DataContextType {
     root: BasePageBlockType;
     // location 
     locations:  Record<string, BlockSizeType>;
+    setLocations: (prev: Record<string, BlockSizeType>) => void;
     getLocation: (blockId: string ) => BlockSizeType;
     updateLocation: (id: string, updates: Partial<BasePageBlockType>) => void;
     addLocation: (size: BlockSizeType, id:string) => void;
@@ -99,7 +100,7 @@ export function DataProvider({children} : {children : ReactNode}){
 
 
     return (
-        <DataContext.Provider value = {{blocks, dataMap, root, updateBlock, addBlock, removeBlock, locations, getLocation, updateLocation, addLocation, removeLocation}}>
+        <DataContext.Provider value = {{blocks, dataMap, root, updateBlock, addBlock, removeBlock, locations, getLocation, updateLocation, addLocation, removeLocation, setLocations}}>
             {children}
         </DataContext.Provider>
     );

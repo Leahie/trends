@@ -33,7 +33,7 @@
     "type": "diary_entry",
     "properties":
     { "title": "Sad Day"}, 
-    "content": [4],
+    "content": ["4"],
     "parent":"0"
   },
    {

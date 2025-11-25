@@ -1,28 +1,54 @@
 import { useParams, Navigate } from 'react-router-dom';
 import { useData } from './context/data';
-import type { Block, TextBlockType } from './types';
+import type { Block, DiaryBlockType, ImageBlockType, TextBlockType } from './types';
 import TextInfo from './components/Info/TextInfo';
 import ImageInfo from './components/Info/ImageInfo';
+import DiaryInfo from './components/Info/DiaryInfo';
+function renderBlock(node: Block) {
+  switch (node.type) {
+    case "text":
+      return <TextInfo node={node as TextBlockType} />;
 
-export default function BlockInfo(){
-    const {id} = useParams();
-    const {dataMap} = useData();
+    case "image":
+      return <ImageInfo node={node as ImageBlockType} />;
 
-    if (!id ) return <Navigate to="/" replace />
+    case "diary_entry":
+      return <DiaryInfo node={node as DiaryBlockType} />;
 
-    const node:Block = dataMap[id];
-
-    if (!node) {
-    return <Navigate to="/" replace />;
+    default:
+      return null;
   }
-    
-    return(
-        <div className="flex-1 overflow-y-auto p-8 overflow-x-hidden">   
-            <div className=' h-full w-full min-w-0 mt-[150px] ml-[20px] pb-[30vh] transition-transform duration-200 ease-linear translate-x-[calc(var(--direction,1)_*_0px)] ' >
-            {node["type"] === "text" && <TextInfo  node={node as TextBlockType} />}
-            {node["type"] === "image" && <ImageInfo />}
-            {/* {node["type"] === "diary_entry" && <DiaryBlock id={node.id} type={node.type} properties={(node as DiaryBlockType).properties} content={(node as DiaryBlockType).content} parent={node.parent}/>} */}
-            </div>
+}
+
+export default function BlockInfo() {
+  const { id } = useParams();
+  const { dataMap } = useData();
+
+  if (!id) return <Navigate to="/" replace />;
+  const node = dataMap[id];
+  if (!node) return <Navigate to="/" replace />;
+
+  const isDiary = node.type === "diary_entry";
+
+  return (
+    <>
+      {/* Diary entries have their own layout */}
+      {isDiary ? (
+        renderBlock(node)
+      ) : (
+        <div className="flex-1 overflow-y-auto p-8 overflow-x-hidden">
+          <div
+            className="
+              h-full w-auto min-w-0 
+              mt-[150px] ml-[20px] mr-[50px] pb-[30vh] 
+              transition-transform duration-200 ease-linear
+              translate-x-[calc(var(--direction,1)_*_0px)]
+            "
+          >
+            {renderBlock(node)}
+          </div>
         </div>
-    )
+      )}
+    </>
+  );
 }

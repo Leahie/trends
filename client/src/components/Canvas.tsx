@@ -1,11 +1,12 @@
-import type {Block, BasePageBlockType, BlockSizeType} from "../types";
+import type {Block, BasePageBlockType, DiaryBlockType, BlockSizeType} from "../types";
 import ResizeableContainer from "./ResizeableContainer.tsx"
 import {useState, useRef, useEffect} from 'react';
 import { useData } from "../context/data.tsx";
+import Context from "./Context.tsx";
 
-
-export default function(){
-    const {root, dataMap, locations} = useData();
+export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockType}){
+    const {dataMap, locations, setLocations} = useData();
+    const [contextMenu, setContextMenu] = useState<{x: number, y:number} | null>(null);
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
     // Zoom and pan state
@@ -16,7 +17,7 @@ export default function(){
     const [spacePressed, setSpacePressed] = useState(false);
     
     const canvasRef = useRef<HTMLDivElement>(null);
-
+    
     // Spacebar handling
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -85,6 +86,26 @@ export default function(){
     const handleMouseUp = () => {
         setIsPanning(false);
     };
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const canvasX = (mouseX - pan.x) ;
+        const canvasY = (mouseY - pan.y);
+
+        setContextMenu({ x: mouseX, y: mouseY });
+
+    }
+
+    // Z INDEX HANDLING 
+
     return(
         
         <div className="fixed inset-0 flex flex-col">        
@@ -129,7 +150,8 @@ export default function(){
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
-                    onClick={() => setSelectedBlockId(null)}
+                    onClick={() => {setSelectedBlockId(null); setContextMenu(null)}}
+                    onContextMenu={handleContextMenu}
                 >
                     {/* Transform container - this gets scaled and panned */}
                     <div
@@ -143,7 +165,7 @@ export default function(){
                     >
                         {/* Re-enable pointer events for actual content */}
                         <div style={{ pointerEvents: 'auto' }}>
-                            {root.content.map((e: string) => (
+                            {node.content.map((e: string) => (
                                 <ResizeableContainer 
                                     key={e}
                                     node={dataMap[e]} 
@@ -153,11 +175,13 @@ export default function(){
                                     onSelected={() => setSelectedBlockId(e)}
                                 />
                             ))}
-                        </div>
+                        </div> 
                     </div>
                 </div>
             </div>
-            
+            { contextMenu != null && 
+            <Context x={contextMenu.x} y={contextMenu.y} selected = {selectedBlockId}/>
+            }
         </div>
         
     )
