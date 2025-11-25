@@ -1,6 +1,8 @@
-import React, {useState, useMemo, useContext, createContext} from 'react';
+import React, {useState, useMemo, useRef, useEffect, useContext, createContext} from 'react';
 import type { ReactNode } from 'react';
 import type { Block, BlockSizeType, BasePageBlockType  } from '../types';
+import {api} from "../utils/api"
+
 import rawData from "../data/data.json"
 import rawBlockStates from "../data/block_states.json"
 
@@ -20,6 +22,11 @@ interface DataContextType {
     updateBlock: (id: string, updates: Partial<Block>) => void;
     addBlock: (block: Block) => void; 
     removeBlock: (id: string) => void;
+
+    // syncing [fear]
+    syncNow: () => Promise<void>;
+    isSyncing: boolean; 
+    lastSyncTime: Date | null;
 }
 
 // context is created? 
@@ -27,12 +34,33 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // provider component 
 export function DataProvider({children} : {children : ReactNode}){
-    const [blocks, setBlocks] = useState<Block[]>(getData());
-    const [locations, setLocations] = useState< Record<string, BlockSizeType>>(getLocations())
+    const [blocks, setBlocks] = useState<Block[]>([]);
+    const [locations, setLocations] = useState< Record<string, BlockSizeType>>({})
+    const [isSyncing, setIsSynching] = useState<boolean>(false);
+    const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
-    const dataMap = useMemo(()=>{
-        return Object.fromEntries(blocks.map( (b) => [b.id, b]));
-    }, [blocks]);
+    const pendingLocationChanges = useRef<Record<string, BlockSizeType>>({});
+    const pendingBlockChanges = useRef<Record<string, Block>>({});
+    const syncTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        const loadData = async () => {
+            setIsSynching(true);
+            const result = await api.fetchData();
+            if (result.success && result.data){
+                setBlocks(result.data.blocks);
+                setLocations(result.data.locations);
+                setLastSyncTime(new Date());
+            } else {
+                console.error('Failed to load initial data:', result.error);
+            }
+            setIsSynching(false);
+        };
+        loadData();
+    }, [])
+
+
+    
 
     const root = useMemo(()=>{
         return blocks.find(id => id.parent === "none") as BasePageBlockType ;
@@ -104,19 +132,6 @@ export function DataProvider({children} : {children : ReactNode}){
             {children}
         </DataContext.Provider>
     );
-}
-
-function getData(): Block[]{
-    return rawData as Block[]
-}
-
-
-// Datamap has id: data 
-// Start from root and then getContent to find children
-
-// construct locations parent: map of all kids 
-function getLocations():Record<string, BlockSizeType>{
-    return rawBlockStates as Record<string, BlockSizeType>;
 }
 
 export function useData(){
