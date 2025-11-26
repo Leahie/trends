@@ -15,13 +15,11 @@ interface DataContextType {
     setLocations: (prev: Record<string, BlockSizeType>) => void;
     getLocation: (blockId: string ) => BlockSizeType;
     updateLocation: (id: string, updates: Partial<BasePageBlockType>) => void;
-    addLocation: (size: BlockSizeType, id:string) => void;
-    removeLocation: (blockId: string) => void;
 
     // blocks
     updateBlock: (id: string, updates: Partial<Block>) => void;
-    addBlock: (block: Block, location: BlockSizeType) => boolean; 
-    removeBlock: (id: string) => boolean;
+    addBlock: (block: Block, location: BlockSizeType) => Promise<boolean>; 
+    removeBlock: (id: string) => Promise<boolean>;
 
     // syncing [fear]
     syncNow: () => Promise<void>;
@@ -40,8 +38,8 @@ export function DataProvider({children} : {children : ReactNode}){
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
     const pendingLocationChanges = useRef<Record<string, BlockSizeType>>({});
-    const pendingBlockChanges = useRef<Record<string, Block>>({});
-    const syncTimeout = useRef<NodeJS.Timeout | null>(null);
+    const pendingBlockChanges = useRef<Record<string, any>>({});
+    const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -59,11 +57,22 @@ export function DataProvider({children} : {children : ReactNode}){
         loadData();
     }, [])
 
-    const scheduleSync = async () => {
-        useCallback({
-            syncTimeout.current = Date.now();
-        }, lastSyncTime)
-    }
+    const dataMap = useMemo(() => {
+    return Object.fromEntries(blocks.map((b) => [b.id, b]));
+  }, [blocks]);
+
+    const root = useMemo(()=>{
+        return blocks.find(id => id.parent === "none") as BasePageBlockType ;
+    }, [blocks])
+
+    const scheduledSync = useCallback( () => {
+        if (syncTimeout.current){
+            clearTimeout(syncTimeout.current);
+        }
+        syncTimeout.current = setTimeout(async () => {
+            await performSync();
+        }, 2000);
+    }, [])
 
     const performSync = async () => {
         const locationChanges = {...pendingLocationChanges.current};
@@ -103,10 +112,21 @@ export function DataProvider({children} : {children : ReactNode}){
         return !hasErrors;
     }
     
+    const syncNow = async () => {
+        if (syncTimeout.current){
+            clearTimeout(syncTimeout.current);
+        }
+        await performSync();   
+    }
 
-    const root = useMemo(()=>{
-        return blocks.find(id => id.parent === "none") as BasePageBlockType ;
-    }, [blocks])
+    useEffect(() => {
+        const interval = setInterval(() => {
+            performSync();
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [])
+    
 
     // GETTING AND UPDATING LOCATIONS
     const getLocation = (blockId: string):BlockSizeType => {
@@ -119,45 +139,28 @@ export function DataProvider({children} : {children : ReactNode}){
             [id]:{ ...prev.id, ...updates}
             })
         )
-    }
+        pendingLocationChanges.current[id] = {
+            ...locations.id, ...updates
+        }
 
-    const addLocation = (size: BlockSizeType, id:string) => {
-        setLocations((prev) => ({
-            ...prev, 
-            [id]: {...size}
-            
-        }))
-    }
-
-    const removeLocation = (blockId:string) => {
-        setLocations((prev) => {
-            const save = {...prev};
-            delete save[blockId];
-            return save;
-        });
+        scheduledSync();
     }
 
     // UPDATING THE BLOCK
     const updateBlock = (id: string, updates: Partial<Block>) => {
         console.log(id, updates)
         setBlocks(prev => 
-            prev.map( b => {
-                if (b.id !== id) return b;
-                switch (b.type) {
-                    case "text":
-                        return { ...b, ...updates } as Block;
-                    case "base_page":
-                        return { ...b, ...updates } as Block;
-                    case "image":
-                        return {...b, ...updates} as Block;
-                    case "diary_entry":
-                        return {...b, ...updates} as Block;
-                    default: 
-                        return b;
-                }
-            })
+            prev.map(b => b.id === id ? { ...b, ...updates } as Block : b)
         )
+        
+        pendingBlockChanges.current[id] = {
+            ...(pendingBlockChanges.current[id] || {}),
+            ...updates 
+        }
+        
+        scheduledSync();
     }
+
 
     const addBlock = async(block: Block, location: BlockSizeType) =>{
         setBlocks(prev => [...prev, block]);
@@ -204,7 +207,7 @@ export function DataProvider({children} : {children : ReactNode}){
 
 
     return (
-        <DataContext.Provider value = {{blocks, dataMap, root, updateBlock, addBlock, removeBlock, locations, getLocation, updateLocation, addLocation, removeLocation, setLocations}}>
+        <DataContext.Provider value = {{blocks, dataMap, root, updateBlock, addBlock, removeBlock, locations, getLocation, updateLocation, setLocations, syncNow, isSyncing, lastSyncTime}}>
             {children}
         </DataContext.Provider>
     );
