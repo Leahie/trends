@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef, useEffect, useContext, createContext} from 'react';
+import React, {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
 import type { ReactNode } from 'react';
 import type { Block, BlockSizeType, BasePageBlockType  } from '../types';
 import {api} from "../utils/api"
@@ -20,8 +20,8 @@ interface DataContextType {
 
     // blocks
     updateBlock: (id: string, updates: Partial<Block>) => void;
-    addBlock: (block: Block) => void; 
-    removeBlock: (id: string) => void;
+    addBlock: (block: Block, location: BlockSizeType) => boolean; 
+    removeBlock: (id: string) => boolean;
 
     // syncing [fear]
     syncNow: () => Promise<void>;
@@ -59,7 +59,49 @@ export function DataProvider({children} : {children : ReactNode}){
         loadData();
     }, [])
 
+    const scheduleSync = async () => {
+        useCallback({
+            syncTimeout.current = Date.now();
+        }, lastSyncTime)
+    }
 
+    const performSync = async () => {
+        const locationChanges = {...pendingLocationChanges.current};
+        const blockChanges = {...pendingBlockChanges.current};
+
+        if (Object.keys(locationChanges).length == 0 && Object.keys(blockChanges).length == 0) 
+            return;
+
+        setIsSynching(true);
+        let hasErrors = false;
+        try {
+            if (Object.keys(locationChanges).length > 0) {
+                const result = await api.batchUpdateLocations(locationChanges);
+                if (result.success){
+                    pendingLocationChanges.current = {};
+                }
+            }
+
+            if (Object.keys(blockChanges).length > 0){
+                for (const[id, updates] of Object.entries(blockChanges)){
+                    const results = await api.updateBlock(id, updates);
+                    if (results.success) delete pendingBlockChanges.current.id;
+                    else hasErrors = true;
+                }
+            }
+
+            if (!hasErrors){
+                setLastSyncTime(new Date());
+            }
+
+        } catch (error) {
+            hasErrors = true;            
+        } finally {
+            setIsSynching(false);
+        }
+
+        return !hasErrors;
+    }
     
 
     const root = useMemo(()=>{
@@ -117,12 +159,46 @@ export function DataProvider({children} : {children : ReactNode}){
         )
     }
 
-    const addBlock = (block: Block) =>{
+    const addBlock = async(block: Block, location: BlockSizeType) =>{
         setBlocks(prev => [...prev, block]);
+        setLocations((prev) => ({
+            ...prev, 
+            [block.id]: {...location}
+            
+        }))
+        const result = await api.addBlock(block, location);
+        if (!result.success){
+            setBlocks(prev => prev.filter((b) => b.id !== block.id));
+            setLocations(prev => {
+                const copy = {...prev};
+                delete copy[block.id];
+                return copy;
+            }
+            )
+            return false;
+        }
+        return true;
     }
 
-    const removeBlock = (id: string) =>{
+    const removeBlock = async(id: string) =>{
+        const block: (Block | undefined) = blocks.find(b => b.id == id);
+        const location = locations[id];
+        if (!block) return false;
         setBlocks(prev => prev.filter(b => b.id !== id));
+        setLocations(prev => {
+            const copy = {...prev};
+            delete copy[id];
+            return copy;
+        })
+        const result = await api.deleteBlock(id);
+        if (!result.success){
+            setBlocks(prev => ([...prev, block]));
+            setLocations(prev => (
+                {...prev, [id]:location}
+            ))
+            return false;
+        }
+        return true;
     }
     
 

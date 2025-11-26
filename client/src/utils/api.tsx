@@ -83,6 +83,7 @@ export const api = {
     }
   },
 
+
   async batchUpdateLocations(updates: Record<string, BlockSizeType>): Promise<ApiResponse<BatchUpdateResponse>> {
     try {
       const { data } = await client.patch('/locations/batch', updates);
@@ -109,6 +110,7 @@ export const api = {
     }
   },
 
+  // DON'T FORGET TO DELETE LOCATION IN CALL AS WELL
   async deleteBlock(blockId: string): Promise<ApiResponse<{ id: string }>> {
     try {
       const { data } = await client.delete(`/blocks/${blockId}`);
