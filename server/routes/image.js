@@ -37,8 +37,8 @@ admin.initializeApp({
 const db = admin.firestore();
 const bucket = admin.storage().bucket(); // image bucket
 
-// // Get 
-router.get("/", async(req, res) => {
+// // Get Data
+router.get("/data", async(req, res) => {
     try {
       const snapshot = await db.collection("images").get();
       if (snapshot.empty) {

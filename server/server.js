@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 // Image Routes
-app.use('/api/images', imageRouter);
+app.use('/api/', imageRouter);
 
 // App is Listening on Port 5000
 const port = process.env.PORT || 5000; 

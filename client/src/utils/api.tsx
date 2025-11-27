@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import type { Block, BlockSizeType } from '../types';
 
 const client = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
