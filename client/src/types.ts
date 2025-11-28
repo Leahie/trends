@@ -32,6 +32,7 @@ export interface ImageBlockType extends BaseBlock{
     properties: {
         title: string; 
         url: string; 
+        source: 'upload' | 'external'
     }
 }
 
