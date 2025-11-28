@@ -21,11 +21,18 @@ function renderBlock(node: Block) {
 }
 
 export default function BlockInfo() {
-  const { id } = useParams();
+  let { id } = useParams();
   const { dataMap } = useData();
 
   if (!id) return <Navigate to="/" replace />;
+  id = String(id).trim();
+  if (!dataMap || Object.keys(dataMap).length === 0) {
+    return <p>Loading...</p>; // or a spinner
+  }
+
   const node = dataMap[id];
+
+  // If the id doesn’t exist in the dataMap
   if (!node) return <Navigate to="/" replace />;
 
   const isDiary = node.type === "diary_entry";

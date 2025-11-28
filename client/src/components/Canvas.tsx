@@ -6,7 +6,7 @@ import Context from "./Context.tsx";
 
 export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockType}){
     const {dataMap, locations, setLocations} = useData();
-    const [contextMenu, setContextMenu] = useState<{x: number, y:number} | null>(null);
+    const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
     // Zoom and pan state
@@ -100,7 +100,7 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
         const canvasX = (mouseX - pan.x) ;
         const canvasY = (mouseY - pan.y);
 
-        setContextMenu({ x: mouseX, y: mouseY });
+        setContextMenu({ x: mouseX, y: mouseY, canvasX, canvasY });
 
     }
 
@@ -131,83 +131,88 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
         if (selectedBlockId!=null) bringToFront(selectedBlockId)
     }, [selectedBlockId])
 
-    return(
-        
-        <div className="fixed inset-0 flex flex-col">        
-            <div className="">
-                <div className="absolute top-9 right-4 z-50 flex gap-2">
-                    <button 
-                        onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
-                        className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
-                    >
-                        −
-                    </button>
-                    <span className="px-3 py-1 bg-highlight text-white rounded">
-                        {(scale * 100).toFixed(0)}%
-                    </span>
-                    <button 
-                        onClick={() => setScale(s => Math.min(s * 1.2, 5))} 
-                        className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
-                    >
-                        +
-                    </button>
-                    <button 
-                        onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
-                        className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
-                    >
-                        Reset
-                    </button>
-                </div>
-            </div>    
-            
-
-            
-
-            {/* Canvas - this is the infinite canvas area */}
-            <div className="flex-1 relative overflow-hidden">
-                <div
-                    ref={canvasRef}
-                    className={`absolute inset-0 overflow-hidden ${
-                        isPanning || spacePressed ? 'cursor-grab' : ''
-                    } ${isPanning ? 'cursor-grabbing' : ''}`}
-                    onWheel={handleWheel}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onClick={() => {setSelectedBlockId(null); setContextMenu(null)}}
-                    onContextMenu={handleContextMenu}
+    return !node ? (
+    <p>Loading...</p>
+) : (
+    <div className="fixed inset-0 flex flex-col">        
+        <div className="">
+            <div className="absolute top-9 right-4 z-50 flex gap-2">
+                <button 
+                    onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
+                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
                 >
-                    {/* Transform container - this gets scaled and panned */}
-                    <div
-                        style={{
-                            transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-                            transformOrigin: "0 0",
-                            position: "absolute",
-                            width: "4000px",
-                            height: "4000px",
-                            }}
-                    >
-                        {/* Re-enable pointer events for actual content */}
-                        <div style={{ pointerEvents: 'auto' }}>
-                            {node.content.map((e: string) => (
-                                <ResizeableContainer 
-                                    key={e}
-                                    node={dataMap[e]} 
-                                    blockLocation={locations[e]} 
-                                    scale = {scale}
-                                    selected={selectedBlockId === e} 
-                                    onSelected={() => setSelectedBlockId(e)}
-                                />
-                            ))}
-                        </div> 
-                    </div>
+                    −
+                </button>
+                <span className="px-3 py-1 bg-highlight text-white rounded">
+                    {(scale * 100).toFixed(0)}%
+                </span>
+                <button 
+                    onClick={() => setScale(s => Math.min(s * 1.2, 5))} 
+                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
+                >
+                    +
+                </button>
+                <button 
+                    onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
+                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
+                >
+                    Reset
+                </button>
+            </div>
+        </div>    
+
+        {/* Canvas - this is the infinite canvas area */}
+        <div className="flex-1 relative overflow-hidden">
+            <div
+                ref={canvasRef}
+                className={`absolute inset-0 overflow-hidden ${
+                    isPanning || spacePressed ? 'cursor-grab' : ''
+                } ${isPanning ? 'cursor-grabbing' : ''}`}
+                onWheel={handleWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onClick={() => {setSelectedBlockId(null); setContextMenu(null)}}
+                onContextMenu={handleContextMenu}
+            >
+                {/* Transform container - this gets scaled and panned */}
+                <div
+                    style={{
+                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+                        transformOrigin: "0 0",
+                        position: "absolute",
+                        width: "4000px",
+                        height: "4000px",
+                    }}
+                >
+                    {/* Re-enable pointer events for actual content */}
+                    <div style={{ pointerEvents: 'auto' }}>
+                        {node.content.map((e: string) => (
+                            <ResizeableContainer 
+                                key={e}
+                                node={dataMap[e]} 
+                                blockLocation={locations[e]} 
+                                scale={scale}
+                                selected={selectedBlockId === e} 
+                                onSelected={() => setSelectedBlockId(e)}
+                            />
+                        ))}
+                    </div> 
                 </div>
             </div>
-            { contextMenu != null && 
-            <Context x={contextMenu.x} y={contextMenu.y} selected = {selectedBlockId}/>
-            }
         </div>
-        
-    )
+        { contextMenu && 
+            <Context 
+                x={contextMenu.x} 
+                y={contextMenu.y} 
+                canvasX={contextMenu.canvasX} 
+                canvasY={contextMenu.canvasY} 
+                selected={selectedBlockId} 
+                parentId={node.id} 
+                setContextMenu={setContextMenu}
+            />
+        }
+    </div>
+)
 }

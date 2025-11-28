@@ -47,6 +47,7 @@ export const api = {
   async fetchData(): Promise<ApiResponse<{ blocks: Block[]; locations: Record<string, BlockSizeType> }>> {
     try {
       const { data } = await client.get('/data');
+      console.log("This is the data", data);
       return { success: true, data };
     } catch (error) {
       console.error('Failed to fetch data:', error);

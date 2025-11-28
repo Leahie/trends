@@ -18,8 +18,8 @@ interface DataContextType {
 
     // blocks
     updateBlock: (id: string, updates: Partial<Block>) => void;
-    addBlock: (block: Block, location: BlockSizeType) => Promise<boolean>; 
-    removeBlock: (id: string) => Promise<boolean>;
+    addBlock: (block: Block, location: BlockSizeType, parentId?: string) => Promise<boolean>; 
+    removeBlock: (id: string, parentId?:string) => Promise<boolean>;
 
     // syncing [fear]
     syncNow: () => Promise<void>;
@@ -29,6 +29,14 @@ interface DataContextType {
 
 // context is created? 
 const DataContext = createContext<DataContextType | undefined>(undefined);
+
+const DEFAULT_ROOT_BLOCK: BasePageBlockType = {
+  id: "root",
+  type: "base_page",
+  parent: "none",
+  properties: { title: "Root Page" },
+  content: [],
+};
 
 // provider component 
 export function DataProvider({children} : {children : ReactNode}){
@@ -45,9 +53,28 @@ export function DataProvider({children} : {children : ReactNode}){
         const loadData = async () => {
             setIsSynching(true);
             const result = await api.fetchData();
-            if (result.success && result.data){
-                setBlocks(result.data.blocks);
-                setLocations(result.data.locations);
+            if (result.success && result.data) {
+                let fetchedBlocks = result.data.blocks;
+                let fetchedLocations = result.data.locations;
+            
+                const root = fetchedBlocks.find(b => b.parent === "none");
+
+                if (!root) {
+                    console.log("No root found — creating one.");
+
+                    // fetchedBlocks = [DEFAULT_ROOT_BLOCK, ...fetchedBlocks];
+                    // fetchedLocations = {
+                    //     ...fetchedLocations,
+                    //     [DEFAULT_ROOT_BLOCK.id]: { x: 0, y: 0, width: 800, height: 600, zIndex: 0 },
+                    // };
+
+                    await api.addBlock(DEFAULT_ROOT_BLOCK, fetchedLocations[DEFAULT_ROOT_BLOCK.id]);
+                }
+
+                const result2 = await api.fetchData();
+
+                setBlocks(result2.data?.blocks);
+                setLocations(result2.data?.locations);
                 setLastSyncTime(new Date());
             } else {
                 console.error('Failed to load initial data:', result.error);
@@ -62,8 +89,11 @@ export function DataProvider({children} : {children : ReactNode}){
   }, [blocks]);
 
     const root = useMemo(()=>{
-        return blocks.find(id => id.parent === "none") as BasePageBlockType ;
+        const foundRoot = blocks.find(b => b.parent === "none") as BasePageBlockType;
+        return foundRoot || null;
     }, [blocks])
+
+    console.log(blocks);
 
     const scheduledSync = useCallback( () => {
         if (syncTimeout.current){
@@ -94,7 +124,7 @@ export function DataProvider({children} : {children : ReactNode}){
             if (Object.keys(blockChanges).length > 0){
                 for (const[id, updates] of Object.entries(blockChanges)){
                     const results = await api.updateBlock(id, updates);
-                    if (results.success) delete pendingBlockChanges.current.id;
+                    if (results.success) delete pendingBlockChanges.current[id];
                     else hasErrors = true;
                 }
             }
@@ -136,12 +166,13 @@ export function DataProvider({children} : {children : ReactNode}){
     const updateLocation = (id: string, updates: Partial<BasePageBlockType>) => {
         setLocations( (prev) => ({
             ...prev, 
-            [id]:{ ...prev.id, ...updates}
+            [id]:{ ...prev[id], ...updates}
             })
         )
         pendingLocationChanges.current[id] = {
-            ...locations.id, ...updates
-        }
+        ...(pendingLocationChanges.current[id] || {}),  
+        ...updates 
+    }
 
         scheduledSync();
     }
@@ -162,7 +193,7 @@ export function DataProvider({children} : {children : ReactNode}){
     }
 
 
-    const addBlock = async(block: Block, location: BlockSizeType) =>{
+    const addBlock = async(block: Block, location: BlockSizeType, parentId?: string) =>{
         setBlocks(prev => [...prev, block]);
         setLocations((prev) => ({
             ...prev, 
@@ -180,10 +211,26 @@ export function DataProvider({children} : {children : ReactNode}){
             )
             return false;
         }
+        if (parentId) {
+            setBlocks(prev => {
+                return prev.map(b => {
+                    if (b.id !== parentId) return b;
+                    if (!("content" in b)) return b;
+
+                    const newContent = [...b.content, block.id];
+
+                    // queue backend sync
+                    updateBlock(parentId, { content: newContent });
+
+                    return { ...b, content: newContent };
+                });
+            });
+        }
+        
         return true;
     }
 
-    const removeBlock = async(id: string) =>{
+    const removeBlock = async(id: string, parentId:string) =>{
         const block: (Block | undefined) = blocks.find(b => b.id == id);
         const location = locations[id];
         if (!block) return false;
@@ -193,6 +240,10 @@ export function DataProvider({children} : {children : ReactNode}){
             delete copy[id];
             return copy;
         })
+        delete pendingBlockChanges.current[id];
+        delete pendingLocationChanges.current[id];
+
+
         const result = await api.deleteBlock(id);
         if (!result.success){
             setBlocks(prev => ([...prev, block]));
@@ -201,6 +252,22 @@ export function DataProvider({children} : {children : ReactNode}){
             ))
             return false;
         }
+
+        if (parentId) {
+            console.log("I am deleting")
+            const parentBlock = blocks.find(b => b.id === parentId);
+            if (parentBlock && 'content' in parentBlock) {
+                const newContent = parentBlock.content.filter(childId => childId !== id);
+                setBlocks(prev => prev.map(b => b.id === parentId ? { ...b, content: newContent } : b));
+                console.log("This is new content", newContent)
+                pendingBlockChanges.current[parentId] = {
+                    ...(pendingBlockChanges.current[parentId] || {}),
+                    content: newContent
+                };
+                scheduledSync();
+            }
+        }
+
         return true;
     }
     

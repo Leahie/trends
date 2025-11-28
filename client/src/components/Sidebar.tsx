@@ -4,7 +4,9 @@ import { useData } from "../context/data.tsx";
 import { useLocation } from "react-router-dom";
 
 
+
 function SidebarNode({node}:{node:Block}){
+   if (!node) return null;
     const [isHovered, setIsHovered] = useState(false);
 
     const handleMouseEnter = () => {
@@ -14,7 +16,15 @@ function SidebarNode({node}:{node:Block}){
     const handleMouseLeave = () => {
       setIsHovered(false);
     }
-    const {dataMap} = useData();
+    const {dataMap, removeBlock} = useData();
+
+    const handleDelete = async () => {
+        const success = await removeBlock(node.id, node.parent);
+        if (success) {
+            console.log('Block deleted successfully');
+        }
+    };
+
     return(
         <div className="flex-col"> 
         <li></li>
@@ -38,7 +48,7 @@ function SidebarNode({node}:{node:Block}){
                 </svg>}</p>
                 
                 </div>
-                <div className="flex-none">
+                <div className="flex-none" onClick={() => handleDelete()}>
                   {isHovered && 
                   <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M5 6.77273H9.2M19 6.77273H14.8M9.2 6.77273V5.5C9.2 4.94772 9.64772 4.5 10.2 4.5H13.8C14.3523 4.5 14.8 4.94772 14.8 5.5V6.77273M9.2 6.77273H14.8M6.4 8.59091V15.8636C6.4 17.5778 6.4 18.4349 6.94673 18.9675C7.49347 19.5 8.37342 19.5 10.1333 19.5H13.8667C15.6266 19.5 16.5065 19.5 17.0533 18.9675C17.6 18.4349 17.6 17.5778 17.6 15.8636V8.59091M9.2 10.4091V15.8636M12 10.4091V15.8636M14.8 10.4091V15.8636" 
@@ -77,7 +87,14 @@ export default function Sidebar(){
     const {root, dataMap} = useData();
     const [open, setOpen] = useState<boolean>(true); // sets the Sidebar 
     const isCanvasLayout = useIsCanvasLayout();
-    console.log(isCanvasLayout);
+
+    if (!root) {
+        return (
+            <div className="w-64 h-full bg-dark flex items-center justify-center">
+                <p className="text-white">Loading...</p>
+            </div>
+        );
+    }
 
     return(
         <div

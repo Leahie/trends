@@ -21,6 +21,7 @@ interface MoveTypes{
 }
 
 export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected}: {node: Block, blockLocation: BlockSizeType, scale: number, selected: boolean, onSelected: () => void}){
+    if (!node) return null;
     const {updateLocation} = useData();
     const navigate = useNavigate();
     const [dims, setDims] = useState<BlockSizeType>(blockLocation);

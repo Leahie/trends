@@ -45,8 +45,6 @@ router.get("/data", async(req, res) => {
         const { createdAt, ...cleanData } = doc.data();  // <-- removes createdAt
         locations[doc.id] = cleanData;
       })
-      console.log(blocks);
-      console.log(locations);
       res.send({blocks, locations});
   }catch (error) {
       console.log("Error getting blocks and locations:", error);
@@ -121,7 +119,7 @@ router.patch("/locations/batch", async (req, res) => {
 
   try{
     const batch = db.batch();
-    Object.entries(updates).forEach((id, location)=>{
+    Object.entries(updates).forEach(([id, location])=>{
       const locRef = db.collection('locations').doc(id);
       batch.update(locRef, location);
     })
@@ -139,13 +137,28 @@ router.post("/blocks", async (req, res) => {
   const block = req.body.block;
   const location = req.body.location;
   try{
-    const uuid = uuidv4();
+    const blockIdFromClient = block && block.id;
+
+    // choose id: use provided id when present (makes creation idempotent), otherwise generate
+    const uuid = blockIdFromClient || uuidv4();
 
     const blocksRef = db.collection("blocks");
     const locationRef = db.collection("locations");
 
-    // add it to the blocks collection 
-    await blocksRef.doc(uuid).set({
+    const blockDocRef = blocksRef.doc(uuid);
+    const existing = await blockDocRef.get();
+
+    if (existing.exists) {
+      const existingData = existing.data();
+      const { createdAt, ...cleaned } = { id: existing.id, ...existingData };
+      if (location) {
+        await locationRef.doc(uuid).set({ ...location, id: uuid, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      }
+      return res.status(200).send({ block: cleaned, location: location ? { ...location, id: uuid } : undefined });
+    }
+
+    // create new block and location
+    await blockDocRef.set({
       ...block,
       id: uuid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
