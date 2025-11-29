@@ -30,11 +30,19 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
         setUploadError(null);
         
         try{
+            if (url && url.includes('storage.googleapis.com')) {
+            try {
+                await deleteFromFirebase(url);
+            } catch (error) {
+                console.warn('Failed to delete old image:', error);
+            }
+        }
+
             const formData = new FormData();
             formData.append('file', file);
             formData.append('blockId', node.id);
 
-            const response = await fetch('http://localhost:5000/api/upload-image', {
+            const response = await fetch('http://localhost:5000/api/images/upload', {
                 method: 'POST',
                 body: formData,
             })
@@ -53,6 +61,25 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
             setIsUploading(false);
         }
     }
+
+    const deleteFromFirebase = async (imageUrl: string): Promise<void> => {
+    try {
+        const urlParts = imageUrl.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        
+        const response = await fetch(`http://localhost:5000/api/images/delete/${encodeURIComponent(filename)}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            throw new Error('Delete failed');
+        }
+    } catch (error) {
+        console.error('Error deleting file:', error);
+        throw error;
+    }
+};
+
     const handleDrop = useCallback(
         async (e: React.DragEvent<HTMLDivElement>) => {
             e.preventDefault();

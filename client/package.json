@@ -13,11 +13,13 @@
     "@tailwindcss/vite": "^4.1.17",
     "axios": "^1.13.2",
     "install": "^0.13.0",
-    "npm": "^11.6.3",
+    "npm": "^11.6.4",
     "react": "^19.2.0",
+    "react-color": "^2.19.3",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.6",
     "tailwindcss": "^4.1.17",
+    "tinycolor2": "^1.6.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

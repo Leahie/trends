@@ -3,6 +3,7 @@ import ResizeableContainer from "./ResizeableContainer.tsx"
 import {useState, useRef, useEffect} from 'react';
 import { useData } from "../context/data.tsx";
 import Context from "./Context.tsx";
+import ThemeModal from "./ThemeModal.tsx";
 
 export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockType}){
     const {dataMap, locations, setLocations} = useData();
@@ -15,6 +16,29 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
 
     // THeme logic
     const [themeModalOpen, setThemeModalOpen] = useState(false);
+    const [themeColor, setThemeColor] = useState("#90A694");
+
+    const onClose = () => {
+        setThemeModalOpen(false);
+    }
+
+    const onSave = (color:string) => {
+        
+
+        const obj = {colorscheme: {
+        black: string, 
+        dark : string,
+        highlight : string, 
+        accent: string,
+        "light-accent": string,
+        white: string,
+        "light-hover": string
+      }}
+    }
+
+    const onChange = (color:string) =>{
+        setThemeColor(color);
+    }
 
     // Zoom and pan state
     const [scale, setScale] = useState(1);
@@ -140,6 +164,8 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
     return !node ? (
     <p>Loading...</p>
 ) : (
+    
+    <>
     <div className="fixed inset-0 flex flex-col">        
         <div className="">
             <div className="absolute top-9 right-4 z-50 flex gap-2">
@@ -165,7 +191,7 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
                     Reset
                 </button>
                 <button 
-                    onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
+                    onClick={() => { setThemeModalOpen(true) }} 
                     className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
                 >
                     Theme
@@ -226,5 +252,7 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
             />
         }
     </div>
+    <ThemeModal open={themeModalOpen} baseColor = {themeColor} onClose={onClose} onSave = {onSave} onChange={onChange}/>
+    </>
 )
 }

@@ -10,9 +10,9 @@ const App = () => {
     
     <BrowserRouter>
       <DataProvider>
-        <div className='flex h-screen w-screen overflow-hidden '>
+        <div className='flex h-screen w-screen  '>
           <Sidebar/>
-          <div className="flex-1 relative">
+          <div className="flex-1 relative overflow-hidden">
             <Routes>
               
                 <Route path="/" element={ <HomePage />} />

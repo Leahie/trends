@@ -9,7 +9,7 @@
     --color-white: #F5F1ED;
     --color-light-hover: #D8D8D8;
   }
-
+  
   :root {
     font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
     line-height: 1.5;
@@ -17,7 +17,7 @@
 
     color-scheme: light dark;
     color: rgba(255, 255, 255, 0.87);
-    background-color: #141613;
+    background-color: #141613;  
     --color-black: #141613;
     --color-dark: #2C302B;
     --color-highlight: #596157;

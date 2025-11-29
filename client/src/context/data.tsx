@@ -34,7 +34,17 @@ const DEFAULT_ROOT_BLOCK: BasePageBlockType = {
   id: "root",
   type: "base_page",
   parent: "none",
-  properties: { title: "Open Diary" },
+  properties: { 
+    title: "Open Diary", 
+    colorscheme: {
+        black: "#141613", 
+        dark : "#2C302B",
+        highlight : "#596157", 
+        accent: "#6C816F",
+        "light-accent": "#90A694",
+        white: "#F5F1ED",
+        "light-hover": "#D8D8D8"
+      }},
   content: [],
 };
 
@@ -284,3 +294,4 @@ export function useData(){
     }
     return context;
 }
+

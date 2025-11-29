@@ -15,6 +15,15 @@ export interface BasePageBlockType extends BaseBlock{
     type: "base_page";
     properties: {
         title: string;
+        colorscheme: {
+        black: string, 
+        dark : string,
+        highlight : string, 
+        accent: string,
+        "light-accent": string,
+        white: string,
+        "light-hover": string
+      }
     };
     content: string[];
 }
@@ -40,6 +49,15 @@ export interface DiaryBlockType extends BaseBlock{
     type: "diary_entry";
     properties: {
         title: string;
+        colorscheme: {
+        black: string, 
+        dark : string,
+        highlight : string, 
+        accent: string,
+        "light-accent": string,
+        white: string,
+        "light-hover": string
+      }
     }
     content: string[];
 }
