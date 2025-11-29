@@ -2,17 +2,30 @@ import type {Block, BasePageBlockType, DiaryBlockType, BlockSizeType} from "../t
 import ResizeableContainer from "./ResizeableContainer.tsx"
 import {useState, useRef, useEffect} from 'react';
 import { useData } from "../context/data.tsx";
+import { useTheme } from "../context/theme.tsx";
+import {generateScheme} from "../utils/theme.tsx"
+
 import Context from "./Context.tsx";
 import ThemeModal from "./ThemeModal.tsx";
 
 export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockType}){
-    const {dataMap, locations, setLocations} = useData();
+    if (!node) return null;
+
+    const {dataMap, locations, setLocations, updateBlock} = useData();
+    const [title, setTitle] = useState<string>(node.properties.title);
+    const {updateTheme} = useTheme();
+    // temp 
+
+    useEffect(() =>{
+        updateTheme(node.properties.colorscheme);
+    }, [])
 
     // Right-click logic
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
     
     // Block logic
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+
 
     // THeme logic
     const [themeModalOpen, setThemeModalOpen] = useState(false);
@@ -22,18 +35,11 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
         setThemeModalOpen(false);
     }
 
-    const onSave = (color:string) => {
-        
-
-        const obj = {colorscheme: {
-        black: string, 
-        dark : string,
-        highlight : string, 
-        accent: string,
-        "light-accent": string,
-        white: string,
-        "light-hover": string
-      }}
+    const onSave = async (color:string) => {
+        const theme = generateScheme(color);
+        await updateBlock(node.id, {properties: {...node.properties, colorscheme: theme}});
+        updateTheme(theme);
+        setThemeModalOpen(false);
     }
 
     const onChange = (color:string) =>{
@@ -49,6 +55,23 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
     
     const canvasRef = useRef<HTMLDivElement>(null);
     
+    // Title 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (title !== node.properties.title) {
+                updateBlock(node.id, {
+                    properties: {
+                        ...node.properties,
+                        title
+                    }
+                });
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [title, node.id]);
+
+
     // Spacebar handling
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -166,12 +189,19 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
 ) : (
     
     <>
-    <div className="fixed inset-0 flex flex-col">        
+    <div className="fixed inset-0 flex flex-col" >        
         <div className="">
             <div className="absolute top-9 right-4 z-50 flex gap-2">
+                <input 
+                    type="text"
+                    value={title} 
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Title"
+                    className = "px-3 py-1 bg-highlight text-white rounded hover:bg-dark outline-none"
+                />      
                 <button 
                     onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
-                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
+                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-dark"
                 >
                     −
                 </button>
@@ -180,19 +210,19 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
                 </span>
                 <button 
                     onClick={() => setScale(s => Math.min(s * 1.2, 5))} 
-                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
+                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-dark"
                 >
                     +
                 </button>
                 <button 
                     onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
-                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
+                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-dark"
                 >
                     Reset
                 </button>
                 <button 
                     onClick={() => { setThemeModalOpen(true) }} 
-                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
+                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-dark"
                 >
                     Theme
                 </button>
@@ -233,7 +263,9 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
                                 blockLocation={locations[e]} 
                                 scale={scale}
                                 selected={selectedBlockId === e} 
-                                onSelected={() => setSelectedBlockId(e)}
+                                onSelected={() => setSelectedBlockId(e)
+                                
+                                }
                             />
                         ))}
                     </div> 

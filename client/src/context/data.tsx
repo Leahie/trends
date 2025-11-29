@@ -201,40 +201,59 @@ export function DataProvider({children} : {children : ReactNode}){
     }
 
 
-    const addBlock = async(block: Block, location: BlockSizeType, parentId?: string) =>{
+    const addBlock = async(block: Block, location: BlockSizeType, parentId?: string) => {
         setBlocks(prev => [...prev, block]);
         setLocations((prev) => ({
             ...prev, 
             [block.id]: {...location}
-            
-        }))
-        const result = await api.addBlock(block, location);
-        if (!result.success){
-            setBlocks(prev => prev.filter((b) => b.id !== block.id));
-            setLocations(prev => {
-                const copy = {...prev};
-                delete copy[block.id];
-                return copy;
-            }
-            )
-            return false;
-        }
+        }));
+        
+        let updatedParentContent: string[] | undefined;
+
         if (parentId) {
             setBlocks(prev => {
                 return prev.map(b => {
                     if (b.id !== parentId) return b;
                     if (!("content" in b)) return b;
-
+                    
+                    // Check if already exists to prevent duplicates
+                    if (b.content.includes(block.id)) return b;
                     const newContent = [...b.content, block.id];
-
-                    // queue backend sync
-                    updateBlock(parentId, { content: newContent });
-
+                    updatedParentContent = newContent; // Capture the new content
+                    
                     return { ...b, content: newContent };
                 });
             });
         }
         
+        const result = await api.addBlock(block, location);
+        
+        if (!result.success) {
+            // Rollback everything on failure
+            setBlocks(prev => prev.filter((b) => b.id !== block.id));
+            setLocations(prev => {
+                const copy = {...prev};
+                delete copy[block.id];
+                return copy;
+            });
+            
+            if (parentId) {
+                setBlocks(prev => {
+                    return prev.map(b => {
+                        if (b.id !== parentId) return b;
+                        if (!("content" in b)) return b;
+                        return { ...b, content: b.content.filter(id => id !== block.id) };
+                    });
+                });
+            }
+            
+            return false;
+        }
+        
+        if (parentId && updatedParentContent) {
+            await api.updateBlock(parentId, { content: updatedParentContent });
+        }
+    
         return true;
     }
 

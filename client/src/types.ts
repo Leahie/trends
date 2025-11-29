@@ -70,5 +70,14 @@ export interface BlockSizeType {
     zIndex: number;
 }
 
+export interface Theme {
+    black: string,
+    dark: string,
+    highlight: string,
+    accent: string,
+    "light-accent": string,
+    white: string,
+    "light-hover": string,
+}
 
 export type Block = BasePageBlockType | TextBlockType | ImageBlockType | DiaryBlockType;

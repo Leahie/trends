@@ -2,7 +2,7 @@
 
   @theme{
     --color-black: #141613;
-    --color-dark: #2C302B;
+    --color-dark: #444444;
     --color-highlight: #596157;
     --color-accent: #6C816F;
     --color-light-accent: #90A694;
@@ -18,8 +18,8 @@
     color-scheme: light dark;
     color: rgba(255, 255, 255, 0.87);
     background-color: #141613;  
-    --color-black: #141613;
-    --color-dark: #2C302B;
+    --color-black: #343135;
+    --color-dark: #444444;
     --color-highlight: #596157;
     --color-accent: #6C816F;
     --color-light-accent: #90A694;
@@ -88,16 +88,19 @@
   .right{right: -5px; cursor: ew-resize;}
 
 .text-block{
-  box-shadow: 0px 21px 49px 2px rgba(144,166,148,0.75);
-  -webkit-box-shadow: 0px 21px 49px 2px rgba(144,166,148,0.75);
-  -moz-box-shadow: 0px 21px 49px 2px rgba(144,166,148,0.75);
+  box-shadow: 0px 21px 49px 2px color-mix(in srgb, var(--color-light-accent) 75%, transparent);
+  -webkit-box-shadow: 0px 21px 49px 2px color-mix(in srgb, var(--color-light-accent) 75%, transparent);
+  -moz-box-shadow: 0px 21px 49px 2px color-mix(in srgb, var(--color-light-accent) 75%, transparent);
 }
 
-.diary-block{
-  background: #819484;
-  background: linear-gradient(0deg,rgba(129, 148, 132, 1) 0%, rgba(89, 97, 87, 1) 50%, rgb(63, 75, 60) 100%);
+.diary-block {
+  background: linear-gradient(
+    0deg,
+    var(--color-light-accent) 0%,
+    var(--color-accent) 50%,
+    var(--color-highlight) 100%
+  );
 }
-
 .context-li{
   padding-left: 25px;
   padding-right: 25px;

@@ -34,6 +34,15 @@ export function createDefaultDiaryBlock(parentId: string): DiaryBlockType {
     parent: parentId,
     properties: {
       title: "Untitled",
+      colorscheme: {
+        black: "#141613",
+        dark: "#2C302B",
+        highlight: "#596157",
+        accent: "#6C816F",
+        "light-accent": "#90A694",
+        white: "#F5F1ED",
+        "light-hover" : "#D8D8D8"
+      }
     },
     content: [],
   };
