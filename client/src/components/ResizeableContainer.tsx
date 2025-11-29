@@ -26,7 +26,6 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
     const navigate = useNavigate();
     const [dims, setDims] = useState<BlockSizeType>(blockLocation);
     const [isEditMode, setIsEditMode] = useState(true);
-    console.log("INSIDE RESIZABLE CONTAINER", node.id, dims);  
     const [drag, setDrag] = useState<DragTypes>({
         active: false,
         handle: null,
@@ -107,11 +106,9 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
     const moveFrame = (e: MouseEvent) => {
         if (!isEditMode) return;
         if (!move.active) return; 
-        console.log(scale);
         const dx = (e.clientX - move.x)/scale;
         const dy = (e.clientY - move.y)/scale;
 
-        console.log(dx, dy);
 
         setDims(prev => { 
             const newX = Math.max(0, prev.x+dx);

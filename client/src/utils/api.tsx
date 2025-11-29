@@ -60,7 +60,7 @@ export const api = {
 
   async updateBlock(blockId: string, updates: Partial<Block>): Promise<ApiResponse<Block>> {
     try {
-      const { data } = await client.patch(`/blocks/${blockId}`, updates);
+      const { data } = await client.patch(`/data/blocks/${blockId}`, updates);
       return { success: true, data };
     } catch (error) {
       console.error(`Failed to update block ${blockId}:`, error);
@@ -73,7 +73,7 @@ export const api = {
 
   async updateLocation(blockId: string, location: BlockSizeType): Promise<ApiResponse<BlockSizeType>> {
     try {
-      const { data } = await client.patch(`/locations/${blockId}`, location);
+      const { data } = await client.patch(`/data/locations/${blockId}`, location);
       return { success: true, data };
     } catch (error) {
       console.error(`Failed to update location ${blockId}:`, error);
@@ -87,7 +87,7 @@ export const api = {
 
   async batchUpdateLocations(updates: Record<string, BlockSizeType>): Promise<ApiResponse<BatchUpdateResponse>> {
     try {
-      const { data } = await client.patch('/locations/batch', updates);
+      const { data } = await client.patch('/data/locations/batch', updates);
       return { success: true, data };
     } catch (error) {
       console.error('Failed to batch update locations:', error);
@@ -100,7 +100,7 @@ export const api = {
 
   async addBlock(block: Block, location: BlockSizeType): Promise<ApiResponse<{ block: Block; location: BlockSizeType }>> {
     try {
-      const { data } = await client.post('/blocks', { block, location });
+      const { data } = await client.post('/data/blocks', { block, location });
       return { success: true, data };
     } catch (error) {
       console.error('Failed to add block:', error);
@@ -114,7 +114,7 @@ export const api = {
   // DON'T FORGET TO DELETE LOCATION IN CALL AS WELL
   async deleteBlock(blockId: string): Promise<ApiResponse<{ id: string }>> {
     try {
-      const { data } = await client.delete(`/blocks/${blockId}`);
+      const { data } = await client.delete(`/data/blocks/${blockId}`);
       return { success: true, data };
     } catch (error) {
       console.error(`Failed to delete block ${blockId}:`, error);

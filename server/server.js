@@ -1,13 +1,17 @@
 import express from 'express';
 import cors from "cors";
+import dataRouter from './routes/blocks.js';
 import imageRouter from './routes/image.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Data Routes
+app.use('/api/data/', dataRouter);
+
 // Image Routes
-app.use('/api/', imageRouter);
+app.use('/api/images/', imageRouter);
 
 // App is Listening on Port 5000
 const port = process.env.PORT || 5000; 

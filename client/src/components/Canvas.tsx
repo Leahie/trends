@@ -106,7 +106,6 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
 
     // Z INDEX HANDLING 
     const bringToFront = (id: string) => {
-        console.log(locations)
         const entries = Object.entries(locations);
         entries.sort((a, b) => a[1].zIndex - b[1].zIndex)
 

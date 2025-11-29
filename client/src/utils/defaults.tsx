@@ -8,7 +8,7 @@ export function createDefaultTextBlock(parentId: string): TextBlockType {
     type: "text",
     parent: parentId,
     properties: {
-      title: "New Text Block",
+      title: "Untitled",
       body: "",
     },
   };
@@ -20,7 +20,7 @@ export function createDefaultImageBlock(parentId: string): ImageBlockType {
     type: "image",
     parent: parentId,
     properties: {
-        title: "",
+        title: "Untitled",
         url: "",
         source: "external",
     },
@@ -33,7 +33,7 @@ export function createDefaultDiaryBlock(parentId: string): DiaryBlockType {
     type: "diary_entry",
     parent: parentId,
     properties: {
-      title: "New Diary Entry",
+      title: "Untitled",
     },
     content: [],
   };

@@ -34,7 +34,7 @@ const DEFAULT_ROOT_BLOCK: BasePageBlockType = {
   id: "root",
   type: "base_page",
   parent: "none",
-  properties: { title: "Root Page" },
+  properties: { title: "Open Diary" },
   content: [],
 };
 
@@ -92,8 +92,6 @@ export function DataProvider({children} : {children : ReactNode}){
         const foundRoot = blocks.find(b => b.parent === "none") as BasePageBlockType;
         return foundRoot || null;
     }, [blocks])
-
-    console.log(blocks);
 
     const scheduledSync = useCallback( () => {
         if (syncTimeout.current){
@@ -169,6 +167,7 @@ export function DataProvider({children} : {children : ReactNode}){
             [id]:{ ...prev[id], ...updates}
             })
         )
+        console.log("updating location")
         pendingLocationChanges.current[id] = {
         ...(pendingLocationChanges.current[id] || {}),  
         ...updates 
@@ -179,7 +178,6 @@ export function DataProvider({children} : {children : ReactNode}){
 
     // UPDATING THE BLOCK
     const updateBlock = (id: string, updates: Partial<Block>) => {
-        console.log(id, updates)
         setBlocks(prev => 
             prev.map(b => b.id === id ? { ...b, ...updates } as Block : b)
         )
@@ -254,12 +252,10 @@ export function DataProvider({children} : {children : ReactNode}){
         }
 
         if (parentId) {
-            console.log("I am deleting")
             const parentBlock = blocks.find(b => b.id === parentId);
             if (parentBlock && 'content' in parentBlock) {
                 const newContent = parentBlock.content.filter(childId => childId !== id);
                 setBlocks(prev => prev.map(b => b.id === parentId ? { ...b, content: newContent } : b));
-                console.log("This is new content", newContent)
                 pendingBlockChanges.current[parentId] = {
                     ...(pendingBlockChanges.current[parentId] || {}),
                     content: newContent

@@ -1,198 +1,96 @@
-/// Backend does not test the validity of the added items, it just updates what it's told to update
-import express from "express";
+import express from 'express';
 import admin from "firebase-admin";
-
-const router = express.Router();
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import multer from "multer";
 import { v4 as uuidv4 } from 'uuid';
 
+const router = express.Router();
 
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const serviceAccountPath = path.join(__dirname, "../firebase-service-key.json");
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
-
-// Firebase Admin Initialization
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-   storageBucket: "gs://photo-app-edaac.firebasestorage.app"
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
 });
 
-const db = admin.firestore();
+router.post("/upload", upload.single('files'), async (req, res) => {
+    try {
+        if (!req.file) {
+        return res.status(400).send({ error: 'No file uploaded' });
+        }
 
-// fetch data '/data' route get
-router.get("/data", async(req, res) => {
-  try{
-      const blocksSnapshot = await db.collection("blocks").get();
-      const resultsSnapshot = await db.collection("locations").get();
+        const blockId = req.body.blockId || uuidv4();
+        const file = req.file;
+        
+        const filename = `${blockId}-${Date.now()}-${file.originalname}`;
+        const bucket = admin.storage().bucket();
+        const fileUpload = bucket.file(`images/${filename}`);
 
-      const blocks = blocksSnapshot.docs.map((doc) => 
-        {
-          const data = doc.data()
-          return {
-            id: doc.id,type: data.type, parent: data.parent, content:data.content, properties: data.properties
-          }
+        const stream = fileUpload.createWriteStream({
+        metadata: {
+            contentType: file.mimetype,
+            metadata: {
+            firebaseStorageDownloadTokens: uuidv4(), 
+            }
+        },
         });
 
-      const locations = {}
-      resultsSnapshot.docs.forEach((doc) =>
-      {
-        const { createdAt, ...cleanData } = doc.data();  // <-- removes createdAt
-        locations[doc.id] = cleanData;
-      })
-      res.send({blocks, locations});
-  }catch (error) {
-      console.log("Error getting blocks and locations:", error);
-      res.status(500).send("Internal Server Error");
-  }
+        stream.on('error', (error) => {
+        console.error('Upload error:', error);
+        res.status(500).send({ error: 'Failed to upload file' });
+        });
 
+        stream.on('finish', async () => {
+        try {
+            await fileUpload.makePublic();
+            
+            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileUpload.name}`;
+            
+            res.status(200).send({
+            success: true,
+            url: publicUrl,
+            filename: filename
+            });
+        } catch (error) {
+            console.error('Error making file public:', error);
+            res.status(500).send({ error: 'Failed to make file public' });
+        }
+        });
 
-})
+        stream.end(file.buffer);
 
-// update block '/blocks/id' route patch
-router.patch("/blocks/:id", async (req, res) => {
-  const { id } = req.params;
-  const updates = req.body;
-  try{
-    if (!updates){
-      return res.status(400).send("No updates provided.");
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        res.status(500).send({ error: 'Internal Server Error' });
     }
-    const blockRef = db.collection("blocks").doc(id);
-    const blockDoc = await blockRef.get();
-
-    if (!blockDoc.exists) {
-      return res.status(404).send({ error: "Block not found." });
-    }
-    
-    await blockRef.update(updates);
-
-
-    const updatedBlockDoc = await blockRef.get();
-    const updatedBlock = { id: updatedBlockDoc.id, ...updatedBlockDoc.data() };
-    const {createdAt, ...cleaned} = updatedBlock
-    res.send(cleaned)
-  } catch (error) {
-    console.log("Error updating block:", error);
-    return res.status(500).send("Internal Server Error");
-  }
 });
 
-// update location 'locations/id' route patch
-router.patch("/locations/:id", async (req, res) => {
-  const { id } = req.params;
-  const updates = req.body;
-  try{
-    if (!updates){
-      return res.status(400).send("No updates provided.");
-    }
-    const locationRef = db.collection("locations").doc(id);
-    const locationDoc = await locationRef.get();
+router.delete("/delete/:filename", async (req, res) => {
+    const { filename } = req.params;
+    try {
+        if (!filename) {
+            return res.status(400).send({ error: 'Filename required' });
+        }
 
-    if (!locationDoc.exists) {
-      return res.status(404).send({ error: "Location not found." });
-    }
-    
-    await locationRef.update(updates);
-
-
-    const updatedLocationDoc = await locationRef.get();
-    const updatedLocation = { id: updatedLocationDoc.id, ...updatedLocationDoc.data() };
-    const {createdAt, ...cleaned} = updatedLocation
-    res.send(cleaned)
-  } catch (error) {
-    console.log("Error updating location:", error);
-    return res.status(500).send("Internal Server Error");
-  }
-});
-
-// update batch location 'location/batch' route patch
-router.patch("/locations/batch", async (req, res) => {
-  const updates = req.body;
-  if (!updates || Object.keys(updates).length === 0) {
-    return res.status(400).send({ error: 'No updates provided' });
-  }
-
-  try{
-    const batch = db.batch();
-    Object.entries(updates).forEach(([id, location])=>{
-      const locRef = db.collection('locations').doc(id);
-      batch.update(locRef, location);
-    })
-    await batch.commit();
-    res.send({ success: true, updatedIds: Object.keys(updates) });
-  } catch (error) {
-    console.error('Error batch updating locations:', error);
-    res.status(500).send({ error: 'Internal Server Error' });
-  }
-})
-
-// add block '/blocks' route post
-
-router.post("/blocks", async (req, res) => {
-  const block = req.body.block;
-  const location = req.body.location;
-  try{
-    const blockIdFromClient = block && block.id;
-
-    // choose id: use provided id when present (makes creation idempotent), otherwise generate
-    const uuid = blockIdFromClient || uuidv4();
-
-    const blocksRef = db.collection("blocks");
-    const locationRef = db.collection("locations");
-
-    const blockDocRef = blocksRef.doc(uuid);
-    const existing = await blockDocRef.get();
-
-    if (existing.exists) {
-      const existingData = existing.data();
-      const { createdAt, ...cleaned } = { id: existing.id, ...existingData };
-      if (location) {
-        await locationRef.doc(uuid).set({ ...location, id: uuid, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-      }
-      return res.status(200).send({ block: cleaned, location: location ? { ...location, id: uuid } : undefined });
-    }
-
-    // create new block and location
-    await blockDocRef.set({
-      ...block,
-      id: uuid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        const bucket = admin.storage().bucket();
+        const file = bucket.file(`images/${filename}`);
+        
+        await file.delete();
+        
+        res.status(200).send({
+        success: true,
+        message: 'Image deleted successfully'
     });
-
-    // update the location to include the new block id
-    await locationRef.doc(uuid).set({
-      ...location, 
-      id: uuid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    
-    return res.status(201).send({ block: { ...block, id: uuid }, location: { ...location, id: uuid } }  );
-  }catch (error) {
-    console.log("Error adding block and location:", error);
-    res.status(500).send("Internal Server Error");
-  }
-  
-});
-
-// delete block '/blocks/id' route delete
-router.delete("/blocks/:id", async(req, res)=>{
-  const {id} = req.params;
-  try{
-    const blocksRef = db.collection("blocks").doc(id);
-    const locationRef = db.collection("locations").doc(id);
-    await blocksRef.delete();
-    await locationRef.delete();
-    return res.status(201).send({message: "Deleted Block and Location successfully", id});
-  }catch (error){
-    console.log("Error deleting block and location:", error);
-    res.status(500).send("Internal Server Error");
-  }
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        res.status(500).send({ error: 'Internal Server Error' });
+    }
 })
-
 
 export default router;
