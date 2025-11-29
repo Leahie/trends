@@ -32,7 +32,16 @@
     "id": "3",
     "type": "diary_entry",
     "properties":
-    { "title": "Sad Day"}, 
+    { "title": "Sad Day",
+      "colorscheme": {
+        "black": "#141613", 
+        "dark" : "#2C302B",
+        "highlight" : "#596157", 
+        "accent": "#6C816F",
+        "light-accent": "#90A694",
+        "white": "#F5F1ED",
+        "light-hover": "#D8D8D8"
+      } }, 
     "content": ["4"],
     "parent":"0"
   },

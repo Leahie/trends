@@ -8,10 +8,12 @@ import {
 
 import type { Block } from "../types";
 
+import { useNavigate } from "react-router-dom";
 
 export default function Context({x, y, selected, parentId, canvasX, canvasY ,setContextMenu}:
     {x:number, y:number, selected:string|null, parentId: string, canvasX: number, canvasY: number, setContextMenu : (x: number, y:number, canvasX:number, canvasY: number | null) => void }){
     const {dataMap, removeBlock, addBlock, locations, syncNow} = useData();
+    const navigate = useNavigate();
     const createNew = async (type: "text" | "image" | "diary_entry") => {
         // Get max z-index to place new block on top
         const maxZ = Math.max(...Object.values(locations).map(loc => loc.zIndex), 0);
@@ -35,10 +37,10 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
         const location = createDefaultLocation(canvasX, canvasY, maxZ + 1);
         
         const success = await addBlock(block, location, parentId);
-
         if (success) {
             console.log(`Created ${type} block successfully`);
             setContextMenu(null);
+            navigate(`/blocks/${block.id}`)
         }
     };
     const handleDelete = async () => {

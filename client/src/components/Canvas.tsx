@@ -6,9 +6,16 @@ import Context from "./Context.tsx";
 
 export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockType}){
     const {dataMap, locations, setLocations} = useData();
-    const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
 
+    // Right-click logic
+    const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
+    
+    // Block logic
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+
+    // THeme logic
+    const [themeModalOpen, setThemeModalOpen] = useState(false);
+
     // Zoom and pan state
     const [scale, setScale] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -156,6 +163,12 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
                     className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
                 >
                     Reset
+                </button>
+                <button 
+                    onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
+                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-gray-600"
+                >
+                    Theme
                 </button>
             </div>
         </div>    

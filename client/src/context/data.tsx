@@ -252,6 +252,7 @@ export function DataProvider({children} : {children : ReactNode}){
         }
 
         if (parentId) {
+            console.log("Got into ParentID")
             const parentBlock = blocks.find(b => b.id === parentId);
             if (parentBlock && 'content' in parentBlock) {
                 const newContent = parentBlock.content.filter(childId => childId !== id);
