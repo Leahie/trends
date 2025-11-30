@@ -13,6 +13,8 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
 
     const {dataMap, locations, setLocations, updateBlock} = useData();
     const [title, setTitle] = useState<string>(node.properties.title);
+    const [themeModalOpen, setThemeModalOpen] = useState(false);
+    const [themeColor, setThemeColor] = useState(node.properties.colorscheme.highlight);
     const {updateTheme} = useTheme();
     // temp 
 
@@ -28,8 +30,7 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
 
 
     // THeme logic
-    const [themeModalOpen, setThemeModalOpen] = useState(false);
-    const [themeColor, setThemeColor] = useState("#90A694");
+    
 
     const onClose = () => {
         setThemeModalOpen(false);
