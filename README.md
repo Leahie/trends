@@ -5,5 +5,5 @@
 - Sidebar add change size functionality
 - Cropping for images
 ### Current Look 
-<img width="3836" height="1732" alt="image" src="https://github.com/user-attachments/assets/a536f5f1-a1eb-447b-902f-b6337931f271" />
-<img width="3816" height="1725" alt="image" src="https://github.com/user-attachments/assets/43c6e0f8-39b2-452f-9bcc-ce24253102f2" />
+<img width="3839" height="1719" alt="image" src="https://github.com/user-attachments/assets/306724be-1938-40cf-9299-cf37f73454d7" />
+<img width="3839" height="1725" alt="image" src="https://github.com/user-attachments/assets/e9a8c6f4-06ce-4c3e-aade-c61e16b87848" />
