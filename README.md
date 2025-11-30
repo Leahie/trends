@@ -1,11 +1,9 @@
 ### Tips
 - right click to add new blocks
+- ctrl click to enter a block
 ### Future Features
-- Add in ctrl v support
 - Sidebar add change size functionality
-- Change accent color slider
 - Cropping for images
-- ? help button so that if there’s errors they can send an email to me
-- Authentication
 ### Current Look 
-<img width="3793" height="1687" alt="image" src="https://github.com/user-attachments/assets/20bf8b7d-8972-4377-9894-7e853db92d95" />
+<img width="3836" height="1732" alt="image" src="https://github.com/user-attachments/assets/a536f5f1-a1eb-447b-902f-b6337931f271" />
+<img width="3816" height="1725" alt="image" src="https://github.com/user-attachments/assets/43c6e0f8-39b2-452f-9bcc-ce24253102f2" />
