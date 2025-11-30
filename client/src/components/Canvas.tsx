@@ -198,32 +198,32 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
                     value={title} 
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Title"
-                    className = "px-3 py-1 bg-highlight text-white rounded hover:bg-dark outline-none"
+                    className = "px-3 py-1 bg-dark text-white rounded hover:bg-dark outline-none"
                 />      
                 <button 
                     onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
-                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-dark"
+                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
                 >
                     −
                 </button>
-                <span className="px-3 py-1 bg-highlight text-white rounded">
+                <span className="px-3 py-1 bg-dark text-white rounded">
                     {(scale * 100).toFixed(0)}%
                 </span>
                 <button 
                     onClick={() => setScale(s => Math.min(s * 1.2, 5))} 
-                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-dark"
+                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
                 >
                     +
                 </button>
                 <button 
                     onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
-                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-dark"
+                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
                 >
                     Reset
                 </button>
                 <button 
                     onClick={() => { setThemeModalOpen(true) }} 
-                    className="px-3 py-1 bg-highlight text-white rounded hover:bg-dark"
+                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
                 >
                     Theme
                 </button>

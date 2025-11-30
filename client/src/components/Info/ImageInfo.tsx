@@ -135,6 +135,31 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
         }
     };
 
+    const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
+        const pastedText = e.clipboardData.getData("text");
+        console.log(pastedText)
+
+        if (pastedText) {
+            if (pastedText.startsWith("http")) {
+                setUrl(pastedText.trim());
+                return;
+            }
+        }
+
+        const items = e.clipboardData.items;
+        for (const item of items) {
+            if (item.type.indexOf("image") !== -1) {
+                const file = item.getAsFile();
+                if (file) {
+                    const firebaseUrl = await uploadToFirebase(file);
+                    if (firebaseUrl) setUrl(firebaseUrl);
+                    return;
+                }
+            }
+        }
+    };
+
+
     return (
                <div className="text-left">
             {/* Title input */}
@@ -146,43 +171,31 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
                 className="outline-none text-3xl font-bold mb-5 w-full"
             />
 
-            {/* URL paste section */}
-            <div className="mb-4">
-                <label className="text-slate-300 text-sm mb-2 block">
-                    Paste Image URL
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={pastedUrl}
-                        onChange={(e) => setPastedUrl(e.target.value)}
-                        onKeyDown={handleUrlKeyDown}
-                        placeholder="https://example.com/image.jpg"
-                        className="flex-1 px-3 py-2 bg-slate-800 text-slate-100 rounded outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                        onClick={handleUrlPaste}
-                        disabled={!pastedUrl.trim()}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed"
-                    >
-                        Use URL
-                    </button>
-                </div>
-            </div>
-
-            <div className="text-slate-300 text-sm mb-2">— OR —</div>
-
+            
             {/* Upload section */}
-            <p className="text-slate-100 mb-2">
-                Drop an image or upload{" "}
+            
+            <div className="text-slate-100 mb-2 flex gap-2">
+                
                 <button
                     onClick={handleButtonClick}
                     className="text-light-accent hover:cursor-pointer hover:underline"
                     disabled={isUploading}
                 >
-                    here
+                    Upload
                 </button>
-            </p>
+                <p>
+                    or drag an image.
+                </p>
+            </div>
+            <input
+                    type="text"
+                    value={pastedUrl}
+                    onChange={(e) => setPastedUrl(e.target.value)}
+                    onPaste={handlePaste}
+                    placeholder="Paste image or URL"
+                     className="w-full block flex-1 px-3 py-2 bg-dark text-slate-100 rounded outline-none  "
+
+                />
 
             <input
                 type="file"
@@ -206,7 +219,7 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
             <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                className={`p-4 min-h-[200px] flex flex-col gap-3 justify-center items-center border-2 border-dashed rounded ${
+                className={`p-4 min-h-[200px] flex flex-col gap-3 justify-center items-center  ${
                     isUploading 
                         ? "border-blue-500 bg-blue-500/10" 
                         : "border-slate-600 hover:border-slate-500"
