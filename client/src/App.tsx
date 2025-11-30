@@ -2,32 +2,58 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./HomePage.tsx";
 import { DataProvider } from './context/data.tsx'
 import { ThemeProvider } from "./context/theme.tsx";
+import { AuthProvider } from './context/auth.tsx'; // Import
+
 import BlockInfo from "./BlockInfo.tsx";
 import Sidebar from './components/Sidebar.tsx'
+import Login from "./Login.tsx";
+import ProtectedRoute from "./ProtectedRoute.tsx";
 
 
 const App = () => {
   return (
-    <ThemeProvider>
-      <DataProvider>
     <BrowserRouter>
+      <AuthProvider>
+        <ThemeProvider>
+          
       
+          
+            <div className='flex h-screen w-screen  '>
+              <div className="flex-1 relative overflow-hidden">
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/" element={
+                      <DataProvider>
+                      <div className='flex h-screen w-screen'>
+                        <Sidebar/>
+                        <div className="flex-1 relative overflow-hidden">
+                          <HomePage />
+                        </div>
+                      </div>
+                      </DataProvider>
+                    } />
+                    <Route path="/blocks/:id" element={
+                      <DataProvider>
+                      <div className='flex h-screen w-screen'>
+                        <Sidebar/>
+                        <div className="flex-1 relative overflow-hidden">
+                          <BlockInfo />
+                        </div>
+                      </div>
+                      </DataProvider>
+                    } />
+                  </Route>
+                </Routes>
+              </div>
+            </div>
       
-        <div className='flex h-screen w-screen  '>
-          <Sidebar/>
-          <div className="flex-1 relative overflow-hidden">
-            <Routes>
-              
-                <Route path="/" element={ <HomePage />} />
-                <Route path="/blocks/:id" element = { <BlockInfo />}/>
-            </Routes>
-          </div>
-        </div>
-      
-      
+        </ThemeProvider>
+      </AuthProvider>
     </BrowserRouter>
-    </DataProvider>
-    </ThemeProvider>
+
+
   );
 };
 

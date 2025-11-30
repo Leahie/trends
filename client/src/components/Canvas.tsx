@@ -196,7 +196,9 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
                 <input 
                     type="text"
                     value={title} 
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={(e) => {
+                        e.stopPropagation();
+                        return setTitle(e.target.value)}}
                     placeholder="Title"
                     className = "px-3 py-1 bg-dark text-white rounded hover:bg-dark outline-none"
                 />      

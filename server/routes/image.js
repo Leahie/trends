@@ -1,7 +1,10 @@
 import express from 'express';
-import admin from "firebase-admin";
+import { admin } from "../firebase.js";
+
 import multer from "multer";
 import { v4 as uuidv4 } from 'uuid';
+import { authenticateUser } from "../middleware/auth.js";
+
 
 const router = express.Router();
 
@@ -18,6 +21,8 @@ const upload = multer({
     }
   }
 });
+
+router.use(authenticateUser);
 
 router.post("/upload", upload.single('file'), async (req, res) => {
     try {

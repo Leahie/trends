@@ -3,6 +3,7 @@ import {useState, useEffect} from 'react';  // will be used later when we fetch 
 import { useData } from "../context/data.tsx";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/auth.tsx";
 
 
 function SidebarNode({node}:{node:Block}){
@@ -88,11 +89,22 @@ function useIsCanvasLayout():boolean{
 }
 
 export default function Sidebar(){
+    const { logOut, user } = useAuth();
     const {root, dataMap} = useData();
     const [open, setOpen] = useState<boolean>(true); // sets the Sidebar 
     const isCanvasLayout = useIsCanvasLayout();
 
     const navigate = useNavigate();
+
+    const handleSignOut = async () => {
+      try {
+        await logOut();
+        navigate('/login');
+      } catch (error) {
+        console.error('Failed to log out:', error);
+      }
+    };
+
 
     if (!root) {
         return (
@@ -222,7 +234,19 @@ export default function Sidebar(){
           </div>
         </nav>
         {/* End Body */}
+        <div className="mt-auto p-4 border-t border-highlight">
+        <div className="text-sm text-slate-400 mb-2">
+          {user?.email}
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="w-full py-2 px-4 bg-highlight hover:bg-accent text-white rounded transition-colors"
+        >
+          Sign Out
+        </button>
       </div>
+      </div>
+      
     </div>
     )
 }

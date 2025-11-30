@@ -1,5 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import type { Block, BlockSizeType } from '../types';
+import { getAuth } from 'firebase/auth';
+
 
 const client = axios.create({
   baseURL: 'http://localhost:5000/api',
@@ -9,19 +11,34 @@ const client = axios.create({
   timeout: 10000,
 });
 
-// client.interceptors.request.use((config) => {
-//   const token = localStorage.getItem('token');
-//   if (token) {
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// });
+client.interceptors.request.use(
+  async (config) => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      try {
+        const token = await user.getIdToken();
+        console.log("token",token)
+        config.headers.Authorization = `Bearer ${token}`;
+      } catch (error) {
+        console.error('Failed to get auth token:', error);
+      }
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 client.interceptors.response.use(
-  (response) => response,
+  (response) => response, 
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       console.error('Unauthorized - redirecting to login');
+      window.location.href = '/login';
     } else if (error.response?.status === 500) {
       console.error('Server error:', error.response.data);
     } else if (error.code === 'ECONNABORTED') {
@@ -100,16 +117,23 @@ export const api = {
 
   async addBlock(block: Block, location: BlockSizeType): Promise<ApiResponse<{ block: Block; location: BlockSizeType }>> {
     try {
+      console.log('Attempting to add block:', block.id);
       const { data } = await client.post('/data/blocks', { block, location });
+      console.log('Block added successfully:', data);
       return { success: true, data };
     } catch (error) {
       console.error('Failed to add block:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Response data:', error.response?.data);
+        console.error('Response status:', error.response?.status);
+      }
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to add block'
       };
     }
   },
+
 
   // DON'T FORGET TO DELETE LOCATION IN CALL AS WELL
   async deleteBlock(blockId: string): Promise<ApiResponse<{ id: string }>> {
@@ -125,3 +149,4 @@ export const api = {
     }
   },
 };
+

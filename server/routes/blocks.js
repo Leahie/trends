@@ -1,35 +1,28 @@
 /// Backend does not test the validity of the added items, it just updates what it's told to update
 import express from "express";
-import admin from "firebase-admin";
+import { admin, db } from "../firebase.js";
+import { authenticateUser } from "../middleware/auth.js";
+
 
 const router = express.Router();
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from 'uuid';
 
 
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+router.use(authenticateUser);
 
-const serviceAccountPath = path.join(__dirname, "../firebase-service-key.json");
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
-
-// Firebase Admin Initialization
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-   storageBucket: "gs://photo-app-edaac.firebasestorage.app"
-});
-
-const db = admin.firestore();
 
 // fetch data '/data' route get
+
 router.get("/", async(req, res) => {
   try{
-      const blocksSnapshot = await db.collection("blocks").get();
-      const resultsSnapshot = await db.collection("locations").get();
+      const userId = req.user.uid;
+      const blocksSnapshot = await db.collection("blocks")
+      .where("userId", "==", userId)
+      .get();
+      const resultsSnapshot = await db.collection("locations")
+      .where("userId", "==", userId)
+      .get();
 
       const blocks = blocksSnapshot.docs.map((doc) => 
         {
@@ -136,6 +129,7 @@ router.patch("/locations/:id", async (req, res) => {
 router.post("/blocks", async (req, res) => {
   const block = req.body.block;
   const location = req.body.location;
+  const userId = req.user.uid;
   try{
     const blockIdFromClient = block && block.id;
 
@@ -149,10 +143,13 @@ router.post("/blocks", async (req, res) => {
     const existing = await blockDocRef.get();
 
     if (existing.exists) {
+      if (existing.data().userId !== userId) {
+        return res.status(403).send({ error: "Forbidden" });
+      }
       const existingData = existing.data();
       const { createdAt, ...cleaned } = { id: existing.id, ...existingData };
       if (location) {
-        await locationRef.doc(uuid).set({ ...location, id: uuid, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        await locationRef.doc(uuid).set({ ...location, id: uuid, userId, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
       }
       return res.status(200).send({ block: cleaned, location: location ? { ...location, id: uuid } : undefined });
     }
@@ -161,6 +158,7 @@ router.post("/blocks", async (req, res) => {
     await blockDocRef.set({
       ...block,
       id: uuid,
+      userId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -168,10 +166,12 @@ router.post("/blocks", async (req, res) => {
     await locationRef.doc(uuid).set({
       ...location, 
       id: uuid,
+      userId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
-    return res.status(201).send({ block: { ...block, id: uuid }, location: { ...location, id: uuid } }  );
+    return res.status(201).send(
+      { block: { ...block, id: uuid, userId }, location: { ...location, id: uuid, userId } }  );
   }catch (error) {
     console.log("Error adding block and location:", error);
     res.status(500).send("Internal Server Error");

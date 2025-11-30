@@ -2,9 +2,10 @@ import React, {useState, useMemo, useRef, useEffect, useContext, createContext, 
 import type { ReactNode } from 'react';
 import type { Block, BlockSizeType, BasePageBlockType  } from '../types';
 import {api} from "../utils/api"
+import { useAuth } from './auth';
+import { v4 as uuidv4 } from 'uuid';
 
-import rawData from "../data/data.json"
-import rawBlockStates from "../data/block_states.json"
+
 
 interface DataContextType {
     blocks: Block[];
@@ -31,7 +32,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 const DEFAULT_ROOT_BLOCK: BasePageBlockType = {
-  id: "root",
+  id: uuidv4(),
   type: "base_page",
   parent: "none",
   properties: { 
@@ -50,6 +51,7 @@ const DEFAULT_ROOT_BLOCK: BasePageBlockType = {
 
 // provider component 
 export function DataProvider({children} : {children : ReactNode}){
+    const {user} = useAuth();
     const [blocks, setBlocks] = useState<Block[]>([]);
     const [locations, setLocations] = useState< Record<string, BlockSizeType>>({})
     const [isSyncing, setIsSynching] = useState<boolean>(false);
@@ -61,6 +63,8 @@ export function DataProvider({children} : {children : ReactNode}){
 
     useEffect(() => {
         const loadData = async () => {
+            console.log(user);
+
             setIsSynching(true);
             const result = await api.fetchData();
             if (result.success && result.data) {
@@ -71,12 +75,6 @@ export function DataProvider({children} : {children : ReactNode}){
 
                 if (!root) {
                     console.log("No root found — creating one.");
-
-                    // fetchedBlocks = [DEFAULT_ROOT_BLOCK, ...fetchedBlocks];
-                    // fetchedLocations = {
-                    //     ...fetchedLocations,
-                    //     [DEFAULT_ROOT_BLOCK.id]: { x: 0, y: 0, width: 800, height: 600, zIndex: 0 },
-                    // };
 
                     await api.addBlock(DEFAULT_ROOT_BLOCK, fetchedLocations[DEFAULT_ROOT_BLOCK.id]);
                 }
