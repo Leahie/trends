@@ -14,31 +14,26 @@ router.use(authenticateUser);
 
 // fetch data '/data' route get
 
-router.get("/", async(req, res) => {
+router.get("/boards", async(req, res) => {
   try{
       const userId = req.user.uid;
-      const blocksSnapshot = await db.collection("blocks")
+      const blocksSnapshot = await db.collection("boards")
       .where("userId", "==", userId)
-      .get();
-      const resultsSnapshot = await db.collection("locations")
-      .where("userId", "==", userId)
+      .where("deletedAt", "==", null)
+      .orderBy("updatedAt", "desc")
       .get();
 
-      const blocks = blocksSnapshot.docs.map((doc) => 
+
+      const boards = blocksSnapshot.docs.map((doc) => 
         {
           const data = doc.data()
           return {
-            id: doc.id,type: data.type, parent: data.parent, content:data.content, properties: data.properties
+            id: doc.id,
+            ...data
           }
         });
 
-      const locations = {}
-      resultsSnapshot.docs.forEach((doc) =>
-      {
-        const { createdAt, ...cleanData } = doc.data();  // <-- removes createdAt
-        locations[doc.id] = cleanData;
-      })
-      res.send({blocks, locations});
+      res.send({boards});
   }catch (error) {
       console.log("Error getting blocks and locations:", error);
       res.status(500).send("Internal Server Error");
@@ -46,6 +41,163 @@ router.get("/", async(req, res) => {
 
 
 })
+
+router.get("/boards/:boardId", async(req, res) => {
+  try{
+      const { boardId } = req.params;
+      const userId = req.user.uid;
+
+      const boardDoc = await db.collection("boards").doc(boardId).get();
+      if (!boardDoc.exists){
+        return res.status(404).send("Board not found");
+      }
+
+      const board = boardDoc.data();
+      if (board.userId !== userId){
+        return res.status(403).send("Forbidden");
+      }
+
+      if (board.deletedAt !== null){
+        return res.status(404).send("Board not found");
+      }
+
+      res.send({board: { id: boardDoc.id, ...board }});
+  }catch (error) {
+      console.log("Error getting blocks and locations:", error);
+      res.status(500).send("Internal Server Error");
+  }
+
+
+})
+
+// create board '/boards' route post
+router.post("/boards", async (req, res) => {
+  try{
+  const {title} = req.body;
+  const userId = req.user.uid;
+
+  const boardId = uuidv4();
+  const boardData = {
+    id: boardId, 
+    userId, 
+    title: title || "Untitled Board",
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    deletedAt: null
+  };
+  await db.collection("boards").doc(boardId).set(boardData);
+  res.status(201).send({board: boardData});}
+  catch (error){
+    console.log("Error creating board:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// update board 'boards/id' route patch
+router.patch("/boards/:id", async (req, res) => {
+  
+  try{
+    const { id } = req.params;
+    const userId = req.user.uid;
+    const updates = req.body;
+
+    if (!updates){
+      return res.status(400).send("No updates provided.");
+    }
+    const boardRef = db.collection("boards").doc(id);
+    const boardDoc = await boardRef.get();
+
+    if (!boardDoc.exists) {
+      return res.status(404).send({ error: "Board not found." });
+    } 
+
+    const board = boardDoc.data();
+    if (board.userId !== userId){
+      return res.status(403).send("Forbidden");
+    }
+    if (board.deletedAt !== null){
+      return res.status(404).send("Board is deleted");
+    }
+
+    await boardRef.update({...updates, updatedAt: admin.firestore.FieldValue.serverTimestamp()});
+    const updatedBoardDoc = await boardRef.get();
+    res.send({board: { id: updatedBoardDoc.id, ...updatedBoardDoc.data() }});
+  } catch (error) {
+    console.log("Error updating board:", error);
+    return res.status(500).send("Internal Server Error");
+  }
+})
+
+// delete board 'boards/id' route delete
+router.delete("/boards/:id", async(req, res)=>{
+  try{
+    const { id } = req.params;
+    const userId = req.user.uid;
+    const boardRef = db.collection("boards").doc(id);
+    const boardDoc = await boardRef.get();
+
+    if (!boardDoc.exists) {
+      return res.status(404).send({ error: "Board not found." });
+    }
+
+    const board = boardDoc.data();
+
+    if (board.userId !== userId){
+      return res.status(403).send("Forbidden");
+    }
+
+    await boardRef.update({deletedAt: admin.firestore.FieldValue.serverTimestamp()});
+
+    const blocksSnapshot = await db.collection("blocks")
+    .where("boardId", "==", id)
+    .where("deletedAt", "==", null)
+    .get();
+
+    const batch = db.batch();
+    blocksSnapshot.docs.forEach((doc)=>{
+      batch.update(doc.ref, {deletedAt: admin.firestore.FieldValue.serverTimestamp()});
+    })
+    await batch.commit();
+    res.send({success: true, 
+      boardId, 
+      deletedBlockCount: blocksSnapshot.docs.length
+    });
+  }catch (error){
+    console.log("Error deleting board:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Restore deleted boards (for undo) 'boards/:boardId/restore' route post
+router.post("/boards/:boardId/restore", async(req, res)=>{
+  try{
+    const {boardId} = req.params;
+    const userId = req.user.uid;
+    const {restoreBlocks = true} = req.body;
+
+    const boardRef = db.collection("boards").doc(boardId);
+    const boardDoc = await boardRef.get();
+
+    if (!boardDoc.exists) {
+      return res.status(404).send({ error: "Board not found." });
+    }
+
+    const board = boardDoc.data();
+
+    if (board.userId !== userId){
+      return res.status(403).send("Forbidden");
+    }
+
+    await boardRef.update({deletedAt: null, updatedAt: admin.firestore.FieldValue.serverTimestamp()});
+
+    // restore blocks maybe add
+    res.send({success: true, boardId});
+  }catch (error){
+    console.log("Error restoring board:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 
 // update block '/blocks/id' route patch
 router.patch("/blocks/:id", async (req, res) => {

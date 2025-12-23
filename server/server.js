@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from "cors";
-import dataRouter from './routes/blocks.js';
+import blocksRouter from './routes/blocks.js';
+
 import imageRouter from './routes/image.js';
 
 const app = express();
@@ -8,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 // Data Routes
-app.use('/api/data/', dataRouter);
+app.use('/api/data', blocksRouter);
 
 // Image Routes
 app.use('/api/images/', imageRouter);
