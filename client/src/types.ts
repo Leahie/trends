@@ -1,36 +1,46 @@
 // Convention: 
 // - Everything that ends in Block represents a block within my code
+// - Everything that ends in Board represents a board 
 // - Everything that ends in Size represents the sizing
 
-export type BlockType = "base_page" | "text" | "image" | "diary_entry"
+export interface Board{
+    id: string; 
+    userId: string; 
+    title: string;
+    colorscheme?: Theme; 
+    readonly createdAt: Date | null;
+    readonly updatedAt: Date | null;
+    readonly deletedAt: Date | null;
+    readonly deletionId?: string | null;
+}
+
+export type BlockType = "text" | "image" | "board_block"
 
 export interface BaseBlock{
     id: string;
     type: BlockType; 
-    properties: Record<string, any>;
-    parent: string;
+    boardId: string;
+    userId: string;
+    x: number;
+    y: number;
+    width:  number;
+    height: number;
+    zIndex: number;
+    rotation: number;
+    scaleX: number; 
+    scaleY: number;
+    content: Record<string, any>;
+    linkedBoardId: string | null;
+    readonly deletedAt: Date | null;
+    readonly deletionId?: string | null;
+    readonly createdAt: Date | null;
+    readonly updatedAt: Date | null;
 }
 
-export interface BasePageBlockType extends BaseBlock{
-    type: "base_page";
-    properties: {
-        title: string;
-        colorscheme: {
-        black: string, 
-        dark : string,
-        highlight : string, 
-        accent: string,
-        "light-accent": string,
-        white: string,
-        "light-hover": string
-      }
-    };
-    content: string[];
-}
 
 export interface TextBlockType extends BaseBlock{
     type: "text"; 
-    properties: {
+    content: {
         title: string;
         body: string;
     }
@@ -38,37 +48,22 @@ export interface TextBlockType extends BaseBlock{
 
 export interface ImageBlockType extends BaseBlock{
     type: "image";
-    properties: {
+    content: {
         title: string; 
         url: string; 
         source: 'upload' | 'external'
     }
 }
 
-export interface DiaryBlockType extends BaseBlock{
-    type: "diary_entry";
-    properties: {
+export interface BoardBlockType extends BaseBlock{
+    type: "board_block";
+    linkedBoardId: string | null;
+    content: {
         title: string;
-        colorscheme: {
-        black: string, 
-        dark : string,
-        highlight : string, 
-        accent: string,
-        "light-accent": string,
-        white: string,
-        "light-hover": string
-      }
+        
     }
-    content: string[];
 }
 
-export interface BlockSizeType {
-    x: number;
-    y: number;
-    width:  number;
-    height: number;
-    zIndex: number;
-}
 
 export interface Theme {
     black: string,
@@ -80,4 +75,4 @@ export interface Theme {
     "light-hover": string,
 }
 
-export type Block = BasePageBlockType | TextBlockType | ImageBlockType | DiaryBlockType;
+export type Block =  TextBlockType | ImageBlockType | BoardBlockType;
