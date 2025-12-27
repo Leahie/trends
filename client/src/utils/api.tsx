@@ -1,7 +1,6 @@
 import axios, { AxiosError } from 'axios';
-import type { Block, BlockSizeType } from '../types';
+import type { Block, Board } from '../types';
 import { getAuth } from 'firebase/auth';
-
 
 const client = axios.create({
   baseURL: 'http://localhost:5000/api',
@@ -19,7 +18,7 @@ client.interceptors.request.use(
     if (user) {
       try {
         const token = await user.getIdToken();
-        console.log("token",token)
+        console.log("token", token);
         config.headers.Authorization = `Bearer ${token}`;
       } catch (error) {
         console.error('Failed to get auth token:', error);
@@ -54,20 +53,139 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-interface BatchUpdateResponse {
-  success: boolean;
-  updated: number;
-  failed: string[];
-}
-
 export const api = {
-  async fetchData(): Promise<ApiResponse<{ blocks: Block[]; locations: Record<string, BlockSizeType> }>> {
+  // fetching the boards 
+  async fetchBoards(): Promise<ApiResponse<{ boards: Board[] }>> {
     try {
-      const { data } = await client.get('/data');
-      console.log("This is the data", data);
+      const { data } = await client.get('/data/boards');
+      console.log("This is the boards", data);
       return { success: true, data };
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      console.log('Failed to fetch boards:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // fetching a specific board using id 
+  async fetchBoard(boardId: string): Promise<ApiResponse<{ board: Board }>> {
+    try {
+      const { data } = await client.get(`/data/boards/${boardId}`);
+      console.log(`This is the data for board ${boardId}`, data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to fetch board:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // fetching the blocks for a specific board 
+  async fetchBlocksFromBoard(boardId: string): Promise<ApiResponse<{ blocks: Block[] }>> {
+    try {
+      const { data } = await client.get(`/data/boards/${boardId}/blocks`);
+      console.log(`This is the blocks for board ${boardId}`, data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to fetch blocks:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // deleting a board 
+  async deleteBoard(boardId: string): Promise<ApiResponse<{ boardId: string; deletionId: string; deletedBlockCount: number }>> {
+    try {
+      const { data } = await client.delete(`/data/boards/${boardId}`);
+      console.log(`This is the board deletion data`, data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to delete board:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // creating a board 
+  async createBoard(title?: string): Promise<ApiResponse<{ board: Board }>> {
+    try {
+      const { data } = await client.post("/data/boards", { title });
+      console.log("This is the newly created board", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to create board:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // updating a board 
+  async updateBoard(boardId: string, updates: Partial<Board>): Promise<ApiResponse<{ board: Board }>> {
+    try {
+      const { data } = await client.patch(`/data/boards/${boardId}`, updates);
+      console.log("This is the newly updated board data", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to update board:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // batch updating blocks 
+  async batchUpdateBlocks(updatesArray: Record<string, Partial<Block>>): Promise<ApiResponse<{ updatedBlockIds: string[]; affectedBoards: string[] }>> {
+    try {
+      const { data } = await client.patch(`/data/blocks/batch`, updatesArray);
+      console.log("This is the batch update response", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to batch update blocks:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // duplicate a block
+  async duplicateBlock(blockId: string, targetBoardId?: string, offsetX?: number, offsetY?: number): Promise<ApiResponse<{ block: Block }>> {
+    try {
+      const { data } = await client.post(`/data/blocks/${blockId}/duplicate`, {
+        targetBoardId,
+        offsetX,
+        offsetY
+      });
+      console.log("Duplicated block", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to duplicate block:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // fetch specific block  
+  async fetchBlock(blockId: string): Promise<ApiResponse<{ block: Block }>> {
+    try {
+      const { data } = await client.get(`/data/blocks/${blockId}`);
+      console.log("This is the block", data);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Failed to fetch block:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -75,7 +193,7 @@ export const api = {
     }
   },
 
-  async updateBlock(blockId: string, updates: Partial<Block>): Promise<ApiResponse<Block>> {
+  async updateBlock(blockId: string, updates: Partial<Block>): Promise<ApiResponse<{ block: Block }>> {
     try {
       const { data } = await client.patch(`/data/blocks/${blockId}`, updates);
       return { success: true, data };
@@ -88,37 +206,10 @@ export const api = {
     }
   },
 
-  async updateLocation(blockId: string, location: BlockSizeType): Promise<ApiResponse<BlockSizeType>> {
+  async addBlock(boardId: string, block: Partial<Block>): Promise<ApiResponse<{ block: Block }>> {
     try {
-      const { data } = await client.patch(`/data/locations/${blockId}`, location);
-      return { success: true, data };
-    } catch (error) {
-      console.error(`Failed to update location ${blockId}:`, error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to update location'
-      };
-    }
-  },
-
-
-  async batchUpdateLocations(updates: Record<string, BlockSizeType>): Promise<ApiResponse<BatchUpdateResponse>> {
-    try {
-      const { data } = await client.patch('/data/locations/batch', updates);
-      return { success: true, data };
-    } catch (error) {
-      console.error('Failed to batch update locations:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to batch update'
-      };
-    }
-  },
-
-  async addBlock(block: Block, location: BlockSizeType): Promise<ApiResponse<{ block: Block; location: BlockSizeType }>> {
-    try {
-      console.log('Attempting to add block:', block.id);
-      const { data } = await client.post('/data/blocks', { block, location });
+      console.log('Attempting to add block to board:', boardId);
+      const { data } = await client.post(`/data/boards/${boardId}/blocks`, block);
       console.log('Block added successfully:', data);
       return { success: true, data };
     } catch (error) {
@@ -134,9 +225,7 @@ export const api = {
     }
   },
 
-
-  // DON'T FORGET TO DELETE LOCATION IN CALL AS WELL
-  async deleteBlock(blockId: string): Promise<ApiResponse<{ id: string }>> {
+  async deleteBlock(blockId: string): Promise<ApiResponse<{ success: true; id: string }>> {
     try {
       const { data } = await client.delete(`/data/blocks/${blockId}`);
       return { success: true, data };
@@ -148,5 +237,94 @@ export const api = {
       };
     }
   },
-};
 
+  // batch delete blocks
+  async batchDeleteBlocks(blockIds: string[]): Promise<ApiResponse<{ deletedBlockIds: string[]; affectedBoards: string[] }>> {
+    try {
+      const { data } = await client.post(`/data/blocks/batch-delete`, { blockIds });
+      console.log("Batch deleted blocks", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to batch delete blocks:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // restore a block
+  async restoreBlock(blockId: string): Promise<ApiResponse<{ block: Block }>> {
+    try {
+      const { data } = await client.post(`/data/blocks/${blockId}/restore`);
+      console.log("Restored block", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to restore block:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // permanently delete a block
+  async permanentlyDeleteBlock(blockId: string): Promise<ApiResponse<{ success: true; id: string }>> {
+    try {
+      const { data } = await client.delete(`/data/blocks/${blockId}/permanent`);
+      console.log("Permanently deleted block", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to permanently delete block:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // restore a board
+  async restoreBoard(boardId: string): Promise<ApiResponse<{ success: true; boardId: string; restoredBlocksCount: number }>> {
+    try {
+      const { data } = await client.post(`/data/boards/${boardId}/restore`);
+      console.log("Restored board", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to restore board:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // permanently delete a board
+  async permanentlyDeleteBoard(boardId: string): Promise<ApiResponse<{ success: true; boardId: string; deletedBlockCount: number }>> {
+    try {
+      const { data } = await client.delete(`/data/boards/${boardId}/permanent`);
+      console.log("Permanently deleted board", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to permanently delete board:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  // cleanup old deleted items
+  async cleanup(): Promise<ApiResponse<{ success: true; deletedBoardCount: number; deletedBlockCount: number }>> {
+    try {
+      const { data } = await client.delete(`/data/cleanup`);
+      console.log("Cleanup completed", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to cleanup:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+};
