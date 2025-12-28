@@ -34,7 +34,7 @@ const App = () => {
                       </div>
                       </DataProvider>
                     } />
-                    <Route path="/blocks/:id" element={
+                    {/* <Route path="/blocks/:id" element={
                       <DataProvider>
                       <div className='flex h-screen w-screen'>
                         <Sidebar/>
@@ -43,7 +43,7 @@ const App = () => {
                         </div>
                       </div>
                       </DataProvider>
-                    } />
+                    } /> */}
                   </Route>
                 </Routes>
               </div>
