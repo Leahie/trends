@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Data Routes
+// Data Routes, # /api/data/boards, 
 app.use('/api/data', blocksRouter);
 
 // Image Routes
