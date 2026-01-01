@@ -23,7 +23,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({children}: {children : ReactNode}){
     const [theme, setTheme] = useState<Theme>(
         {black: "#343135",
-        dark: "#444444",
+        dark: "#2C302B",
         highlight: "#596157",
         accent: "#6C816F",
         "light-accent": "#90A694",

@@ -1,84 +1,16 @@
-import type {Block} from "../types.ts";
+import type {Block, Board} from "../types.ts";
 import {useState, useEffect} from 'react';  // will be used later when we fetch data 
 import { useData } from "../context/data.tsx";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth.tsx";
 
-
-function SidebarNode({node}:{node:Block}){
-  
-   if (!node) return null;
-   const id = location.pathname.split("/")[2];
-   
-    const [isHovered, setIsHovered] = useState(false);
-
-    const handleMouseEnter = () => {
-      setIsHovered(true);
-    }
-
-    const handleMouseLeave = () => {
-      setIsHovered(false);
-    }
-    const {dataMap, removeBlock} = useData();
-
-    const handleDelete = async () => {
-        const success = await removeBlock(node.id, node.parent);
-        if (success) {
-            console.log('Block deleted successfully');
-        }
-    };
-
-    return(
-        <div className="flex-col"> 
-        <li></li>
-        <li>
-
-            <a href={`/blocks/${node.id}`}
-                className={`${id==node.id && "bg-accent"} flex flex-row gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-                <div className="flex-1 text-left">
-                <p>{node.properties.title || "Untitled"}  {node.type == "diary_entry" && 
-                <svg className="inline" width="12px" height="12px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 8C3 5.17157 3 3.75736 3.87868 2.87868C4.75736 2 6.17157 2 9 2H15C17.8284 2 19.2426 2 20.1213 2.87868C21 3.75736 21 5.17157 21 8V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H9C6.17157 22 4.75736 22 3.87868 21.1213C3 20.2426 3 18.8284 3 16V8Z" stroke="#F5F1ED" stroke-width="1.5"/>
-                    <path d="M8 2.5V22" stroke="#F5F1ED" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M2 12H4" stroke="#F5F1ED" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M2 16H4" stroke="#F5F1ED" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M2 8H4" stroke="#F5F1ED" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M11.5 6.5H16.5" stroke="#F5F1ED" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M11.5 10H16.5" stroke="#F5F1ED" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>}</p>
-                
-                </div>
-                <div className="flex-none" onClick={(e) => {e.stopPropagation(); e.preventDefault(); handleDelete()}}>
-                  {isHovered && 
-                  <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 6.77273H9.2M19 6.77273H14.8M9.2 6.77273V5.5C9.2 4.94772 9.64772 4.5 10.2 4.5H13.8C14.3523 4.5 14.8 4.94772 14.8 5.5V6.77273M9.2 6.77273H14.8M6.4 8.59091V15.8636C6.4 17.5778 6.4 18.4349 6.94673 18.9675C7.49347 19.5 8.37342 19.5 10.1333 19.5H13.8667C15.6266 19.5 16.5065 19.5 17.0533 18.9675C17.6 18.4349 17.6 17.5778 17.6 15.8636V8.59091M9.2 10.4091V15.8636M12 10.4091V15.8636M14.8 10.4091V15.8636" 
-                  stroke="#F5F1ED" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  }
-                  
-</div>
-            </a>
-        </li>
-
-        { "content" in node && node.content.length > 0 && (
-        <ol className="pl-2">
-            {node.content.map((childId:string) => <SidebarNode node={dataMap[childId]}  />)}
-        </ol>)
-        }
-        </div>
-    )
-}
-
 function useIsCanvasLayout():boolean{
 
   const location = useLocation();
   const {dataMap} = useData();
   if (location.pathname === "/") {
-        return true;
+        return false; // home page no longer uses canvas
   }
   const blockId = location.pathname.split('/blocks/')[1];
   if (!blockId) return false;
@@ -89,8 +21,9 @@ function useIsCanvasLayout():boolean{
 }
 
 export default function Sidebar(){
+  
     const { logOut, user } = useAuth();
-    const {root, dataMap} = useData();
+    const {boards} = useData();
     const [open, setOpen] = useState<boolean>(true); // sets the Sidebar 
     const isCanvasLayout = useIsCanvasLayout();
 
@@ -105,8 +38,21 @@ export default function Sidebar(){
       }
     };
 
+    const id = location.pathname.split("/")[2];
+   
+    const [isHovered, setIsHovered] = useState(false);
 
-    if (!root) {
+    const handleMouseEnter = () => {
+      setIsHovered(true);
+    }
+
+    const handleMouseLeave = () => {
+      setIsHovered(false);
+    }
+
+    
+
+    if (!boards) {
         return (
             <></>
         );
@@ -217,7 +163,7 @@ export default function Sidebar(){
             href="/ "
             aria-label="Brand"
           >
-            {root.properties.title}
+            BoardBash
           </a>
         </header>
         
@@ -227,8 +173,26 @@ export default function Sidebar(){
         {/* Body */}
         <nav className="mt-6 h-full overflow-y-auto ">
           <div className="pb-0 px-2 w-full flex flex-col flex-wrap">
-            <ul className="space-y-1">
-                {root.content.map((childId:string) => <SidebarNode key={childId} node={dataMap[childId]}/>)}
+            <ul className="space-y-1 text-left">
+                {boards.map((board:Board) => (
+                  <li>
+                    <a href={`/blocks/${board.id}`}
+                        className={`${id==board.id && "bg-accent"} flex flex-row gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                        <div className="flex-1 text-left">
+                        <p>{board.title || "Untitled"}</p>
+                        
+                        </div>
+                        <div className="flex-none" onClick={(e) => {e.stopPropagation(); e.preventDefault(); handleDelete()}}>
+                          
+                          
+        </div>
+                    </a>
+                </li>
+
+                ))}
            
             </ul>
           </div>

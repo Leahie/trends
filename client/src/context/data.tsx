@@ -46,6 +46,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 // provider component 
 export function DataProvider({children} : {children : ReactNode}){
     const {user} = useAuth();
+    console.log(user?.getIdToken())
     const [boards, setBoards] = useState<Board[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
     const [currentBoard, setCurrentBoard] = useState<Board | null>(null);

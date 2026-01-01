@@ -1,5 +1,5 @@
 import type { BaseBlock, DiaryBlockType, ImageBlockType, TextBlockType,  } from "../types";
-import DiaryBlock from "./DiaryBlock";
+import DiaryBlock from "./BoardBlock";
 import ImageBlock from "./ImageBlock";
 import TextBlock from "./TextBlock";
 

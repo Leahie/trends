@@ -2,12 +2,18 @@
 
   @theme{
     --color-black: #141613;
-    --color-dark: #444444;
+    --color-dark: #2c302b;
     --color-highlight: #596157;
     --color-accent: #6C816F;
     --color-light-accent: #90A694;
     --color-white: #F5F1ED;
     --color-light-hover: #D8D8D8;
+    
+    /* text colors */
+    --color-primary: var(--color-white);
+    --color-secondary: var(--color-highlight);
+    --color-subtext: #BCC5BD;
+
   }
   
   :root {
@@ -19,11 +25,17 @@
     color: rgba(255, 255, 255, 0.87);
     background-color: #141613;  
     --color-black: #343135;
-    --color-dark: #444444;
+    --color-dark: #2c302b;
     --color-highlight: #596157;
     --color-accent: #6C816F;
     --color-light-accent: #90A694;
     --color-white: #F5F1ED;
+
+    /* text colors */
+    --color-primary: var(--color-white);
+    --color-secondary: var(--color-highlight);
+    --color-subtext: #BCC5BD;
+
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
