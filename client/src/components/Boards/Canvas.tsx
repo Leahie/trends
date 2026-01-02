@@ -10,10 +10,10 @@ import ResizeableContainer from "./ResizeableContainer.tsx"
 
 
 export default function Canvas(){
-    const {dataMap, blocks, updateBlock, updateBoard, currentBoard, batchUpdateBlocks} = useData();
+    const {blocks, updateBlock, updateBoard, currentBoard, batchUpdateBlocks} = useData();
 
     if (!currentBoard) return <p>Loading...</p>;
-
+    console.log(currentBoard)
     const [title, setTitle] = useState<string>(currentBoard.title);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
     const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
@@ -40,7 +40,7 @@ export default function Canvas(){
 
     const onSave = async (color:string) => {
         const theme = generateScheme(color);
-        await updateBlock(node.id, {properties: {...node.properties, colorscheme: theme}});
+        await updateBoard(currentBoard.id, { ...currentBoard, colorscheme: theme});
         updateTheme(theme);
         setThemeModalOpen(false);
     }
@@ -271,19 +271,19 @@ export default function Canvas(){
                 </div>
             </div>
         </div>
-        {/* { contextMenu && 
+        { contextMenu && 
             <Context 
                 x={contextMenu.x} 
                 y={contextMenu.y} 
                 canvasX={contextMenu.canvasX} 
                 canvasY={contextMenu.canvasY} 
                 selected={selectedBlockId} 
-                parentId={node.id} 
+                parentId={currentBoard.id} 
                 setContextMenu={setContextMenu}
             />
-        } */}
+        }
     </div>
-    {/* <ThemeModal open={themeModalOpen} baseColor = {themeColor} onClose={onClose} onSave = {onSave} onChange={onChange}/> */}
+    <ThemeModal open={themeModalOpen} baseColor = {themeColor} onClose={onClose} onSave = {onSave} onChange={onChange}/>
     </>
 )
 }

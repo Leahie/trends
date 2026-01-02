@@ -12,7 +12,6 @@ export default function Board(){
     
     
     useEffect(()=>{
-        console.log("THIS IS ID", id, "THIS IS CURRENT")
         setCurrentBoardId(id);
     }, [])
     

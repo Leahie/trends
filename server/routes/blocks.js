@@ -11,6 +11,16 @@ import { v4 as uuidv4 } from 'uuid';
 
 router.use(authenticateUser);
 
+const DEFAULT_THEME = {
+  black: "#343135",
+  dark: "#2C302B",
+  highlight: "#596157",
+  accent: "#6C816F",
+  "light-accent": "#90A694",
+  white: "#F5F1ED",
+  "light-hover": "#D8D8D8",
+};
+
 
 // fetch data '/data' route get
 
@@ -81,6 +91,7 @@ router.post("/boards", async (req, res) => {
     id: boardId, 
     userId, 
     title: title || "Untitled Board",
+    colorscheme: DEFAULT_THEME,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     deletedAt: null
@@ -285,7 +296,7 @@ router.get("/boards/:boardId/blocks",  async (req, res) => {
     const snapshot = await db.collection("blocks")
     .where("boardId", "==", boardId)
     .where("deletedAt", "==", null)
-    .orderBy("zIndex", "asc")
+    .orderBy("location.zIndex", "asc")
     .get();
 
     const blocks = snapshot.docs.map((doc) => ({
@@ -329,7 +340,7 @@ router.get("/blocks/:id", async (req, res) => {
 router.post("/boards/:id/blocks", async (req, res) => {
   try{
     const blockData = req.body;
-    const {boardId} = req.params;
+    const {id : boardId} = req.params;
     const userId = req.user.uid;
 
     // verify board exists and belongs to user
@@ -363,7 +374,7 @@ router.post("/boards/:id/blocks", async (req, res) => {
         rotation: blockData.location?.rotation ?? blockData.rotation ?? 0,
         scaleX: blockData.location?.scaleX ?? blockData.scaleX ?? 1,
         scaleY: blockData.location?.scaleY ?? blockData.scaleY ?? 1,
-      },x
+      },
       // content 
       content: blockData.content || {},
 
@@ -477,6 +488,15 @@ router.patch("/blocks/batch", async (req, res) => {
 
     Object.entries(updatesArray).forEach(([id, updates]) => {
       const blockRef = db.collection("blocks").doc(id);
+      const existingBlock = blockDataMap[id];
+      
+      const processedUpdates = {...updates};
+      if (processedUpdates.location && existingBlock.location) {
+        processedUpdates.location = {
+          ...existingBlock.location,
+          ...processedUpdates.location
+        };
+      }
       batch.update(blockRef, {...updates, updatedAt: now});
     });
 
@@ -535,8 +555,11 @@ router.post("/blocks/:id/duplicate", async (req, res) => {
       ...originla, 
       id: newId,
       boardId: finalBoardId,
-      x: originla.x + offsetX,
-      y: originla.y + offsetY,
+      location: {
+        ...original.location,
+        x: original.location.x + offsetX,
+        y: original.location.y + offsetY,
+      },
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }

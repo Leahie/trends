@@ -7,7 +7,7 @@ export interface Board{
     id: string; 
     userId: string; 
     title: string;
-    colorscheme?: Theme; 
+    colorscheme: Theme; 
     readonly createdAt: Date | null;
     readonly updatedAt: Date | null;
     readonly deletedAt: Date | null;

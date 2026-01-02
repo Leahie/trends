@@ -1,25 +1,25 @@
 // utils/blockFactory.ts
 import { v4 as uuidv4 } from 'uuid';
-import type { Block, BlockSizeType, TextBlockType, ImageBlockType, DiaryBlockType } from "../types";
+import type { Block, Location, TextBlockType, ImageBlockType, BoardBlockType } from "../types";
 
-export function createDefaultTextBlock(parentId: string): TextBlockType {
+export function createDefaultTextBlock(parentId: string): Partial<TextBlockType> {
   return {
     id:  uuidv4(),
     type: "text",
-    parent: parentId,
-    properties: {
+    boardId: parentId,
+    content: {
       title: "Untitled",
       body: "",
     },
   };
 }
 
-export function createDefaultImageBlock(parentId: string): ImageBlockType {
+export function createDefaultImageBlock(parentId: string): Partial<ImageBlockType> {
   return {
     id:  uuidv4(),
     type: "image",
-    parent: parentId,
-    properties: {
+    boardId: parentId,
+    content: {
         title: "Untitled",
         url: "",
         source: "external",
@@ -27,24 +27,15 @@ export function createDefaultImageBlock(parentId: string): ImageBlockType {
   };
 }
 
-export function createDefaultDiaryBlock(parentId: string): DiaryBlockType {
+export function createDefaultDiaryBlock(parentId: string): Partial<BoardBlockType> {
   return {
     id:  uuidv4(),
-    type: "diary_entry",
-    parent: parentId,
-    properties: {
+    type: "board_block",
+    boardId: parentId,
+    // no linkedBoardId for now need to figure that out
+    content: {
       title: "Untitled",
-      colorscheme: {
-        black: "#141613",
-        dark: "#2C302B",
-        highlight: "#596157",
-        accent: "#6C816F",
-        "light-accent": "#90A694",
-        white: "#F5F1ED",
-        "light-hover" : "#D8D8D8"
-      }
     },
-    content: [],
   };
 }
 

@@ -1,4 +1,4 @@
-import type {Block, BlockSizeType} from "@/types"
+import type {Block, Location} from "@/types"
 import {useState, useEffect} from "react";
 import Container from "./Container";
 import { useNavigate } from "react-router-dom";
@@ -20,11 +20,11 @@ interface MoveTypes{
     y: number
 }
 
-export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected}: {node: Block, blockLocation: BlockSizeType, scale: number, selected: boolean, onSelected: () => void}){
+export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected}: {node: Block, blockLocation: Location, scale: number, selected: boolean, onSelected: () => void}){
     if (!node) return null;
-    const {updateLocation} = useData();
+    const {updateBlock} = useData();
     const navigate = useNavigate();
-    const [dims, setDims] = useState<BlockSizeType>(blockLocation);
+    const [dims, setDims] = useState<Location>(blockLocation);
     const [isEditMode, setIsEditMode] = useState(true);
     const [drag, setDrag] = useState<DragTypes>({
         active: false,
@@ -65,7 +65,7 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
     useEffect(() => {
         const handleMouseUp = () => {
             if (drag.active || move.active) {
-                updateLocation(node.id, dims); // Save to context when done
+                updateBlock(node.id, {location:dims}); // Save to context when done
             }
             setDrag((d) => ({ ...d, active: false, handle: null }));
             setMove((m) => ({ ...m, active: false }));
