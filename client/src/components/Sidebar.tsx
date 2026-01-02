@@ -8,14 +8,9 @@ import { useAuth } from "../context/auth.tsx";
 function useIsCanvasLayout():boolean{
 
   const location = useLocation();
-  const {dataMap} = useData();
   if (location.pathname === "/") {
         return false; // home page no longer uses canvas
   }
-  const blockId = location.pathname.split('/blocks/')[1];
-  if (!blockId) return false;
-  
-  const block = dataMap[blockId];
   
   return true;
 }
@@ -176,7 +171,7 @@ export default function Sidebar(){
             <ul className="space-y-1 text-left">
                 {boards.map((board:Board) => (
                   <li>
-                    <a href={`/blocks/${board.id}`}
+                    <a href={`/boards/${board.id}`}
                         className={`${id==board.id && "bg-accent"} flex flex-row gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}

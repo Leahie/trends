@@ -354,18 +354,16 @@ router.post("/boards/:id/blocks", async (req, res) => {
       userId, 
       type: blockData.type || "text",
 
-      // position & size 
-      x: blockData.x || 0,
-      y: blockData.y || 0,
-      width: blockData.width || 100,
-      height: blockData.height || 100,
-      zIndex: blockData.zIndex || 0,
-
-      // transformations 
-      rotation: blockData.rotation || 0,
-      scaleX: blockData.scaleX || 1,
-      scaleY: blockData.scaleY || 1,
-
+      location: {
+        x: blockData.location?.x ?? blockData.x ?? 0,
+        y: blockData.location?.y ?? blockData.y ?? 0,
+        width: blockData.location?.width ?? blockData.width ?? 100,
+        height: blockData.location?.height ?? blockData.height ?? 100,
+        zIndex: blockData.location?.zIndex ?? blockData.zIndex ?? 0,
+        rotation: blockData.location?.rotation ?? blockData.rotation ?? 0,
+        scaleX: blockData.location?.scaleX ?? blockData.scaleX ?? 1,
+        scaleY: blockData.location?.scaleY ?? blockData.scaleY ?? 1,
+      },x
       // content 
       content: blockData.content || {},
 
@@ -416,6 +414,13 @@ router.patch("/blocks/:id", async (req, res) => {
     }
 
     const {boardId, ...safeUpdates} = updates;
+
+    if (safeUpdates.location && block.location) {
+      safeUpdates.location = {
+        ...block.location,
+        ...safeUpdates.location
+      };
+    }
 
     await blockRef.update({...safeUpdates, updatedAt: admin.firestore.FieldValue.serverTimestamp()});
     

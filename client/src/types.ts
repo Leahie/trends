@@ -21,14 +21,7 @@ export interface BaseBlock{
     type: BlockType; 
     boardId: string;
     userId: string;
-    x: number;
-    y: number;
-    width:  number;
-    height: number;
-    zIndex: number;
-    rotation: number;
-    scaleX: number; 
-    scaleY: number;
+    location: Location;
     content: Record<string, any>;
     linkedBoardId: string | null;
     readonly deletedAt: Date | null;
@@ -63,8 +56,6 @@ export interface BoardBlockType extends BaseBlock{
         
     }
 }
-
-
 export interface Theme {
     black: string,
     dark: string,
@@ -73,6 +64,17 @@ export interface Theme {
     "light-accent": string,
     white: string,
     "light-hover": string,
+}
+
+export interface Location {
+    x: number;
+    y: number;
+    width:  number;
+    height: number;
+    zIndex: number;
+    rotation: number;
+    scaleX: number; 
+    scaleY: number;
 }
 
 export type Block =  TextBlockType | ImageBlockType | BoardBlockType;

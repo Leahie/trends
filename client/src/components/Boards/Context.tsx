@@ -1,12 +1,12 @@
-import { useData } from "../context/data";
+import { useData } from "@/context/data";
 import { 
   createDefaultTextBlock, 
   createDefaultImageBlock, 
   createDefaultDiaryBlock,
   createDefaultLocation 
-} from "../utils/defaults";
+} from "@/utils/defaults";
 
-import type { Block } from "../types";
+import type { Block } from "@/types";
 
 import { useNavigate } from "react-router-dom";
 

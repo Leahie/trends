@@ -1,25 +1,27 @@
-import type {Block, BasePageBlockType, DiaryBlockType, BlockSizeType} from "../types";
-import ResizeableContainer from "./ResizeableContainer.tsx"
+import type {Block} from "@/types";
 import {useState, useRef, useEffect} from 'react';
-import { useData } from "../context/data.tsx";
-import { useTheme } from "../context/theme.tsx";
-import {generateScheme} from "../utils/theme.tsx"
+import { useData } from "@/context/data.tsx";
+import { useTheme } from "@/context/theme.tsx";
+import {generateScheme} from "@/utils/theme.tsx"
 
 import Context from "./Context.tsx";
 import ThemeModal from "./ThemeModal.tsx";
+import ResizeableContainer from "./ResizeableContainer.tsx"
 
-export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockType}){
-    if (!node) return null;
 
-    const {dataMap, locations, setLocations, updateBlock} = useData();
-    const [title, setTitle] = useState<string>(node.properties.title);
+export default function Canvas(){
+    const {dataMap, blocks, updateBlock, updateBoard, currentBoard, batchUpdateBlocks} = useData();
+
+    if (!currentBoard) return <p>Loading...</p>;
+
+    const [title, setTitle] = useState<string>(currentBoard.title);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
-    const [themeColor, setThemeColor] = useState(node.properties.colorscheme.highlight);
+    const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
     const {updateTheme} = useTheme();
     // temp 
 
     useEffect(() =>{
-        updateTheme(node.properties.colorscheme);
+        updateTheme(currentBoard.colorscheme);
     }, [])
 
     // Right-click logic
@@ -59,18 +61,17 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
     // Title 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (title !== node.properties.title) {
-                updateBlock(node.id, {
-                    properties: {
-                        ...node.properties,
-                        title
-                    }
+            if (title !== currentBoard.title) {
+                updateBoard(currentBoard.id, {
+                        ...currentBoard,
+                        title:title
+                    
                 });
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [title, node.id]);
+    }, [title, currentBoard.id]);
 
 
     // Spacebar handling
@@ -161,8 +162,8 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
 
     // Z INDEX HANDLING 
     const bringToFront = (id: string) => {
-        const entries = Object.entries(locations);
-        entries.sort((a, b) => a[1].zIndex - b[1].zIndex)
+        const entries = Object.entries(blocks);
+        entries.sort((a, b) => a[1].location.zIndex - b[1].location.zIndex)
 
         const others = entries.filter(entry => entry[0] != id);
         const one = entries.find((entry) => entry[0] == id);
@@ -170,24 +171,21 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
         if (!one){ 
             return; }
 
-        const updated:Record<string, BlockSizeType> = {};
+        const updated:Record<string, Block> = {};
         others.forEach((elem, ind) => 
-            updated[elem[0]] = {...elem[1], zIndex: ind + 1}
+            updated[elem[0]] = {...elem[1], location: {...elem[1].location, zIndex: ind + 1}}
         )
 
-        updated[id] = {...one[1], zIndex: others.length+1}
+        updated[id] = {...one[1], location: {...one[1].location, zIndex: others.length+1}}
 
-        setLocations(updated);
-
+        batchUpdateBlocks(updated);
     }
 
     useEffect(() =>{
         if (selectedBlockId!=null) bringToFront(selectedBlockId)
     }, [selectedBlockId])
 
-    return !node ? (
-    <p>Loading...</p>
-) : (
+    return (
     
     <>
     <div className="fixed inset-0 flex flex-col" >        
@@ -259,23 +257,21 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
                 >
                     {/* Re-enable pointer events for actual content */}
                     <div style={{ pointerEvents: 'auto' }}>
-                        {node.content.map((e: string) => (
+                        {blocks.map((block) => (
                             <ResizeableContainer 
-                                key={e}
-                                node={dataMap[e]} 
-                                blockLocation={locations[e]} 
+                                key={block.id}
+                                node={block} 
+                                blockLocation={block.location} 
                                 scale={scale}
-                                selected={selectedBlockId === e} 
-                                onSelected={() => setSelectedBlockId(e)
-                                
-                                }
+                                selected={selectedBlockId === block.id} 
+                                onSelected={() => setSelectedBlockId(block.id)}
                             />
                         ))}
                     </div> 
                 </div>
             </div>
         </div>
-        { contextMenu && 
+        {/* { contextMenu && 
             <Context 
                 x={contextMenu.x} 
                 y={contextMenu.y} 
@@ -285,9 +281,9 @@ export default function Canvas({node}: {node : BasePageBlockType | DiaryBlockTyp
                 parentId={node.id} 
                 setContextMenu={setContextMenu}
             />
-        }
+        } */}
     </div>
-    <ThemeModal open={themeModalOpen} baseColor = {themeColor} onClose={onClose} onSave = {onSave} onChange={onChange}/>
+    {/* <ThemeModal open={themeModalOpen} baseColor = {themeColor} onClose={onClose} onSave = {onSave} onChange={onChange}/> */}
     </>
 )
 }

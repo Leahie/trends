@@ -6,8 +6,9 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
     const navigate = useNavigate();
 
     return( 
-        <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-[150px] bg-dark  border-light-accent border-t-5 border-b-5 border-r-5 border-l-2 rounded-lg
-        hover:cursor-pointer hover:border-white
+        <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-[150px] bg-dark  border-accent border-t-3 border-b-5 border-r-5 border-l-2 rounded-lg
+        transition-border duration-300
+        hover:cursor-pointer hover:border-light-accent hover:shadow-md shadow-accent
         "
         onClick={() => navigate(`/boards/${id}`)} 
         >
