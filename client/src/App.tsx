@@ -4,10 +4,10 @@ import { DataProvider } from './context/data.tsx'
 import { ThemeProvider } from "./context/theme.tsx";
 import { AuthProvider } from './context/auth.tsx'; // Import
 
-import BlockInfo from "./BlockInfo.tsx";
 import Sidebar from './components/Sidebar.tsx'
 import Login from "./Login.tsx";
 import ProtectedRoute from "./ProtectedRoute.tsx";
+import Board from "./components/Boards/Board.tsx";
 
 
 const App = () => {
@@ -34,12 +34,12 @@ const App = () => {
                       </div>
                       </DataProvider>
                     } />
-                    <Route path="/blocks/:id" element={
+                    <Route path="/boards/:id" element={
                       <DataProvider>
                       <div className='flex h-screen w-screen'>
                         <Sidebar/>
                         <div className="flex-1 relative overflow-hidden">
-                          <BlockInfo />
+                          <Board />
                         </div>
                       </div>
                       </DataProvider>

@@ -1,8 +1,16 @@
 import type {Board} from "../../types.ts"
-export default function BoardDiv({title, updatedAt, userId}: Board){
+import { useNavigate } from "react-router-dom";
+
+export default function BoardDiv({id, title, updatedAt, userId}: Board){
     const updatedAtDate = new Date(updatedAt?._seconds * 1000);
+    const navigate = useNavigate();
+
     return( 
-        <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-[150px] bg-dark  border-light-accent border-t-5 border-b-5 border-r-5 rounded-lg">
+        <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-[150px] bg-dark  border-light-accent border-t-5 border-b-5 border-r-5 border-l-2 rounded-lg
+        hover:cursor-pointer hover:border-white
+        "
+        onClick={() => navigate(`/boards/${id}`)} 
+        >
             <div className="absolute inset-y-0 left-1 w- -translate-x-1/2 bg-black/30 pointer-events-none"></div>
 
             <h5 className="

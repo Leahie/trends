@@ -1,6 +1,3 @@
-import { useState } from 'react'
-// Component Imports
-import Canvas from './components/Canvas.tsx'
 import { useData } from './context/data.tsx'
 import type { Board } from './types.ts'
 
@@ -15,7 +12,7 @@ export default function HomePage() {
     <div className='mt-32 mx-16 flex flex-col gap-5'>
       <Message/>
       <Subheading />
-      <div className='flex flex-wrap gap-4'>
+      <div className='flex flex-wrap gap-7'>
         {boards.map((board: Board) =>(
           <BoardDiv {...board}/>
         ))}

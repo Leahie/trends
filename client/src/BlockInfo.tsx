@@ -1,6 +1,6 @@
 import { useParams, Navigate } from 'react-router-dom';
 import { useData } from './context/data';
-import type { Block, DiaryBlockType, ImageBlockType, TextBlockType } from './types';
+import type { Block, BoardBlockType, ImageBlockType, TextBlockType } from './types';
 import TextInfo from './components/Info/TextInfo';
 import ImageInfo from './components/Info/ImageInfo';
 import DiaryInfo from './components/Info/DiaryInfo';

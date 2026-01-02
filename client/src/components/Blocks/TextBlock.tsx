@@ -1,4 +1,4 @@
-import type {TextBlockType} from "../types.ts"
+import type {TextBlockType} from "@/types.ts"
 export default function ImageBlock({id, type, properties, parent}: TextBlockType){
     return( 
         <div className=" bg-highlight p-5 h-full w-full flex flex-col text-left border-x-4 border-b-8 border-dark">

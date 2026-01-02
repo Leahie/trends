@@ -1,8 +1,8 @@
-import type {Block, BlockSizeType} from "../types"
+import type {Block, BlockSizeType} from "@/types"
 import {useState, useEffect} from "react";
 import Container from "./Container";
 import { useNavigate } from "react-router-dom";
-import {useData} from "../context/data.tsx"
+import {useData} from "@/context/data.tsx"
 
 type HandleType = "right" | "left" | "bottom" | "top" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | null;
 

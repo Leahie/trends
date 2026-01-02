@@ -17,7 +17,7 @@ function useIsCanvasLayout():boolean{
   
   const block = dataMap[blockId];
   
-  return block?.type === "base_page" || block?.type === "diary_entry";
+  return true;
 }
 
 export default function Sidebar(){
@@ -185,7 +185,7 @@ export default function Sidebar(){
                         <p>{board.title || "Untitled"}</p>
                         
                         </div>
-                        <div className="flex-none" onClick={(e) => {e.stopPropagation(); e.preventDefault(); handleDelete()}}>
+                        <div className="flex-none" onClick={(e) => {e.stopPropagation(); e.preventDefault()}}>
                           
                           
         </div>
