@@ -1,0 +1,5 @@
+firebaseConfig.json
+src/firebaseConfig.json
+
+# Local dev
+node_modules/

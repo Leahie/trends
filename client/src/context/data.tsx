@@ -208,8 +208,16 @@ export function DataProvider({children} : {children : ReactNode}){
     }
 
     const updateBoardFunc = async (boardId: string, updates : Partial<Board>): Promise<boolean> =>{
+        // Optimistic update: update UI immediately
+        setBoards((prev: Board[]) => prev.map(b => b.id === boardId ? { ...b, ...updates } : b));
+        if (currentBoardId === boardId){
+            setCurrentBoard((prev: Board | null) => prev ? { ...prev, ...updates } : null);
+        }
+
+        // Then sync with server
         const result = await api.updateBoard(boardId, updates);
         if (result.success && result.data){
+            // If server returns data, use it (in case there were server-side changes)
             setBoards((prev: Board[]) => prev.map(b => b.id === boardId ? result.data!.board : b));
             if (currentBoardId === boardId){
                 setCurrentBoard(result.data.board);

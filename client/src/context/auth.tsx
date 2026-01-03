@@ -34,11 +34,14 @@ export function AuthProvider({children}: {children : ReactNode}){
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setUser(user);
         setLoading(false);
+        if(user){
+          const token = await user.getIdToken();
+          console.log("🔥 ID TOKEN (TEST):", token);
+        }
         });
-
         console.log("user is totally updating",user);
         return unsubscribe;
     }, []);

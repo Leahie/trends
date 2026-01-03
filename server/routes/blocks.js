@@ -175,7 +175,7 @@ router.delete("/boards/:id", async(req, res)=>{
     await batch.commit();
     res.send({success: true, 
       boardId:id, 
-      deletionId,
+      deletedId,
       deletedBlockCount: blocksSnapshot.docs.length
     });
   }catch (error){
