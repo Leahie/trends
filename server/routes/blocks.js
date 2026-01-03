@@ -399,6 +399,73 @@ router.post("/boards/:id/blocks", async (req, res) => {
   
 });
 
+// Batch update multiple blocks '/blocks/batch' route patch
+router.patch("/blocks/batch", async (req, res) => {
+  try{
+    const userId = req.user.uid;
+    const updatesArray = req.body;
+
+    if (!updatesArray || Object.keys(updatesArray).length === 0){
+      return res.status(400).send("No updates provided.");
+    }
+
+    const blockIds = Object.keys(updatesArray);
+    const blockDocs = await Promise.all(
+      blockIds.map((id) => db.collection("blocks").doc(id).get())
+    )
+
+    const blockDataMap = {};
+    const boardIds = new Set();
+
+    for (const doc of blockDocs){
+      if (!doc.exists){
+        return res.status(404).send(`Block with ID ${doc.id} not found.`);
+      }
+      const block = doc.data();
+      blockDataMap[doc.id] = block
+
+      if (block.userId !== userId){
+        return res.status(403).send("Forbidden");
+      }
+
+      if (block.deletedAt !== null){
+        return res.status(404).send(`Block with ID ${doc.id} is deleted.`);
+      }
+
+      boardIds.add(block.boardId);
+    }
+
+    const batch = db.batch();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    Object.entries(updatesArray).forEach(([id, updates]) => {
+      const blockRef = db.collection("blocks").doc(id);
+      const existingBlock = blockDataMap[id];
+      
+      const processedUpdates = {...updates};
+      if (processedUpdates.location && existingBlock.location) {
+        processedUpdates.location = {
+          ...existingBlock.location,
+          ...processedUpdates.location
+        };
+      }
+      batch.update(blockRef, {...processedUpdates, updatedAt: now});
+    });
+
+    boardIds.forEach((boardId) => {
+      const boardRef = db.collection("boards").doc(boardId);
+      batch.update(boardRef, { updatedAt: now });
+    });
+
+    await batch.commit();
+
+    res.send({ success: true, updatedBlockIds: Object.keys(updatesArray), affectedBoards: Array.from(boardIds) });
+  }
+  catch (error){
+    console.log("Error in batch updating blocks:", error);
+    return res.status(500).send("Internal Server Error");
+  }
+})
 
 // update block '/blocks/id' route patch
 router.patch("/blocks/:id", async (req, res) => {
@@ -449,71 +516,6 @@ router.patch("/blocks/:id", async (req, res) => {
   }
 });
 
-// Batch update multiple blocks '/blocks/batch' route patch
-router.patch("/blocks/batch", async (req, res) => {
-  try{
-    const userId = req.user.uid;
-    const updatesArray = req.body;
-
-    if (!updates || Object.keys(updatesArray).length === 0){
-      return res.status(400).send("No updates provided.");
-    }
-
-    const blockIds = Object.keys(updatesArray);
-    const blockDocs = await Promise.all(
-      blockIds.map((id) => db.collection("blocks").doc(id).get())
-    )
-
-    const boardIds = new Set();
-
-    for (const doc of blockDocs){
-      if (!doc.exists){
-        return res.status(404).send(`Block with ID ${doc.id} not found.`);
-      }
-      const block = doc.data();
-
-      if (block.userId !== userId){
-        return res.status(403).send("Forbidden");
-      }
-
-      if (block.deletedAt !== null){
-        return res.status(404).send(`Block with ID ${doc.id} is deleted.`);
-      }
-
-      boardIds.add(block.boardId);
-    }
-
-    const batch = db.batch();
-    const now = admin.firestore.FieldValue.serverTimestamp();
-
-    Object.entries(updatesArray).forEach(([id, updates]) => {
-      const blockRef = db.collection("blocks").doc(id);
-      const existingBlock = blockDataMap[id];
-      
-      const processedUpdates = {...updates};
-      if (processedUpdates.location && existingBlock.location) {
-        processedUpdates.location = {
-          ...existingBlock.location,
-          ...processedUpdates.location
-        };
-      }
-      batch.update(blockRef, {...updates, updatedAt: now});
-    });
-
-    boardIds.forEach((boardId) => {
-      const boardRef = db.collection("boards").doc(boardId);
-      batch.update(boardRef, { updatedAt: now });
-    });
-
-    await batch.commit();
-
-    res.send({ success: true, updatedBlockIds: Object.keys(updatesArray), affectedBoards: Array.from(boardIds) });
-  }
-  catch (error){
-    console.log("Error in batch updating blocks:", error);
-    return res.status(500).send("Internal Server Error");
-  }
-})
 
 // duplicate block '/blocks/id/duplicate' route post
 router.post("/blocks/:id/duplicate", async (req, res) => {

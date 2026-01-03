@@ -1,5 +1,5 @@
 import type {Block} from "@/types";
-import {useState, useRef, useEffect} from 'react';
+import {useState, useRef, useEffect, useMemo} from 'react';
 import { useData } from "@/context/data.tsx";
 import { useTheme } from "@/context/theme.tsx";
 import {generateScheme} from "@/utils/theme.tsx"
@@ -14,11 +14,17 @@ export default function Canvas(){
 
     if (!currentBoard) return <p>Loading...</p>;
     console.log(currentBoard)
+    console.log(blocks)
     const [title, setTitle] = useState<string>(currentBoard.title);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
     const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
     const {updateTheme} = useTheme();
     // temp 
+    const sortedBlocks = useMemo(() => {
+        return [...blocks].sort(
+            (a, b) => a.location.zIndex - b.location.zIndex
+        );
+    }, [blocks]);
 
     useEffect(() =>{
         updateTheme(currentBoard.colorscheme);
@@ -33,6 +39,7 @@ export default function Canvas(){
 
     // THeme logic
     
+    console.log("This is the selected block id", selectedBlockId);
 
     const onClose = () => {
         setThemeModalOpen(false);
@@ -161,29 +168,50 @@ export default function Canvas(){
     }
 
     // Z INDEX HANDLING 
-    const bringToFront = (id: string) => {
-        const entries = Object.entries(blocks);
-        entries.sort((a, b) => a[1].location.zIndex - b[1].location.zIndex)
+    const bringToFront = async(id: string) => {
+        console.log("bring to front called")
+        const block = blocks.find(b => b.id === id);
+        if (!block) return;
 
-        const others = entries.filter(entry => entry[0] != id);
-        const one = entries.find((entry) => entry[0] == id);
+        const maxZ = Math.max(...blocks.map(b => b.location.zIndex), 0);
+
+
+        const sorted = [...blocks].sort(
+            (a, b) => a.location.zIndex - b.location.zIndex
+        );
+
+        const others = sorted.filter(b => b.id !== id);
+        const one = sorted.find(b => b.id === id);
 
         if (!one){ 
-            return; }
+            console.log("bring to front stop 2")
+            return;
+}
+        const updated: Record<string, Partial<Block>> = {};
 
-        const updated:Record<string, Block> = {};
-        others.forEach((elem, ind) => 
-            updated[elem[0]] = {...elem[1], location: {...elem[1].location, zIndex: ind + 1}}
-        )
+        others.forEach((block, index) => {
+        updated[block.id] = {
+            location: {
+            ...block.location,
+            zIndex: index + 1,
+            },
+        };
+        });
 
-        updated[id] = {...one[1], location: {...one[1].location, zIndex: others.length+1}}
+        updated[id] = {
+        location: {
+            ...one.location,
+            zIndex: others.length + 2,
+        },
+        };
 
-        batchUpdateBlocks(updated);
+        console.log("updated z index locations", updated);
+        await batchUpdateBlocks(updated);
     }
 
-    useEffect(() =>{
-        if (selectedBlockId!=null) bringToFront(selectedBlockId)
-    }, [selectedBlockId])
+    // useEffect(() =>{
+    //     if (selectedBlockId!=null) bringToFront(selectedBlockId)
+    // }, [selectedBlockId])
 
     return (
     
@@ -257,7 +285,7 @@ export default function Canvas(){
                 >
                     {/* Re-enable pointer events for actual content */}
                     <div style={{ pointerEvents: 'auto' }}>
-                        {blocks.map((block) => (
+                        {sortedBlocks.map((block) => (
                             <ResizeableContainer 
                                 key={block.id}
                                 node={block} 
@@ -265,6 +293,7 @@ export default function Canvas(){
                                 scale={scale}
                                 selected={selectedBlockId === block.id} 
                                 onSelected={() => setSelectedBlockId(block.id)}
+                                bringToFront={bringToFront}
                             />
                         ))}
                     </div> 

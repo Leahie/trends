@@ -30,7 +30,6 @@ export function ThemeProvider({children}: {children : ReactNode}){
         white: "#F5F1ED",
         "light-hover" : "#D8D8D8"
     });
-        console.log("theme", theme);
 
 
     const updateTheme = (newTheme:Theme) => {

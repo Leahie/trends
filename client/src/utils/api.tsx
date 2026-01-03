@@ -147,6 +147,7 @@ export const api = {
   // batch updating blocks 
   async batchUpdateBlocks(updatesArray: Record<string, Partial<Block>>): Promise<ApiResponse<{ updatedBlockIds: string[]; affectedBoards: string[] }>> {
     try {
+      console.log("This is the batch array", updatesArray);
       const { data } = await client.patch(`/data/blocks/batch`, updatesArray);
       console.log("This is the batch update response", data);
       return { success: true, data };

@@ -20,7 +20,12 @@ interface MoveTypes{
     y: number
 }
 
-export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected}: {node: Block, blockLocation: Location, scale: number, selected: boolean, onSelected: () => void}){
+export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected,
+    bringToFront
+}: {node: Block, blockLocation: Location, scale: number, selected: boolean, onSelected: () => void,
+    bringToFront: (x: string) => void 
+},
+){
     if (!node) return null;
     const {updateBlock} = useData();
     const navigate = useNavigate();
@@ -238,8 +243,10 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
     // Location Syncing 
 
     useEffect(() => {
+        if (!drag.active && !move.active) {
         setDims(blockLocation);
-    }, [blockLocation]);
+    }
+}, [blockLocation, drag.active, move.active]);
 
 
     return(     
@@ -253,7 +260,10 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
         }}}>
         <div
             className="absolute inset-0 "
-            onMouseDown={startMove}
+            onMouseDown={
+                () => {startMove;
+                    bringToFront(node.id)
+                }}
         >
             <Container node={node} />
             </div>

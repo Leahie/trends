@@ -85,6 +85,8 @@ export function DataProvider({children} : {children : ReactNode}){
     }, [user]);
 
     useEffect(() => {
+        console.trace(); // This will show you the call stack
+    
         const loadBoardBlocks = async () => {
             if (!currentBoardId) {
                 setBlocks([]);
@@ -136,6 +138,7 @@ export function DataProvider({children} : {children : ReactNode}){
 
         try {
             if (Object.keys(blockChanges).length > 0) {
+                console.log("I AM REUPDATING HERE")
                 const result = await api.batchUpdateBlocks(blockChanges);
                 if (result.success) {
                     pendingBlockChanges.current = {};
@@ -314,16 +317,32 @@ export function DataProvider({children} : {children : ReactNode}){
     }
 
     const batchUpdateBlocks = async (updates: Record<string, Partial<Block>>): Promise<boolean> => {
-        setBlocks((prev: Block[]) => prev.map(b => 
-            updates[b.id] ? {...b, ...updates[b.id]} as Block : b
-        ));
-
+        setBlocks((prev: Block[]) => {
+            const newBlocks = prev.map(b => {
+                if (!updates[b.id]) return b;
+                
+                return {
+                    ...b,
+                    location: {
+                        ...b.location,
+                        ...(updates[b.id].location || {})
+                    }
+                } as Block;
+            });
+            
+            console.log('New blocks after batch update:', newBlocks);
+            return newBlocks;
+        });
         const result = await api.batchUpdateBlocks(updates);
 
         if (!result.success){
             console.error('Batch update failed:', result.error);
             return false;
         }
+
+        Object.keys(updates).forEach(blockId => {
+            delete pendingBlockChanges.current[blockId];
+        });
 
         return true;
     }
