@@ -85,8 +85,7 @@ export function DataProvider({children} : {children : ReactNode}){
     }, [user]);
 
     useEffect(() => {
-        console.trace(); // This will show you the call stack
-    
+        console.trace(); 
         const loadBoardBlocks = async () => {
             if (!currentBoardId) {
                 setBlocks([]);

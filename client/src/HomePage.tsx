@@ -1,19 +1,19 @@
-import { useData } from './context/data.tsx'
-import type { Board } from './types.ts'
+import { useData } from '@/context/data.tsx'
+import type { Board } from '@/types.ts'
 import { useState } from 'react'
 
 import './App.css'
-import BoardDiv from './components/Home/BoardDiv.tsx'
-import  Message from './components/Home/Message.tsx'
-import Subheading from './components/Home/Subheading.tsx'
+import BoardDiv from '@/components/Home/BoardDiv.tsx'
+import  Message from '@/components/Home/Message.tsx'
+import Subheading from '@/components/Home/Subheading.tsx'
+import { useAuth } from '@/context/auth.tsx'
 
-interface HomePageProps {
-    firstName: string;
-}
-export default function HomePage({firstName}: HomePageProps) {
+
+export default function HomePage() {
   const {boards, createBoard} = useData();
   const [isCreating, setIsCreating] = useState(false);
-
+  const {firstName} = useAuth();
+  
   const handleCreateBoard = async () => {
     setIsCreating(true);
     await createBoard("Untitled Board");

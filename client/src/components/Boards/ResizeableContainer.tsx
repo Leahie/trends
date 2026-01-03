@@ -6,7 +6,6 @@ import {useData} from "@/context/data.tsx"
 
 type HandleType = "right" | "left" | "bottom" | "top" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | null;
 
-
 interface DragTypes{
     active: boolean, 
     handle: HandleType, 
@@ -47,7 +46,7 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
     // Track modifier key state
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.ctrlKey || e.metaKey) { // Ctrl on Windows/Linux, Cmd on Mac
+            if (e.ctrlKey || e.metaKey) {
                 setIsEditMode(false);
             }
         };
@@ -70,11 +69,11 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
     useEffect(() => {
         const handleMouseUp = () => {
             if (drag.active || move.active) {
-                updateBlock(node.id, {location:dims}); // Save to context when done
+                updateBlock(node.id, {location:dims});
             }
             setDrag((d) => ({ ...d, active: false, handle: null }));
             setMove((m) => ({ ...m, active: false }));
-            };
+        };
 
         const handleMouseMove = (e: MouseEvent) => {
             if (drag.active) {
@@ -85,26 +84,24 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
         };
 
         if (drag.active || move.active) {
-        window.addEventListener("mouseup", handleMouseUp);
-        window.addEventListener("mousemove", handleMouseMove);
+            window.addEventListener("mouseup", handleMouseUp);
+            window.addEventListener("mousemove", handleMouseMove);
 
-        return () => {
-            window.removeEventListener("mouseup", handleMouseUp);
-            window.removeEventListener("mousemove", handleMouseMove);
-        };
+            return () => {
+                window.removeEventListener("mouseup", handleMouseUp);
+                window.removeEventListener("mousemove", handleMouseMove);
+            };
         }
-  }, [drag.active, move.active, drag.handle, drag.x, drag.y, move.x, move.y, dims, node.id]);
+    }, [drag.active, move.active, drag.handle, drag.x, drag.y, move.x, move.y, dims, node.id]);
 
-
-    // MOVING !! 
+    // MOVING
     const startMove = (e: React.MouseEvent) => {
         if (!isEditMode) return;
-        e.stopPropagation();
         onSelected();
         setMove({
             active: true, 
             x: e.clientX, 
-            y:e.clientY
+            y: e.clientY
         })
     }
 
@@ -114,7 +111,6 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
         const dx = (e.clientX - move.x)/scale;
         const dy = (e.clientY - move.y)/scale;
 
-
         setDims(prev => { 
             const newX = Math.max(0, prev.x+dx);
             const newY = Math.max(0, prev.y+dy);
@@ -123,13 +119,11 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
 
         setMove(prev => ({
             ...prev, x: e.clientX, 
-            y:e.clientY
+            y: e.clientY
         }))
-
     }
 
-
-    // START AND STOP THE RESIZING !!!! 
+    // START AND STOP THE RESIZING
     const startResize = (drag: HandleType) => (e: React.MouseEvent) => {
         e.stopPropagation();
         onSelected();
@@ -205,22 +199,17 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
         
             x = Math.max(0, x);
             y = Math.max(0, y);
-        
-
-            
 
             return { ...prev, x:x, y:y, width: w, height: h };
         })
 
         setDrag(prev => ({
             ...prev, x: e.clientX, 
-            y:e.clientY
+            y: e.clientY
         }))
-
     }
 
     const handleMouseMove = (e: MouseEvent) =>{
-
         if (drag.active){
             resizeFrame(e);
         }
@@ -240,46 +229,55 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
         userSelect: "none"
     };
 
-    // Location Syncing 
-
+    // Location Syncing
     useEffect(() => {
+        if (blockLocation.zIndex !== dims.zIndex) {
+            setDims(prev => ({...prev, zIndex: blockLocation.zIndex}));
+        }
+        
         if (!drag.active && !move.active) {
-        setDims(blockLocation);
-    }
-}, [blockLocation, drag.active, move.active]);
-
+            if (blockLocation.x !== dims.x || 
+                blockLocation.y !== dims.y || 
+                blockLocation.width !== dims.width || 
+                blockLocation.height !== dims.height) {
+                setDims(blockLocation);
+            }
+        }
+    }, [blockLocation, drag.active, move.active]);
 
     return(     
-    <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
-        style={boxStyle} onMouseMove={() => handleMouseMove} 
-        onClick={(e)=>{e.stopPropagation(); if (isEditMode) {
-            // In edit mode, just select
-            onSelected();
-        } else{
-            navigate(`/blocks/${node.id}`)
-        }}}>
-        <div
-            className="absolute inset-0 "
-            onMouseDown={
-                () => {startMove;
-                    bringToFront(node.id)
+        <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
+            style={boxStyle} onMouseMove={() => handleMouseMove} 
+            onClick={(e)=>{
+                e.stopPropagation(); 
+                if (isEditMode) {
+                    onSelected();
+                } else{
+                    navigate(`/blocks/${node.id}`)
+                }
+            }}>
+            <div
+                className="absolute inset-0 "
+                onMouseDown={(e) => {
+                    e.stopPropagation();
+                    // Call bringToFront but DON'T await it
+                    bringToFront(node.id);
+                    // Immediately start the move so event listeners are set up
+                    startMove(e);
                 }}
-        >
-            <Container node={node} />
+            >
+                <Container node={node} />
             </div>
 
-        <div className="resize-handle top top-bottom"   onMouseDown={startResize("top")} />
-        <div className="resize-handle bottom top-bottom"  onMouseDown={startResize("bottom")} />
-        <div className="resize-handle left left-right" onMouseDown={startResize("left")} />
-        <div className="resize-handle right left-right" onMouseDown={startResize("right")} />
-        
-        <div className="resize-handle diagonal top-left" onMouseDown={startResize("top-left")} />
-        <div className="resize-handle diagonal top-right" onMouseDown={startResize("top-right")}  />
-        <div className="resize-handle diagonal bottom-left" onMouseDown={startResize("bottom-left")}/>
-        <div className="resize-handle diagonal bottom-right" onMouseDown={startResize("bottom-right")} />
-
-
-    </div>
+            <div className="resize-handle top top-bottom"   onMouseDown={startResize("top")} />
+            <div className="resize-handle bottom top-bottom"  onMouseDown={startResize("bottom")} />
+            <div className="resize-handle left left-right" onMouseDown={startResize("left")} />
+            <div className="resize-handle right left-right" onMouseDown={startResize("right")} />
+            
+            <div className="resize-handle diagonal top-left" onMouseDown={startResize("top-left")} />
+            <div className="resize-handle diagonal top-right" onMouseDown={startResize("top-right")}  />
+            <div className="resize-handle diagonal bottom-left" onMouseDown={startResize("bottom-left")}/>
+            <div className="resize-handle diagonal bottom-right" onMouseDown={startResize("bottom-right")} />
+        </div>
     )
 }
-

@@ -20,6 +20,7 @@ const auth = getAuth(app);
 
 interface AuthContextType {
   user: User | null;
+  firstName: string;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -31,15 +32,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType  | undefined>(undefined);
 export function AuthProvider({children}: {children : ReactNode}){
     const [user, setUser] = useState<User | null>(null);
+    const [firstName, setFirstName] = useState<string>("user");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setUser(user);
+        
         setLoading(false);
         if(user){
           const token = await user.getIdToken();
-          console.log("🔥 ID TOKEN (TEST):", token);
+          setFirstName(user.displayName?.split(' ')[0] || 'User')
         }
         });
         console.log("user is totally updating",user);
@@ -154,7 +157,7 @@ export function AuthProvider({children}: {children : ReactNode}){
         }
     };
     return (
-        <AuthContext.Provider value = {{user, loading, signIn, signUp, signInWithGoogle, logOut, getIdToken}}>
+        <AuthContext.Provider value = {{user, firstName, loading, signIn, signUp, signInWithGoogle, logOut, getIdToken}}>
             {children}
         </AuthContext.Provider>
     );

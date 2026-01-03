@@ -1,7 +1,7 @@
-import type {Board} from "../../types.ts"
+import type {Board} from "@/types.ts"
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useData } from "../../context/data.tsx";
+import { useData } from "@/context/data.tsx";
 
 export default function BoardDiv({id, title, updatedAt, userId}: Board){
     const updatedAtDate = new Date(updatedAt?._seconds * 1000);
