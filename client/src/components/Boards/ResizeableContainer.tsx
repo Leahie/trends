@@ -252,8 +252,8 @@ export default function ResizeableContainer({node, blockLocation, scale, selecte
                 e.stopPropagation(); 
                 if (isEditMode) {
                     onSelected();
-                } else{
-                    navigate(`/blocks/${node.id}`)
+                } else if (node.type == "board_block"){
+                    navigate(`/boards/${node.linkedBoardId}`)
                 }
             }}>
             <div

@@ -2,7 +2,7 @@ import { useData } from "@/context/data";
 import { 
   createDefaultTextBlock, 
   createDefaultImageBlock, 
-  createDefaultDiaryBlock,
+  createDefaultBoardBlock,
   createDefaultLocation 
 } from "@/utils/defaults";
 
@@ -12,8 +12,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function Context({x, y, selected, parentId, canvasX, canvasY ,setContextMenu}:
     {x:number, y:number, selected:string|null, parentId: string, canvasX: number, canvasY: number, setContextMenu : (value: {x: number, y:number, canvasX:number, canvasY: number} | null) => void }){
-    const {blocks, removeBlock, addBlock, syncNow} = useData();
-    const createNew = async (type: "text" | "image" | "diary_entry") => {
+    const {blocks, createBoard, removeBlock, addBlock, syncNow} = useData();
+    const createNew = async (type: "text" | "image" | "board_block") => {
         // Get max z-index to place new block on top
         const maxZ = Math.max(...Object.values(blocks).map(b => b.location.zIndex), 0);
         
@@ -28,9 +28,13 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
         case "image":
             block = createDefaultImageBlock(parentId);
             break;
-        case "diary_entry":
-            block = createDefaultDiaryBlock(parentId);
-            break;
+        case "board_block":
+            const board = await createBoard();
+            if (board) {
+                block = createDefaultBoardBlock(parentId, board.id);
+                break;
+            }
+            else return;
         }
         
         const location = createDefaultLocation(canvasX, canvasY, maxZ + 1);
@@ -70,8 +74,8 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
                         Image Block
                     </li>
                     <li className="context-li"
-                    onClick={() => createNew("diary_entry")}>
-                        Diary Block
+                    onClick={() => createNew("board_block")}>
+                        Board Block
                     </li>
                 </ul>
                 {

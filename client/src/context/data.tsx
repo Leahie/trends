@@ -18,7 +18,7 @@ interface DataContextType {
     createBoard: (title?: string) => Promise<Board | null>;
     deleteBoard: (boardId: string) => Promise<boolean>;
     updateBoard: (boardId: string, updates: Partial<Board>) => Promise<boolean>;
-
+    
     // Blocks for current board
     blocks: Block[];
     dataMap: Record<string, Block>; 
@@ -38,6 +38,7 @@ interface DataContextType {
     isSyncing: boolean; 
     lastSyncTime: Date | null;
     hasPendingChanges: boolean;
+    boardLoadError: string | null;
 }
 
 // context is created? 
@@ -55,6 +56,9 @@ export function DataProvider({children} : {children : ReactNode}){
     
     const [isSyncing, setIsSyncing] = useState<boolean>(false);
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+    const [boardLoadError, setBoardLoadError] = useState<string | null>(null);
+
+
 
     const pendingBlockChanges = useRef<Record<string, Partial<Block>>>({});
     const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,7 +75,7 @@ export function DataProvider({children} : {children : ReactNode}){
                 setBoards(result.data.boards);
                 
                 if (result.data.boards.length > 0) {
-                    setCurrentBoardId(result.data.boards[0].id);
+                    setCurrentBoardId(null); // no board currently selected
                 }
                 
                 setLastSyncTime(new Date());
@@ -90,12 +94,27 @@ export function DataProvider({children} : {children : ReactNode}){
             if (!currentBoardId) {
                 setBlocks([]);
                 setCurrentBoard(null);
+                setBoardLoadError(null);
                 return;
             }
 
             setIsSyncing(true);
-            
+            setBoardLoadError(null);
+
             const boardResult = await api.fetchBoard(currentBoardId);
+            
+            // error 
+            if (!boardResult.success) {
+                console.error('Failed to load board:', boardResult.error);
+                
+                setBoardLoadError(currentBoardId);
+                setCurrentBoardId(null);
+                setCurrentBoard(null); 
+                setBlocks([]);
+                setIsSyncing(false);
+                return; 
+        }
+
             if (boardResult.success && boardResult.data) {
                 setCurrentBoard(boardResult.data.board);
             }
@@ -105,6 +124,7 @@ export function DataProvider({children} : {children : ReactNode}){
                 setBlocks(blocksResult.data.blocks);
             } else {
                 console.error('Failed to load blocks:', blocksResult.error);
+                setBlocks([]);
             }
             
             setIsSyncing(false);
@@ -378,7 +398,8 @@ export function DataProvider({children} : {children : ReactNode}){
             loadBoards, createBoard, deleteBoard, updateBoard: updateBoardFunc, 
             blocks, dataMap,
             updateBlock, addBlock, removeBlock, duplicateBlock, batchUpdateBlocks, batchDeleteBlocks,
-            syncNow, isSyncing, lastSyncTime, hasPendingChanges
+            syncNow, isSyncing, lastSyncTime, hasPendingChanges,
+            boardLoadError 
             }}>
             {children}
         </DataContext.Provider>

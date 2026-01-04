@@ -27,12 +27,13 @@ export function createDefaultImageBlock(parentId: string): Partial<ImageBlockTyp
   };
 }
 
-export function createDefaultDiaryBlock(parentId: string): Partial<BoardBlockType> {
+export function createDefaultBoardBlock(parentId: string, linkedBoardId: string): Partial<BoardBlockType> {
   return {
     id:  uuidv4(),
     type: "board_block",
     boardId: parentId,
     // no linkedBoardId for now need to figure that out
+    linkedBoardId: linkedBoardId,
     content: {
       title: "Untitled",
     },

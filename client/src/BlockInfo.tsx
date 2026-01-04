@@ -3,7 +3,7 @@ import { useData } from './context/data';
 import type { Block, BoardBlockType, ImageBlockType, TextBlockType } from './types';
 import TextInfo from './components/Info/TextInfo';
 import ImageInfo from './components/Info/ImageInfo';
-import DiaryInfo from './components/Info/DiaryInfo';
+import DiaryInfo from './components/Info/';
 function renderBlock(node: Block) {
   switch (node.type) {
     case "text":
@@ -12,8 +12,8 @@ function renderBlock(node: Block) {
     case "image":
       return <ImageInfo node={node as ImageBlockType} />;
 
-    case "diary_entry":
-      return <DiaryInfo node={node as DiaryBlockType} />;
+    case "board_block":
+      return <DiaryInfo node={node as BoardBlockType} />;
 
     default:
       return null;

@@ -1,22 +1,42 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "@/context/data";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Canvas from "./Canvas";
 
 
 export default function Board(){
-    const {currentBoard, setCurrentBoardId} = useData()
+    const {currentBoard, setCurrentBoardId, isSyncing, boardLoadError } = useData()
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    
+    
+    useEffect(() => {
+        if (id && id !== currentBoard?.id) {
+            setCurrentBoardId(id);
+        }
+    }, [id]);
 
-    if (currentBoard == null || id == null) return("");
-    
-    
-    useEffect(()=>{
-        setCurrentBoardId(id);
-    }, [])
-    
-    console.log("THE ID", id)
-    return(
-        <Canvas />
-    )
+    // for failures
+    useEffect(() => {
+        if (boardLoadError === id) {
+            console.error('Board not found, redirecting:', id);
+            navigate('/', { replace: true });
+        }
+    }, [boardLoadError, id, navigate]);
+
+
+    if (!id) {
+        navigate('/', { replace: true });
+        return null;
+    }
+
+    if (isSyncing || !currentBoard) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p className="text-white">Loading board...</p>
+            </div>
+        );
+    }
+
+    return <Canvas />;
 }

@@ -117,6 +117,7 @@ export const api = {
   // creating a board 
   async createBoard(title?: string): Promise<ApiResponse<{ board: Board }>> {
     try {
+      console.log("This is the title", title)
       const { data } = await client.post("/data/boards", { title });
       console.log("This is the newly created board", data);
       return { success: true, data };

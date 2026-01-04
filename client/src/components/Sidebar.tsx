@@ -18,7 +18,7 @@ function useIsCanvasLayout():boolean{
 export default function Sidebar(){
   
     const { logOut, user } = useAuth();
-    const {boards} = useData();
+    const {boards, currentBoard } = useData();
     const [open, setOpen] = useState<boolean>(true); // sets the Sidebar 
     const isCanvasLayout = useIsCanvasLayout();
 
@@ -33,7 +33,7 @@ export default function Sidebar(){
       }
     };
 
-    const id = location.pathname.split("/")[2];
+    console.log("THIS IS TEH CURERNT BOARD", currentBoard)
    
     const [isHovered, setIsHovered] = useState(false);
 
@@ -172,7 +172,7 @@ export default function Sidebar(){
                 {boards.map((board:Board) => (
                   <li>
                     <a href={`/boards/${board.id}`}
-                        className={`${id==board.id && "bg-accent"} flex flex-row gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
+                        className={`${currentBoard?.id==board.id && "bg-accent"} flex flex-row gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}
                     >
