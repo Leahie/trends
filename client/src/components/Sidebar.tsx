@@ -33,7 +33,6 @@ export default function Sidebar(){
       }
     };
 
-    console.log("THIS IS TEH CURERNT BOARD", currentBoard)
    
     const [isHovered, setIsHovered] = useState(false);
 

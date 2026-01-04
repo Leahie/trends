@@ -1,6 +1,7 @@
-import type {Block} from "@/types";
+import type {Block, ImageBlockType} from "@/types";
 import {useState, useRef, useEffect, useMemo} from 'react';
 import { useData } from "@/context/data.tsx";
+import { useAuth } from "@/context/auth.tsx";
 import { useTheme } from "@/context/theme.tsx";
 import {generateScheme} from "@/utils/theme.tsx"
 
@@ -8,10 +9,13 @@ import Context from "./Context.tsx";
 import ThemeModal from "./ThemeModal.tsx";
 import ResizeableContainer from "./ResizeableContainer.tsx"
 
+// HOOKS 
+import { useImagePaste } from "@/hooks/useImagePaste.ts";
+import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
 
 export default function Canvas(){
-    const {blocks, updateBlock, updateBoard, currentBoard, batchUpdateBlocks} = useData();
-
+    const {blocks, addBlock, updateBoard, currentBoard, batchUpdateBlocks} = useData();
+    const {getIdToken} = useAuth()
     if (!currentBoard) return <p>Loading...</p>;
     console.log(currentBoard)
     console.log(blocks)
@@ -65,6 +69,54 @@ export default function Canvas(){
     
     const canvasRef = useRef<HTMLDivElement>(null);
     
+    // IMAGE PASTING 
+    const handleImagePaste = async (file: File, x : number, y: number) => {
+        
+        const token = await getIdToken();
+        console.log("I get here, this is my token", token)
+
+        if (token == null) return;
+        // upload to firebase storage 
+        const firebaseUrl = await uploadToFirebase({file, token});
+
+        if (!firebaseUrl){
+            console.error('Oops failed');
+            return;
+        }
+
+
+        const maxZ = Math.max(...blocks.map(b => b.location.zIndex), 0);
+
+        const imageBlock:Partial<ImageBlockType> = {
+            type: 'image' as const,
+            boardId: currentBoard.id,
+            content: {
+                title: "Untitled",
+                url: firebaseUrl,
+                source: 'external'
+            },
+            location: {
+                x,
+                y,
+                width: 300,
+                height: 300,
+                zIndex: maxZ + 1,
+                rotation: 0,
+                scaleX: 1,
+                scaleY: 1
+            }
+        };
+
+        await addBlock(imageBlock); 
+    }
+
+    useImagePaste({
+        onImagePaste: handleImagePaste, 
+        canvasRef, 
+        scale, 
+        pan
+    })
+
     // Title 
     useEffect(() => {
         const timer = setTimeout(() => {

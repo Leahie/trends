@@ -75,7 +75,7 @@ export function DataProvider({children} : {children : ReactNode}){
                 setBoards(result.data.boards);
                 
                 if (result.data.boards.length > 0) {
-                    setCurrentBoardId(null); // no board currently selected
+                    setCurrentBoardId(result.data.boards[0].id); // no board currently selected
                 }
                 
                 setLastSyncTime(new Date());
@@ -108,7 +108,6 @@ export function DataProvider({children} : {children : ReactNode}){
                 console.error('Failed to load board:', boardResult.error);
                 
                 setBoardLoadError(currentBoardId);
-                setCurrentBoardId(null);
                 setCurrentBoard(null); 
                 setBlocks([]);
                 setIsSyncing(false);
@@ -264,8 +263,9 @@ export function DataProvider({children} : {children : ReactNode}){
 
 
     const addBlock = async(block: Partial<Block>): Promise<boolean> => {
+        console.log(currentBoardId)
         if (!currentBoardId) return false; // i.e. not event on a board rn
-
+        
         const blockId = block.id || uuidv4();
         const newBlock: Block = {
             id : blockId, 
@@ -294,7 +294,8 @@ export function DataProvider({children} : {children : ReactNode}){
 
 
         setBlocks((prev: Block[]) => [...prev, newBlock]);
-        
+        console.log("here's my info", currentBoardId, block)
+
         const result = await api.addBlock(currentBoardId, block);
                 
         if (!result.success) {
