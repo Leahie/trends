@@ -20,6 +20,11 @@ export default function Canvas(){
     console.log(currentBoard)
     console.log(blocks)
     const [title, setTitle] = useState<string>(currentBoard.title);
+    // Keep local title in sync when switching boards to avoid overwriting
+    // the newly-opened board with a stale title from the previous board.
+    useEffect(() => {
+        setTitle(currentBoard.title);
+    }, [currentBoard.id]);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
     const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
     const {updateTheme} = useTheme();

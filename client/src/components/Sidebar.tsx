@@ -8,7 +8,7 @@ import { useAuth } from "../context/auth.tsx";
 function useIsCanvasLayout():boolean{
 
   const location = useLocation();
-  if (location.pathname === "/") {
+  if (location.pathname === "/" || location.pathname === "/archive"){
         return false; // home page no longer uses canvas
   }
   
@@ -169,23 +169,22 @@ export default function Sidebar(){
           <div className="pb-0 px-2 w-full flex flex-col flex-wrap">
             <ul className="space-y-1 text-left">
                 {boards.map((board:Board) => (
-                  <li>
-                    <a href={`/boards/${board.id}`}
-                        className={`${currentBoard?.id==board.id && "bg-accent"} flex flex-row gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
+                  <li key={board.id}>
+                    <a
+                        href={`/boards/${board.id}`}
+                        onClick={(e) => { e.preventDefault(); navigate(`/boards/${board.id}`); }}
+                        className={`${isCanvasLayout && currentBoard?.id==board.id ? "bg-accent" : ""} flex flex-row gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
                     >
                         <div className="flex-1 text-left">
                         <p>{board.title || "Untitled"}</p>
-                        
+
                         </div>
-                        <div className="flex-none" onClick={(e) => {e.stopPropagation(); e.preventDefault()}}>
-                          
-                          
-        </div>
+                        <div className="flex-none" onClick={(e) => {e.stopPropagation();}}>
+                        </div>
                     </a>
                 </li>
-
                 ))}
            
             </ul>

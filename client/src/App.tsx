@@ -34,6 +34,16 @@ const App = () => {
                       </div>
                       </DataProvider>
                     } />
+                    <Route path="/archive" element={
+                      <DataProvider>
+                      <div className='flex h-screen w-screen'>
+                        <Sidebar/>
+                        <div className="flex-1 relative overflow-hidden">
+                          <HomePage />
+                        </div>
+                      </div>
+                      </DataProvider>
+                    } />
                     <Route path="/boards/:id" element={
                       <DataProvider>
                       <div className='flex h-screen w-screen'>

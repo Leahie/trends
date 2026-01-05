@@ -6,7 +6,7 @@ import { useData } from "@/context/data.tsx";
 export default function BoardDiv({id, title, updatedAt, userId}: Board){
     const updatedAtDate = new Date(updatedAt?._seconds * 1000);
     const navigate = useNavigate();
-    const { updateBoard, archiveBoard, deleteBoard } = useData();
+    const { updateBoard, restoreBoard, deleteBoard } = useData();
     
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(title);
@@ -50,13 +50,13 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
         }
     };
 
-    const handleArchive = async (e: React.MouseEvent) => {
+    const handleRestore = async (e: React.MouseEvent) => {
         if (e) e.stopPropagation();
-        if (!window.confirm('Archive this board? You can restore it later.')) return;
+        if (!window.confirm('Restore this board?')) return;
         try {
-            await archiveBoard(id);
+            await restoreBoard(id);
         } catch (err) {
-            console.error('Failed to archive board', err);
+            console.error('Failed to restore board', err);
         }
     }
 
@@ -112,22 +112,24 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
                     </div>
                 <div className="flex items-center gap-1 ml-3">
                     <button
-                    onClick={(e) => handleArchive(e)}
-                    aria-label="Archive board"
-                    title="Archive board"
+                    onClick={(e) => handleRestore(e)}
+                    aria-label="Restore board"
+                    title="Restore board"
                     className="ml-2 text-dark w-7 h-7 flex items-center justify-center hover:text-white hover:cursor-pointer transition-colors duration-200">
                     <svg 
-                        className="h-4 w-4" 
                         xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" viewBox="0 0 24 24" 
-                        strokeWidth={2} stroke="currentColor" 
-                    >
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={2} 
+                        stroke="currentColor" 
+                        className="h-4 w-4" >
                         <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" 
                         />
-                    </svg>
+                </svg>
+
 
                 </button>
                 <button

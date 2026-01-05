@@ -22,6 +22,31 @@ const DEFAULT_THEME = {
 };
 
 
+// new api for getting soft deleted boards
+router.get("/boards/archived", async(req, res) => {
+  try {
+    const userId = req.user.uid;
+    const archivedSnapshot = await db.collection("boards")
+        .where("userId", "==", userId)
+        .where("deletedAt", "!=", null)  // Only deleted boards
+        .orderBy("deletedAt", "desc")     // Most recently deleted first
+        .get();
+
+      const boards = archivedSnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data
+          };
+      });
+
+      res.send({boards});
+
+  }catch (error) {
+    console.log("Error getting archived boards:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
 // fetch data '/data' route get
 
 router.get("/boards", async(req, res) => {
@@ -103,6 +128,7 @@ router.post("/boards", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
 
 // update board 'boards/id' route patch
 router.patch("/boards/:id", async (req, res) => {

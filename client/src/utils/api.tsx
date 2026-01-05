@@ -69,6 +69,20 @@ export const api = {
     }
   },
 
+  // fetching archived boards
+  async fetchArchivedBoards(): Promise<ApiResponse<{ boards: Board[] }>> {
+    try{
+      const { data } = await client.get('/data/boards/archived');
+      console.log("This is the archived boards", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to fetch archived boards:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
   // fetching a specific board using id 
   async fetchBoard(boardId: string): Promise<ApiResponse<{ board: Board }>> {
     try {
