@@ -1,4 +1,4 @@
-import type {Block, Board} from "../types.ts";
+import type {Block, Board} from "../types/types.ts";
 import {useState, useEffect} from 'react';  // will be used later when we fetch data 
 import { useData } from "../context/data.tsx";
 import { useLocation } from "react-router-dom";

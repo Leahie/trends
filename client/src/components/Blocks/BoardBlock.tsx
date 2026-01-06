@@ -1,4 +1,4 @@
-import type {BoardBlockType} from "@/types.ts"
+import type {BoardBlockType} from "@/types/types"
 export default function BoardBlock({id, type, content, boardId}: BoardBlockType){
     return( 
         <div className=" flex flex-col h-full w-full border-light-accent border-t-5 border-b-10 border-r-10">

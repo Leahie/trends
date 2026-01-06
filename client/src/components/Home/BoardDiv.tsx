@@ -1,4 +1,4 @@
-import type {Board} from "@/types.ts"
+import type {Board} from "@/types/types"
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useData } from "@/context/data.tsx";

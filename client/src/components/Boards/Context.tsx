@@ -6,7 +6,7 @@ import {
   createDefaultLocation 
 } from "@/utils/defaults";
 
-import type { Block, ImageBlockType } from "@/types";
+import type { Block, ImageBlockType } from "@/types/types";
 
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";

@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import type { Block, Board } from '../types';
+import type { Block, Board } from '../types/types';
 import { getAuth } from 'firebase/auth';
 
 const client = axios.create({

@@ -1,4 +1,4 @@
-import type { BaseBlock, BoardBlockType, ImageBlockType, TextBlockType,  } from "@/types";
+import type { BaseBlock, BoardBlockType, ImageBlockType, TextBlockType,  } from "@/types/types";
 import BoardBlock from "@/components/Blocks/BoardBlock";
 import ImageBlock from "@/components/Blocks/ImageBlock";
 import TextBlock from "@/components/Blocks/TextBlock";

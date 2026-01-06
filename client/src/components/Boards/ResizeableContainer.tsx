@@ -1,4 +1,4 @@
-import type {Block, Location} from "@/types"
+import type {Block, Location} from "@/types/types"
 import {useState, useEffect} from "react";
 import Container from "./Container";
 import { useNavigate } from "react-router-dom";

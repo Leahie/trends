@@ -1,4 +1,4 @@
-import type {Block, ImageBlockType} from "@/types";
+import type {Block, ImageBlockType} from "@/types/types.ts";
 import {useState, useRef, useEffect, useMemo} from 'react';
 import { useData } from "@/context/data.tsx";
 import { useAuth } from "@/context/auth.tsx";
@@ -14,9 +14,9 @@ import { useImagePaste } from "@/hooks/useImagePaste.ts";
 import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
 
 export default function Canvas(){
-    const {blocks, addBlock, updateBoard, currentBoard, batchUpdateBlocks} = useData();
+    const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks} = useData();
     const {getIdToken} = useAuth()
-    if (!currentBoard) return <p>Loading...</p>;
+    if (!currentBoard){  return <p>Loading...</p>};
     console.log(currentBoard)
     console.log(blocks)
     const [title, setTitle] = useState<string>(currentBoard.title);

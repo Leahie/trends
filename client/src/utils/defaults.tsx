@@ -1,6 +1,6 @@
 // utils/blockFactory.ts
 import { v4 as uuidv4 } from 'uuid';
-import type { Block, Location, TextBlockType, ImageBlockType, BoardBlockType } from "../types";
+import type { Block, Location, TextBlockType, ImageBlockType, BoardBlockType } from "../types/types";
 
 export function createDefaultTextBlock(parentId: string): Partial<TextBlockType> {
   return {

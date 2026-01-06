@@ -30,7 +30,8 @@ export default function Board(){
         return null;
     }
 
-    if (isSyncing || !currentBoard) {
+    if ( !currentBoard) {
+        console.log("IT'S ME HERE")
         return (
             <div className="flex items-center justify-center h-screen">
                 <p className="text-white">Loading board...</p>

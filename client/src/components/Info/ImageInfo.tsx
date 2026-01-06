@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, type ChangeEvent } from "react";
-import type { ImageBlockType } from "../../types"; 
+import type { ImageBlockType } from "../../types/types"; 
 import { useData } from "../../context/data";
 
 export default function ImageInfo({ node }: { node: ImageBlockType }) {

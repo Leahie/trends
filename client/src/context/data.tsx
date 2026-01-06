@@ -1,6 +1,6 @@
 import React, {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
 import type { ReactNode } from 'react';
-import type { Block, Board  } from '../types';
+import type { Block, Board  } from '../types/types';
 import {api} from "../utils/api"
 import { useAuth } from './auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -98,7 +98,6 @@ export function DataProvider({children} : {children : ReactNode}){
         const loadBoardBlocks = async () => {
             if (!currentBoardId) {
                 setBlocks([]);
-                setCurrentBoard(null);
                 setBoardLoadError(null);
                 return;
             }

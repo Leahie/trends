@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Block, TextBlockType } from "../../types"; 
+import type { Block, TextBlockType } from "../../types/types"; 
 import { useData } from "../../context/data";
 
 export default function TextInfo({node}:{node: TextBlockType}){

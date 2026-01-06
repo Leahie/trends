@@ -1,4 +1,4 @@
-import type {ImageBlockType} from "@/types.ts"
+import type {ImageBlockType} from "@/types/types"
 export default function ImageBlock({id, type, content, boardId}: ImageBlockType){
     return( 
         <div className="h-full w-full relative overflow-hidden">

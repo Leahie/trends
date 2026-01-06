@@ -1,5 +1,5 @@
 import { useData } from '@/context/data.tsx'
-import type { Board } from '@/types.ts'
+import type { Board } from '@/types/types'
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
