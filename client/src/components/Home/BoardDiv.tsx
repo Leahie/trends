@@ -52,7 +52,7 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
 
     const handleArchive = async (e: React.MouseEvent) => {
         if (e) e.stopPropagation();
-        if (!window.confirm('Archive this board? You can restore it later.')) return;
+        // if (!window.confirm('Archive this board? You can restore it later.')) return;
         try {
             await archiveBoard(id);
         } catch (err) {

@@ -24,6 +24,7 @@ export default function HomePage() {
     await createBoard("Untitled Board");
     setIsCreating(false);
   };
+  
   useEffect(() => {
     if (isArchived) {
       loadArchivedBoards();

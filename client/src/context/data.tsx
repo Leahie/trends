@@ -262,6 +262,7 @@ export function DataProvider({children} : {children : ReactNode}){
         const result = await api.permanentlyDeleteBoard(boardId);
         if (result.success) {
             setBoards((prev: Board[]) => prev.filter(b => b.id !== boardId));
+            setArchivedBoards((prev: Board[]) => prev.filter(b => b.id !== boardId));
             if (currentBoardId === boardId){
                 setCurrentBoardId(boards[0]?.id || null); // set it to null if no boards
             }

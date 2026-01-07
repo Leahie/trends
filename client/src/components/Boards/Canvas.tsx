@@ -37,7 +37,7 @@ export default function Canvas(){
 
     useEffect(() =>{
         updateTheme(currentBoard.colorscheme);
-    }, [])
+    }, [currentBoard.id]); //adds currentBoard.id as dependency to update theme when board changes
 
     // Right-click logic
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
@@ -56,7 +56,7 @@ export default function Canvas(){
 
     const onSave = async (color:string) => {
         const theme = generateScheme(color);
-        await updateBoard(currentBoard.id, { ...currentBoard, colorscheme: theme});
+        await updateBoard(currentBoard.id, { colorscheme: theme});
         updateTheme(theme);
         setThemeModalOpen(false);
     }

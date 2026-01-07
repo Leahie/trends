@@ -52,7 +52,7 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
 
     const handleRestore = async (e: React.MouseEvent) => {
         if (e) e.stopPropagation();
-        if (!window.confirm('Restore this board?')) return;
+        // if (!window.confirm('Restore this board?')) return;
         try {
             await restoreBoard(id);
         } catch (err) {
@@ -63,9 +63,8 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
     return( 
         <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-[150px] bg-dark  border-accent border-t-3 border-b-5 border-r-5 border-l-2 rounded-lg
         transition-border duration-300
-        hover:cursor-pointer hover:border-light-accent hover:shadow-md shadow-accent
+       hover:border-light-accent hover:shadow-md shadow-accent
         "
-        onClick={() => navigate(`/boards/${id}`)} 
         >
             <div className="absolute inset-y-0 left-1 w- -translate-x-1/2 bg-black/30 pointer-events-none"></div>
             <div className="bg-highlight">
