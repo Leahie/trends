@@ -124,6 +124,42 @@ export default function Canvas(){
         pan
     })
 
+    // drag and drop for images
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const files = Array.from(e.dataTransfer.files);
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+        if (imageFiles.length === 0) {
+            console.log('No image files dropped');
+            return;
+        }
+
+        // Calculate canvas position where image was dropped
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Convert to canvas coordinates (accounting for pan and scale)
+        const canvasX = (mouseX - pan.x) / scale;
+        const canvasY = (mouseY - pan.y) / scale;
+
+        // Upload each image (or just the first one)
+        for (const file of imageFiles) {
+            await handleImagePaste(file, canvasX, canvasY);
+        }
+    }
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault(); // Required to allow drop
+        e.stopPropagation();
+    };
+
     // Title 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -336,6 +372,8 @@ export default function Canvas(){
                 onMouseLeave={handleMouseUp}
                 onClick={() => {handleBlockSelect(null); setContextMenu(null)}}
                 onContextMenu={handleContextMenu}
+                onDrop={handleDrop}         
+                onDragOver={handleDragOver}
             >
                 {/* Transform container - this gets scaled and panned */}
                 <div
