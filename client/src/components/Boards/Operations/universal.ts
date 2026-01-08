@@ -8,6 +8,8 @@ export const UNIVERSAL_OPERATIONS : Operation[] = [
         icon: AlignLeft, 
         blockTypes: ["text", "image", "board_block"], 
         category: "universal",
+        group: 'alignment',
+        priority: 1,
         apply: (block) => ({
             location: {...block.location, x:0}
         })
@@ -18,6 +20,8 @@ export const UNIVERSAL_OPERATIONS : Operation[] = [
         icon: AlignCenter,
         blockTypes: ["text", "image", "board_block"],
         category: "universal",
+        group: 'alignment',
+        priority: 1,
         apply: (block) => ({
         location: {
             ...block.location,
@@ -31,6 +35,8 @@ export const UNIVERSAL_OPERATIONS : Operation[] = [
         icon: AlignRight,
         blockTypes: ["text", "image", "board_block"],
         category: "universal",
+        group: 'alignment',
+        priority: 1,
         apply: (block) => ({
         location: {
             ...block.location,

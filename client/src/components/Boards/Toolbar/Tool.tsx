@@ -20,9 +20,8 @@ export default function Tool({operation, selectedBlock, handleOperationClick}: {
                 ? 'bg-accent hover:bg-light-accent text-white'
                 : selectedBlock || operation.category === 'universal'
                 ? ' hover:bg-highlight text-white'
-                : 'text-subtext cursor-not-allowed'
+                : 'text-secondary cursor-not-allowed'
             }`}
-            title={operation.label}
             >
             {<operation.icon size={18}/>}
             <span
@@ -32,9 +31,9 @@ export default function Tool({operation, selectedBlock, handleOperationClick}: {
                 -top-2 left-1/2 -translate-x-1/2 -translate-y-full
                 whitespace-nowrap
                 rounded-md
-                bg-black/90
+                bg-white/90
                 px-2 py-1
-                text-xs text-white
+                text-xs text-black
                 opacity-0
                 scale-95
                 transition-all
@@ -42,7 +41,7 @@ export default function Tool({operation, selectedBlock, handleOperationClick}: {
                 group-hover:scale-100
                 "
             >
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full border-4 border-transparent border-t-black/90" />
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full border-4 border-transparent border-t-white/90" />
 
                 {operation.label}
             </span>

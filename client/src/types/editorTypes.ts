@@ -16,5 +16,8 @@ export interface Operation {
   blockTypes: Block['type'][];
   requiresOverlay?: boolean;
   category: 'universal' | 'image' | 'text';
+  group: string;
+  priority?: number; 
   apply: (block: Block, params?: any) => Partial<Block>;
+  isActive?: (block: Block) => boolean;
 }

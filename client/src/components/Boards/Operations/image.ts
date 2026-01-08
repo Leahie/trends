@@ -12,6 +12,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     blockTypes: ["image"],
     requiresOverlay: true,
     category: "image",
+    group: 'crop',
+    priority: 3,
     apply: (block, params) => {
       const imageBlock = block as ImageBlockType;
       return {
@@ -31,6 +33,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     icon: FlipHorizontal,
     blockTypes: ["image"],
     category: "image",
+    group: 'transform',
+    priority: 1,
     apply: (block) => {
       const imageBlock = block as ImageBlockType;
       const currentFlip = imageBlock.content.transforms?.flip || { horizontal: false, vertical: false };
@@ -51,6 +55,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     icon: FlipVertical,
     blockTypes: ['image'],
     category: 'image',
+    group: 'transform',
+    priority: 1,
     apply: (block) => {
       const imageBlock = block as ImageBlockType;
       const currentFlip = imageBlock.content.transforms?.flip || { horizontal: false, vertical: false };
@@ -74,6 +80,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     icon: Palette,
     blockTypes: ['image'],
     category: 'image',
+    group: 'filters',
+    priority: 2,
     apply: (block) => {
       const imageBlock = block as ImageBlockType;
       const currentGrayscale = imageBlock.content.transforms?.grayscale || false;
@@ -95,6 +103,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     blockTypes: ['image'],
     requiresOverlay: true,
     category: 'image',
+    group: 'filters',
+    priority: 2,
     apply: (block, params) => {
       const imageBlock = block as ImageBlockType;
       return {
