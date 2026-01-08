@@ -23,7 +23,7 @@ interface EditorContextType{
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
-export function EditorProvider({children, updateBlock} : {children : ReactNode; updateBlock: (id: string, updates: Partial<Block>) => Promise<void>}){
+export function EditorProvider({children, updateBlock} : {children : ReactNode; updateBlock: (id: string, updates: Partial<Block>) => void}){
     const [selectedBlock, setSelectedBlockState] = useState<Block | null>(null);
     const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
     const [redoStack, setRedoStack] = useState<HistoryEntry[]>([]);

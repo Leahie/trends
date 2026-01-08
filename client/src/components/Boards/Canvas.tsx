@@ -5,17 +5,22 @@ import { useAuth } from "@/context/auth.tsx";
 import { useTheme } from "@/context/theme.tsx";
 import {generateScheme} from "@/utils/theme.tsx"
 
+// Components 
 import Context from "./Context.tsx";
 import ThemeModal from "./ThemeModal.tsx";
 import ResizeableContainer from "./ResizeableContainer.tsx"
+import Toolbar from "./Toolbar/Toolbar.tsx";
 
 // HOOKS 
 import { useImagePaste } from "@/hooks/useImagePaste.ts";
 import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
+import { useEditor } from "@/context/editor.tsx";
 
 export default function Canvas(){
     const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks} = useData();
     const {getIdToken} = useAuth()
+    const {setSelectedBlock, selectedBlockId} = useEditor();
+
     if (!currentBoard){  return <p>Loading...</p>};
     console.log(currentBoard)
     console.log(blocks)
@@ -42,9 +47,6 @@ export default function Canvas(){
     // Right-click logic
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
     
-    // Block logic
-    const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-
 
     // THeme logic
     
@@ -271,6 +273,9 @@ export default function Canvas(){
     // }, [selectedBlockId])
 
     
+    const handleBlockSelect = (block: Block | null) => {
+        setSelectedBlock(block);
+    }
 
     return (
     
@@ -329,7 +334,7 @@ export default function Canvas(){
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
-                onClick={() => {setSelectedBlockId(null); setContextMenu(null)}}
+                onClick={() => {handleBlockSelect(null); setContextMenu(null)}}
                 onContextMenu={handleContextMenu}
             >
                 {/* Transform container - this gets scaled and panned */}
@@ -350,8 +355,7 @@ export default function Canvas(){
                                 node={block} 
                                 blockLocation={block.location} 
                                 scale={scale}
-                                selected={selectedBlockId === block.id} 
-                                onSelected={() => setSelectedBlockId(block.id)}
+                                onSelected={() => handleBlockSelect(block)}
                                 bringToFront={bringToFront}
                             />
                         ))}
@@ -370,6 +374,7 @@ export default function Canvas(){
                 setContextMenu={setContextMenu}
             />
         }
+        <Toolbar />
     </div>
     <ThemeModal open={themeModalOpen} baseColor = {themeColor} onClose={onClose} onSave = {onSave} onChange={onChange}/>
     </>

@@ -44,7 +44,8 @@ export interface ImageBlockType extends BaseBlock{
     content: {
         title: string; 
         url: string; 
-        source: 'upload' | 'external'
+        source: 'upload' | 'external';
+        transforms?: ImageTransforms;
     }
 }
 
@@ -78,3 +79,22 @@ export interface Location {
 }
 
 export type Block =  TextBlockType | ImageBlockType | BoardBlockType;
+
+export interface ImageTransforms {
+  crop?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  flip?: {
+    horizontal: boolean;
+    vertical: boolean;
+  };
+  rotation?: number; // degrees
+  grayscale?: boolean;
+  opacity?: number; // 0-1
+  brightness?: number; // -100 to 100
+  contrast?: number; // -100 to 100
+  saturation?: number; // -100 to 100
+}

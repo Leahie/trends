@@ -3,6 +3,8 @@ import {useState, useEffect} from "react";
 import Container from "./Container";
 import { useNavigate } from "react-router-dom";
 import {useData} from "@/context/data.tsx"
+import { useEditor } from "@/context/editor.tsx";
+
 
 type HandleType = "right" | "left" | "bottom" | "top" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | null;
 
@@ -19,14 +21,18 @@ interface MoveTypes{
     y: number
 }
 
-export default function ResizeableContainer({node, blockLocation, scale, selected, onSelected,
+export default function ResizeableContainer({node, blockLocation, scale, onSelected,
     bringToFront
-}: {node: Block, blockLocation: Location, scale: number, selected: boolean, onSelected: () => void,
+}: {node: Block, blockLocation: Location, scale: number, onSelected: () => void,
     bringToFront: (x: string) => void 
 },
 ){
     if (!node) return null;
     const {updateBlock} = useData();
+    const { selectedBlockId } = useEditor();
+    const selected = selectedBlockId === node.id;
+
+
     const navigate = useNavigate();
     const [dims, setDims] = useState<Location>(blockLocation);
     const [isEditMode, setIsEditMode] = useState(true);

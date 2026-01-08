@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Block } from "./types";
+import type { ComponentType  } from "react";
 
 export interface HistoryEntry {
   blockId: string;
@@ -11,9 +12,9 @@ export interface HistoryEntry {
 export interface Operation {
   id: string;
   label: string;
-  icon: ReactNode;
+  icon: ComponentType<{ size?: number }>;
   blockTypes: Block['type'][];
   requiresOverlay?: boolean;
   category: 'universal' | 'image' | 'text';
-  apply: (blockId: string, params: any) => Promise<void>;
+  apply: (block: Block, params?: any) => Partial<Block>;
 }

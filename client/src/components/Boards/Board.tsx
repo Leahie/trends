@@ -1,11 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "@/context/data";
 import { useEffect, useState } from "react";
+import { EditorProvider } from "@/context/editor";
+
 import Canvas from "./Canvas";
 
 
 export default function Board(){
-    const {currentBoard, setCurrentBoardId, isSyncing, boardLoadError } = useData()
+    const {currentBoard, setCurrentBoardId, isSyncing, boardLoadError,updateBlock } = useData()
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     
@@ -39,5 +41,9 @@ export default function Board(){
         );
     }
 
-    return <Canvas />;
+    return (
+        <EditorProvider updateBlock={updateBlock}>
+            <Canvas />
+        </EditorProvider>
+    );
 }
