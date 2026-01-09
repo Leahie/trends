@@ -78,3 +78,15 @@ export function generateScheme(base: string) {
     "light-hover": toHex(h, s, 85),
   };
 }
+
+export function schemeToCSSVars(scheme: ReturnType<typeof generateScheme>) {
+  return {
+    "--color-black": scheme.black,
+    "--color-dark": scheme.dark,
+    "--color-highlight": scheme.highlight,
+    "--color-accent": scheme.accent,
+    "--color-light-accent": scheme["light-accent"],
+    "--color-white": scheme.white,
+    "--color-light-hover": scheme["light-hover"],
+  } as React.CSSProperties;
+}

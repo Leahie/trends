@@ -1,3 +1,4 @@
+// Really complicated but kind of needed for slate, whenever I do marks it has to be in the file
 import { useData } from "@/context/data";
 import { useEditor } from "@/context/editor";
 import { createEditor, Editor, Transforms, Element as SlateElement } from "slate";
@@ -5,8 +6,9 @@ import type {Descendant} from "slate";
 import {Slate, useSlate, withReact, ReactEditor, Editable} from "slate-react"
 import type {TextBlockType} from "@/types/types"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { parseBodyContent, serializeSlateContent, TEXT_SIZES, COLORS, HIGHLIGHTS } from "@/hooks/blocks/textHooks";
+import { parseBodyContent, serializeSlateContent, TEXT_SIZES } from "@/hooks/blocks/textHooks";
 import { withHistory } from "slate-history";
+import { HexColorPicker } from "react-colorful";
 
 import { 
   Bold, Italic, Underline, Code, 
@@ -15,6 +17,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, 
   Type, Highlighter, Palette
 } from "lucide-react";
+import { generateScheme, schemeToCSSVars } from "@/utils/theme";
 
 
 const getMarkValue = (editor: Editor, format: string) => {
@@ -126,7 +129,7 @@ function ToolbarButton({
     );
 }
 
-function FontSizeDropdown() {
+function FontSizeDropdown({ toolbarPosition }: { toolbarPosition: 'top' | 'bottom' }) {
     const editor = useSlate();
     const currentSize = getMarkValue(editor, 'fontSize') || '15px';
     const [isOpen, setIsOpen] = useState(false);
@@ -138,10 +141,9 @@ function FontSizeDropdown() {
                     e.preventDefault();
                     setIsOpen(!isOpen);
                 }}
-                className="px-2 py-2 rounded transition-colors hover:bg-dark/50 text-body flex items-center gap-1 min-w-[60px]"
+                className="px-2 py-2 rounded transition-colors hover:bg-dark/50 text-body flex items-center gap-1 "
             >
-                <Type size={14} />
-                <span className="text-xs font-mono">{currentSize.replace('px', '')}</span>
+                <span className="text-[13px] font-mono">{currentSize.replace('px', '')}</span>
             </button>
             
             {isOpen && (
@@ -150,7 +152,11 @@ function FontSizeDropdown() {
                         className="fixed inset-0 z-10" 
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="absolute bottom-full mb-2 left-0 bg-dark border border-gray-600 rounded shadow-lg z-20 max-h-[200px] overflow-y-auto">
+                    <div className={`absolute ${toolbarPosition === 'top' ? 'bottom-full mb-4' : 'top-full mt-4'} left-0 bg-dark border border-gray-600 rounded shadow-lg z-20 max-h-[200px] overflow-y-auto`}
+                    onWheel={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }}>
                         {TEXT_SIZES.map((size) => (
                             <button
                                 key={size.value}
@@ -173,103 +179,135 @@ function FontSizeDropdown() {
     );
 }
 
-function ColorPicker({ type = 'color' }: { type?: 'color' | 'highlight' }) {
+function ColorPicker({ type = 'color', toolbarPosition }: { type?: 'color' | 'highlight'; toolbarPosition: 'top' | 'bottom' }) {
     const editor = useSlate();
-    const markName = type === 'color' ? 'color' : 'backgroundColor';
-    const currentValue = getMarkValue(editor, markName);
+    const [lastColor, setLastColor] = useState("#FFFFFF");
     const [isOpen, setIsOpen] = useState(false);
-    const colors = type === 'color' ? COLORS : HIGHLIGHTS;
+    const pickerRef = useRef<HTMLDivElement>(null);
+
+    const markName = type === 'color' ? 'color' : 'backgroundColor';
+    const currentValue = getMarkValue(editor, markName) || lastColor;
     const Icon = type === 'color' ? Palette : Highlighter;
+
+    // Smart positioning for color picker
+    const [pickerPosition, setPickerPosition] = useState<'left' | 'right'>('left');
+
+    useEffect(() => {
+        if (isOpen && pickerRef.current) {
+            const rect = pickerRef.current.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            
+            // If picker would go off right edge, position it to the right
+            if (rect.right > viewportWidth - 20) {
+                setPickerPosition('right');
+            } else {
+                setPickerPosition('left');
+            }
+        }
+    }, [isOpen]);
 
     return (
         <div className="relative">
-            <button
-                onMouseDown={(e) => {
-                    e.preventDefault();
-                    setIsOpen(!isOpen);
-                }}
-                className="p-2 rounded transition-colors hover:bg-dark/50 text-body relative"
+        <button
+            onMouseDown={(e) => {
+            e.preventDefault();
+            setIsOpen(v => !v);
+            }}
+            className="p-2 rounded hover:bg-dark/50 text-body relative"
+        >
+            <Icon size={16} />
+            <div
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 rounded"
+            style={{ backgroundColor: currentValue }}
+            />
+        </button>
+
+        {isOpen && (
+            <>
+            <div className="fixed inset-0 z-10" onMouseDown={() => setIsOpen(false)} />
+
+            <div 
+                ref={pickerRef}
+                className={`absolute ${toolbarPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} ${pickerPosition === 'right' ? 'right-0' : 'left-0'} bg-dark border border-gray-600 rounded-xl shadow-lg z-20 p-3`}
             >
-                <Icon size={16} />
-                {currentValue && (
-                    <div 
-                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 rounded"
-                        style={{ backgroundColor: currentValue }}
-                    />
-                )}
-            </button>
-            
-            {isOpen && (
-                <>
-                    <div 
-                        className="fixed inset-0 z-10" 
-                        onClick={() => setIsOpen(false)}
-                    />
-                    <div className="absolute bottom-full mb-2 left-0 bg-dark border border-gray-600 rounded shadow-lg z-20 p-2">
-                        <div className="grid grid-cols-5 gap-1">
-                            {colors.map((color) => (
-                                <button
-                                    key={color.label}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        if (color.value === null) {
-                                            Editor.removeMark(editor, markName);
-                                        } else {
-                                            Editor.addMark(editor, markName, color.value);
-                                        }
-                                        setIsOpen(false);
-                                    }}
-                                    className={`w-7 h-7 rounded border-2 transition-all ${
-                                        currentValue === color.value 
-                                            ? 'border-white scale-110' 
-                                            : 'border-gray-600 hover:border-gray-400'
-                                    }`}
-                                    style={{ 
-                                        backgroundColor: color.value || '#333',
-                                        backgroundImage: color.value === null 
-                                            ? 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)'
-                                            : 'none',
-                                        backgroundSize: color.value === null ? '4px 4px' : 'auto',
-                                        backgroundPosition: color.value === null ? '0 0, 2px 2px' : 'center'
-                                    }}
-                                    title={color.label}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </>
-            )}
-        </div>
-    );
+                <HexColorPicker
+                color={currentValue}
+                onChange={(color) => {
+                    setLastColor(color);
+                    Editor.addMark(editor, markName, color);
+                }}
+                />
+
+                <div className="flex justify-between mt-2">
+                <span className="text-xs text-gray-400">{currentValue}</span>
+                <button
+                    onMouseDown={(e) => {
+                    e.preventDefault();
+                    Editor.removeMark(editor, markName);
+                    }}
+                    className="text-xs text-red-400 hover:underline"
+                >
+                    Clear
+                </button>
+                </div>
+            </div>
+            </>
+        )}
+    </div>
+  );
 }
 
 
 export default function TextBlock({id, type, content, boardId}: TextBlockType){
     const {isEditingText, setIsEditingText, editingBlockId, setEditingBlockId} = useEditor();
+    
     const {updateBlock, isSyncing} = useData();
     const [title, setTitle] = useState<string>(content.title);
     const [isSaving, setIsSaving] = useState(false);
 
-
     const containerRef = useRef<HTMLDivElement>(null);
+    const toolbarRef = useRef<HTMLDivElement>(null);
+    const [toolbarPosition, setToolbarPosition] = useState<'top' | 'bottom'>('top');
+    
 
     const isThisBlockEditing = isEditingText && editingBlockId === id;
 
     const editor = useMemo(()=> withHistory(withReact(createEditor())), []);
     const [value, setValue] = useState<Descendant[]>(() => parseBodyContent(content.body))
 
+    // Calculate optimal toolbar position
     useEffect(() => {
-        if (!isThisBlockEditing) {
-            setValue(parseBodyContent(content.body));
-        }
-    }, [content.body, isThisBlockEditing]);
-    
-    useEffect(() => {
-        if (!isSyncing && isSaving) {
-            setIsSaving(false);
-        }
-        }, [isSyncing, isSaving]);
-    
+        if (!isThisBlockEditing || !containerRef.current) return;
+
+        const updatePosition = () => {
+            const container = containerRef.current;
+            if (!container) return;
+
+            const rect = container.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const toolbarHeight = 60; // Approximate toolbar height
+            const spaceAbove = rect.top;
+            const spaceBelow = viewportHeight - rect.bottom;
+
+
+            if (spaceAbove < toolbarHeight + 20 && spaceBelow > spaceAbove) {
+                setToolbarPosition('bottom');
+            } else {
+                setToolbarPosition('top');
+            }
+        };
+
+        updatePosition();
+        
+        window.addEventListener('scroll', updatePosition, true);
+        window.addEventListener('resize', updatePosition);
+        
+        return () => {
+            window.removeEventListener('scroll', updatePosition, true);
+            window.removeEventListener('resize', updatePosition);
+        };
+    }, [isThisBlockEditing]);
+
     const handleBlur = useCallback(() => {
         const latestValue = editor.children as Descendant[];
         const serialized = serializeSlateContent(latestValue);
@@ -286,6 +324,33 @@ export default function TextBlock({id, type, content, boardId}: TextBlockType){
             }
         });
     }, [value, title, id, content, updateBlock, setIsEditingText, setEditingBlockId]);
+
+    useEffect(() => {
+        if (!isThisBlockEditing) {
+            setValue(parseBodyContent(content.body));
+        }
+    }, [content.body, isThisBlockEditing]);
+    
+    useEffect(() => {
+        if (!isSyncing && isSaving) {
+            setIsSaving(false);
+        }
+        }, [isSyncing, isSaving]);
+    
+    
+
+    useEffect(() => {
+  if (!isThisBlockEditing) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+        if (!containerRef.current?.contains(event.target as Node)) {
+        handleBlur();
+        }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isThisBlockEditing, handleBlur]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -437,26 +502,32 @@ export default function TextBlock({id, type, content, boardId}: TextBlockType){
         });
     }, [value]);
 
+    const scheme = content.bgColor ? generateScheme(content.bgColor) : null;
+
+    const blockTheme = scheme ? schemeToCSSVars(scheme) : undefined;
 
     return(    
         <>
                 {(isThisBlockEditing && !isSaving)  ? (
                     <div 
-                    className=" relative bg-highlight p-5 h-full w-full flex flex-col text-left border-x-4 border-b-8 border-dark"
+                    className="relative bg-highlight h-full w-full flex flex-col text-left border-x-4 border-b-8 border-dark"
                     ref = {containerRef}
-                        onBlur={(e) => {
-                            if (!containerRef.current?.contains(e.relatedTarget as Node)) {
-                            handleBlur();
-                            }
-                        }}
+                    style={blockTheme}
                         >
                     <Slate 
                         editor={editor} 
                         initialValue={value}
                         onChange={newValue => setValue(newValue)}
                     >
-                    {/* Floating toolbar */}
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 -translate-y-full w-full bg-accent border-b border-dark px-3 py-2 flex gap-1 items-center flex-wrap rounded-xl">
+                    {/* Smart positioned toolbar */}
+                    <div 
+                        ref={toolbarRef}
+                        className={`absolute ${
+                            toolbarPosition === 'top' 
+                                ? '-top-3 -translate-y-full' 
+                                : '-bottom-3 translate-y-full'
+                        } left-1/2 -translate-x-1/2 w-full max-w-[600px] bg-accent border border-dark px-3 py-2 flex gap-1 items-center flex-wrap rounded-xl shadow-xl z-50`}
+                    >
                         <ToolbarButton format="bold" icon={Bold} />
                         <ToolbarButton format="italic" icon={Italic} />
                         <ToolbarButton format="underline" icon={Underline} />
@@ -464,9 +535,9 @@ export default function TextBlock({id, type, content, boardId}: TextBlockType){
                         
                         <div className="w-px h-6 bg-dark mx-1" />
 
-                        <FontSizeDropdown />
-                        <ColorPicker type="color" />
-                        <ColorPicker type="highlight" />
+                        <FontSizeDropdown toolbarPosition={toolbarPosition} />
+                        <ColorPicker type="color" toolbarPosition={toolbarPosition} />
+                        <ColorPicker type="highlight" toolbarPosition={toolbarPosition} />
 
                             <div className="w-px h-6 bg-dark mx-1" />
 
@@ -488,7 +559,7 @@ export default function TextBlock({id, type, content, boardId}: TextBlockType){
                     </div>
                     
                     <Editable
-                        className="text-body text-[15px] flex-1 outline-none p-5"
+                        className="text-body text-[15px] flex-1 outline-none m-5"
                         renderLeaf={renderLeaf}
                         renderElement={renderElement}
                         onKeyDown={handleKeyDown}
@@ -510,7 +581,9 @@ export default function TextBlock({id, type, content, boardId}: TextBlockType){
                     </div>
 
                     ) : (
-                        <div className="relative bg-highlight p-5 h-full w-full flex flex-col text-left border-x-4 border-b-8 border-dark"> 
+                        <div className="relative bg-highlight p-5 h-full w-full flex flex-col text-left border-x-4 border-b-8 border-dark"
+                        style={blockTheme}> 
+                        
                         {isSaving && (
                             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] z-20 flex items-center justify-center">
                             <div className="flex items-center gap-2 text-xs text-white font-medium">
@@ -523,7 +596,7 @@ export default function TextBlock({id, type, content, boardId}: TextBlockType){
                             {renderFormattedContent()}
                         </div>
                                        
-                        <h5 className="font-bold mb-3 text-[10px] text-light-accent leading-8 flex-shrink-0 ">{content.title}</h5>
+                        <h5 className="font-bold px-5 pb-3 text-[10px] text-light-accent leading-8 flex-shrink-0">{content.title}</h5>
                         </div>
                         
                     )}

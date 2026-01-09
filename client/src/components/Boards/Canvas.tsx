@@ -310,10 +310,12 @@ export default function Canvas(){
 
     
     const handleBlockSelect = (block: Block | null) => {
-        setSelectedBlock(block);
-        if (block && block.type !== "text") {
-            setIsEditingText(false);
-            setEditingBlockId(null);
+        if (!isPanning && !spacePressed){ // don't want this behavior if I'm panning
+            setSelectedBlock(block);
+            if (block && block.type !== "text") {
+                setIsEditingText(false);
+                setEditingBlockId(null);
+            }
         }
     }
 
@@ -399,6 +401,7 @@ export default function Canvas(){
                                 scale={scale}
                                 onSelected={() => handleBlockSelect(block)}
                                 bringToFront={bringToFront}
+                                shouldResize = {(!isPanning && !spacePressed)}
                             />
                         ))}
                     </div> 

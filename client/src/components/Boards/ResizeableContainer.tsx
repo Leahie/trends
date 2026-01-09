@@ -4,6 +4,7 @@ import Container from "./Container";
 import { useNavigate } from "react-router-dom";
 import {useData} from "@/context/data.tsx"
 import { useEditor } from "@/context/editor.tsx";
+import { generateScheme, schemeToCSSVars } from "@/utils/theme";
 
 
 type HandleType = "right" | "left" | "bottom" | "top" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | null;
@@ -22,9 +23,9 @@ interface MoveTypes{
 }
 
 export default function ResizeableContainer({node, blockLocation, scale, onSelected,
-    bringToFront
+    bringToFront, shouldResize
 }: {node: Block, blockLocation: Location, scale: number, onSelected: () => void,
-    bringToFront: (x: string) => void 
+    bringToFront: (x: string) => void, shouldResize: boolean
 },
 ){
     if (!node) return null;
@@ -116,7 +117,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     }
 
     const moveFrame = (e: MouseEvent) => {
-        if (!isEditMode) return;
+        if (!isEditMode || !shouldResize ) return;
         if (isThisTextBlockEditing) return;
         if (!move.active) return; 
         const dx = (e.clientX - move.x)/scale;
@@ -221,6 +222,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     }
 
     const handleMouseMove = (e: MouseEvent) =>{
+        if (!shouldResize) return;
         if (drag.active){
             resizeFrame(e);
         }
@@ -266,11 +268,18 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         }
     }, [blockLocation, drag.active, move.active]);
 
+
+    const scheme = node.type == "text" && node.content.bgColor ? generateScheme(node.content.bgColor) : null;
+    
+    const blockTheme = scheme ? schemeToCSSVars(scheme) : undefined;
+    
+
     return(     
         <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}
         `} 
-            style={boxStyle} onMouseMove={() => handleMouseMove} 
+            style={{...boxStyle, ...blockTheme} }  onMouseMove={() => handleMouseMove} 
             onClick={(e)=>{
+                if (!shouldResize) return;
                 e.stopPropagation(); 
                 if (isEditMode) {
                     onSelected();
@@ -282,6 +291,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
             <div
                 className="absolute inset-0 "
                 onMouseDown={(e) => {
+                    if (!shouldResize) return;
                     e.stopPropagation();
                     // Call bringToFront but DON'T await it
                     bringToFront(node.id);

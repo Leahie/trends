@@ -1,5 +1,6 @@
 import type { Operation } from "@/types/editorTypes";
-import type { Block } from "@/types/types";
+import type { Block, TextBlockType } from "@/types/types";
+import PaintTool from "./Painttool";
 
 export default function Tool({operation, selectedBlock, handleOperationClick}: {operation: Operation, selectedBlock: Block | null, handleOperationClick: (operation: Operation) => void}){
     const isActive = selectedBlock && (() => {
@@ -10,6 +11,9 @@ export default function Tool({operation, selectedBlock, handleOperationClick}: {
                                         if (operation.id === 'grayscale') return (selectedBlock as any).content?.transforms?.grayscale;
                                         return false;
                                     })();
+    if (operation.id == "bg-color"){
+        return (<PaintTool operation={operation} selectedBlock={selectedBlock as TextBlockType} handleOperationClick={handleOperationClick}/>)
+    }
     return(
         <button
             key={operation.id}

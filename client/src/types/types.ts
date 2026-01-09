@@ -36,6 +36,7 @@ export interface TextBlockType extends BaseBlock{
     content: {
         title: string;
         body: string;
+        bgColor?: string;
     }
 }
 

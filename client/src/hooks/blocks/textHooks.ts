@@ -37,25 +37,3 @@ export const TEXT_SIZES = [
   { label: '48', value: '48px' },
 ];
 
-export const COLORS = [
-  { label: 'Black', value: '#000000' },
-  { label: 'Dark Gray', value: '#444444' },
-  { label: 'Gray', value: '#888888' },
-  { label: 'Red', value: '#e74c3c' },
-  { label: 'Orange', value: '#e67e22' },
-  { label: 'Yellow', value: '#f39c12' },
-  { label: 'Green', value: '#27ae60' },
-  { label: 'Blue', value: '#3498db' },
-  { label: 'Purple', value: '#9b59b6' },
-  { label: 'White', value: '#ffffff' },
-];
-
-export const HIGHLIGHTS = [
-  { label: 'None', value: null },
-  { label: 'Yellow', value: '#fff59d' },
-  { label: 'Green', value: '#c5e1a5' },
-  { label: 'Blue', value: '#90caf9' },
-  { label: 'Red', value: '#ef9a9a' },
-  { label: 'Purple', value: '#ce93d8' },
-  { label: 'Orange', value: '#ffcc80' },
-];
