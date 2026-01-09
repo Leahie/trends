@@ -1,4 +1,4 @@
-import React, {useState, useContext, useCallback, createContext, type ReactNode} from 'react';
+import React, {useState, useContext, useCallback, createContext, type ReactNode, useEffect} from 'react';
 import type { Block, BlockType } from "@/types/types";
 import type { HistoryEntry, Operation } from "@/types/editorTypes";
 
@@ -7,6 +7,13 @@ interface EditorContextType{
     selectedBlockType: BlockType | null;
     selectedBlock: Block | null;
     setSelectedBlock: (block: Block | null) => void;
+
+    // text editing 
+    isEditingText: boolean; 
+    setIsEditingText: (editing: boolean) => void; 
+    editingBlockId: string | null; 
+    setEditingBlockId: (id: string | null) => void; 
+
     
     undoStack: HistoryEntry[];
     redoStack: HistoryEntry[];
@@ -28,6 +35,17 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
     const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
     const [redoStack, setRedoStack] = useState<HistoryEntry[]>([]);
     const [activeOverlay, setActiveOverlay] = useState<string | null>(null);
+    const [isEditingText, setIsEditingText] = useState(false);
+    const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+
+    console.log("ARE WE EDITING BLOCKS", isEditingText)
+
+    useEffect(() => {
+        if (selectedBlock == null){
+            setIsEditingText(false);
+            setEditingBlockId(null);
+        }
+    }, [selectedBlock])
 
     const setSelectedBlock = useCallback((block: Block | null) => {
         setSelectedBlockState(block);
@@ -82,7 +100,13 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
         canRedo: redoStack.length > 0,
         pushToHistory,
         activeOverlay,
-        setActiveOverlay
+        setActiveOverlay,
+
+        // Specific for text blocks 
+        isEditingText,
+        setIsEditingText,
+        editingBlockId,
+        setEditingBlockId,
     }
     return (
         <EditorContext.Provider value={value}>

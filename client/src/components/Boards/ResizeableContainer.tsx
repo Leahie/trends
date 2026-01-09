@@ -29,7 +29,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
 ){
     if (!node) return null;
     const {updateBlock} = useData();
-    const { selectedBlockId } = useEditor();
+    const { selectedBlockId, setIsEditingText, setEditingBlockId, isEditingText, editingBlockId } = useEditor();
     const selected = selectedBlockId === node.id;
 
 
@@ -224,6 +224,16 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         }
     }
 
+    // Double clicking on text blocks result in entering edit mode 
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (node.type === "text") {
+            setIsEditingText(true);
+            setEditingBlockId(node.id);
+            onSelected();
+        }
+    };
+
     // This is the box style 
     const boxStyle = {
         width: `${dims.width}px`,
@@ -252,7 +262,8 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     }, [blockLocation, drag.active, move.active]);
 
     return(     
-        <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
+        <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}
+        `} 
             style={boxStyle} onMouseMove={() => handleMouseMove} 
             onClick={(e)=>{
                 e.stopPropagation(); 
@@ -261,7 +272,8 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                 } else if (node.type == "board_block"){
                     navigate(`/boards/${node.linkedBoardId}`)
                 }
-            }}>
+            }}
+            onDoubleClick={handleDoubleClick}>
             <div
                 className="absolute inset-0 "
                 onMouseDown={(e) => {

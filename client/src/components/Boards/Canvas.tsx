@@ -19,7 +19,7 @@ import { useEditor } from "@/context/editor.tsx";
 export default function Canvas(){
     const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks} = useData();
     const {getIdToken} = useAuth()
-    const {setSelectedBlock, selectedBlockId} = useEditor();
+    const {setSelectedBlock, selectedBlockId, isEditingText, setIsEditingText, setEditingBlockId} = useEditor();
 
     if (!currentBoard){  return <p>Loading...</p>};
     console.log(currentBoard)
@@ -179,7 +179,7 @@ export default function Canvas(){
     // Spacebar handling
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.code === 'Space' && !spacePressed) {
+            if (e.code === 'Space' && !spacePressed && !isEditingText) {
                 e.preventDefault();
                 setSpacePressed(true);
             }
@@ -199,7 +199,7 @@ export default function Canvas(){
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [spacePressed]);
+    }, [spacePressed, isEditingText]);
 
     // Zoom with wheel
     const handleWheel = (e: React.WheelEvent) => {
@@ -311,6 +311,10 @@ export default function Canvas(){
     
     const handleBlockSelect = (block: Block | null) => {
         setSelectedBlock(block);
+        if (block && block.type !== "text") {
+            setIsEditingText(false);
+            setEditingBlockId(null);
+        }
     }
 
     return (

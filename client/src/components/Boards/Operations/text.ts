@@ -22,7 +22,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           // TO DO 
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'italic',
@@ -40,7 +41,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           // TO DO 
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'underline',
@@ -58,7 +60,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           // TO DO 
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'bullet-list',
@@ -76,7 +79,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           // TO DO 
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'text-color',
@@ -95,7 +99,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           // TO DO 
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'bg-color',
@@ -114,7 +119,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           backgroundColor: params.color
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'highlight',
@@ -133,7 +139,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           highlight: params.color
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'align-left',
@@ -151,7 +158,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           textAlign: 'left'
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'align-center',
@@ -169,7 +177,8 @@ export const TEXT_OPERATIONS: Operation[] = [
           textAlign: 'center'
         }
       };
-    }
+    },
+    isEditingText: true,
   },
   {
     id: 'align-right',
@@ -187,6 +196,7 @@ export const TEXT_OPERATIONS: Operation[] = [
           textAlign: 'right'
         }
       };
-    }
+    },
+    isEditingText: true,
   }
 ];
