@@ -2,7 +2,7 @@ import type { Operation } from "@/types/editorTypes";
 import type { Block, TextBlockType } from "@/types/types";
 import PaintTool from "./Painttool";
 
-export default function Tool({operation, selectedBlock, handleOperationClick}: {operation: Operation, selectedBlock: Block | null, handleOperationClick: (operation: Operation) => void}){
+export default function Tool({operation, selectedBlock, handleOperationClick}: {operation: Operation, selectedBlock: Block | null, handleOperationClick: (operation: Operation, params?: any) => void}){
     const isActive = selectedBlock && (() => {
                                         // Check if the operation is currently active TO DO: better check T_T
                                         if (operation.id === 'bold') return (selectedBlock as any).content?.bold;

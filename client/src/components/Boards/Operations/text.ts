@@ -11,7 +11,7 @@ export const TEXT_OPERATIONS: Operation[] = [
     label: 'Background',
     icon: Palette,
     blockTypes: ['text'],
-    requiresOverlay: true,
+    requiresOverlay: false,
     category: 'text',
     group: 'colors',
     priority: 2,
@@ -20,7 +20,7 @@ export const TEXT_OPERATIONS: Operation[] = [
       return {
         content: {
           ...textBlock.content,
-          backgroundColor: params.color
+          bgColor: params.color
         }
       };
     },

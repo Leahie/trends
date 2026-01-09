@@ -90,16 +90,17 @@ export default function Toolbar(){
         return () => resizeObserver.disconnect();
     }, [groupedOperations]);
 
-    const handleOperationClick = async(operation:Operation) => {
+    const handleOperationClick = async(operation:Operation, params?:any) => {
+
         if (!selectedBlock) return;
 
         if (operation.requiresOverlay) {
             // Skip for now 
         }else{
             const before = { ...selectedBlock };
-            const updates = operation.apply(selectedBlock, {});
+            const updates = operation.apply(selectedBlock, params );
             const after = { ...selectedBlock, ...updates };
-            
+
             await updateBlock(selectedBlock.id, updates);
             pushToHistory(selectedBlock.id, before, after);
             

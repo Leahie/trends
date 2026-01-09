@@ -5,7 +5,7 @@ import { useState } from "react";
 import { HexColorPicker } from "react-colorful";
 
 
-export default function PaintTool({operation, selectedBlock, handleOperationClick}: {operation: Operation, selectedBlock: TextBlockType | null, handleOperationClick: (operation: Operation) => void}){
+export default function PaintTool({operation, selectedBlock, handleOperationClick}: {operation: Operation, selectedBlock: TextBlockType | null, handleOperationClick: (operation: Operation, params: any) => void}){
     if (selectedBlock == null) return;
     const {updateBlock} = useData();
     
@@ -14,13 +14,12 @@ export default function PaintTool({operation, selectedBlock, handleOperationClic
 
     const handleColorChange = async (color: string | null) => {
         if (color == null) {
-            selectedBlock.content.bgColor = undefined;
+            handleOperationClick(operation,  {color: undefined})
         }
         else{
-            let after = selectedBlock;
-            after.content.bgColor = color;
             setLastColor(color);
-            await updateBlock(selectedBlock.id, after);
+            handleOperationClick(operation, {color: color})
+
 
         }
         
