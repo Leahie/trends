@@ -29,9 +29,9 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
 ){
     if (!node) return null;
     const {updateBlock} = useData();
-    const { selectedBlockId, setIsEditingText, setEditingBlockId, isEditingText, editingBlockId } = useEditor();
+    const { selectedBlockId, setIsEditingText, setEditingBlockId, isEditingText, editingBlockId, pushToHistory } = useEditor();
     const selected = selectedBlockId === node.id;
-
+    const isThisTextBlockEditing = editingBlockId === node.id;
 
     const navigate = useNavigate();
     const [dims, setDims] = useState<Location>(blockLocation);
@@ -75,7 +75,11 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     useEffect(() => {
         const handleMouseUp = () => {
             if (drag.active || move.active) {
+                const before = node;
                 updateBlock(node.id, {location:dims});
+
+                if (before != node)
+                    pushToHistory(node.id, before, node) // probably wrong
             }
             setDrag((d) => ({ ...d, active: false, handle: null }));
             setMove((m) => ({ ...m, active: false }));
@@ -113,6 +117,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
 
     const moveFrame = (e: MouseEvent) => {
         if (!isEditMode) return;
+        if (isThisTextBlockEditing) return;
         if (!move.active) return; 
         const dx = (e.clientX - move.x)/scale;
         const dy = (e.clientY - move.y)/scale;
@@ -241,7 +246,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         top: `${dims.y}px`, 
         left: `${dims.x}px`,
         zIndex: selected ? 1000 : dims.zIndex, 
-        overflow: "hidden",
+        overflow: isThisTextBlockEditing ? "visible" : "hidden",
         userSelect: "none"
     };
 

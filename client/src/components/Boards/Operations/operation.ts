@@ -8,7 +8,7 @@ import type { Operation } from "@/types/editorTypes";
 export const ALL_OPERATIONS = [
   ...UNIVERSAL_OPERATIONS, 
   ...IMAGE_OPERATIONS, 
-  // ...TEXT_OPERATIONS not used for now
+  ...TEXT_OPERATIONS 
 ]
 
 export function getOperationsForBlock(blockType: Block['type'] | null): Operation[] {
