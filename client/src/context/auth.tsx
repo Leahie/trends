@@ -7,12 +7,14 @@ import {
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendEmailVerification
 } from 'firebase/auth';
 import type {User} from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 
 import firebaseConfig from '../firebaseConfig.json';
+import { send } from 'vite';
 
 
 const app = initializeApp(firebaseConfig);
@@ -85,6 +87,9 @@ export function AuthProvider({children}: {children : ReactNode}){
     const signUp = async (email: string, password: string) => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+            await sendEmailVerification(userCredential.user)
+
             // Wait for auth state to update
             return new Promise<void>((resolve, reject) => {
                 const unsubscribe = onAuthStateChanged(auth, (user) => {
