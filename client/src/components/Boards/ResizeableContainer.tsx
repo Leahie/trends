@@ -23,9 +23,10 @@ interface MoveTypes{
 }
 
 export default function ResizeableContainer({node, blockLocation, scale, onSelected,
-    bringToFront, shouldResize
+    bringToFront, shouldResize, zoomToBlock
 }: {node: Block, blockLocation: Location, scale: number, onSelected: () => void,
-    bringToFront: (x: string) => void, shouldResize: boolean
+    bringToFront: (x: string) => void, shouldResize: boolean,
+    zoomToBlock: (x:Block) => void
 },
 ){
     if (!node) return null;
@@ -238,6 +239,9 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
             setIsEditingText(true);
             setEditingBlockId(node.id);
             onSelected();
+        }
+        if (node.type == "image"){
+            zoomToBlock(node);
         }
     };
 

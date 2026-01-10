@@ -115,7 +115,7 @@ export default function Toolbar(){
     return(
         <>
             <div ref={toolbarRef} 
-            className='fixed bottom-5 left-0 right-0 flex items-center justify-center px-4 z-40 pointer-events-none'
+            className='fixed bottom-5 left-0 right-0 flex items-center justify-center px-4 z-40 pointer-events-none opacity-30 hover:opacity-100'
 >
                 <div className='bg-dark px-5 py-2 rounded-xl pointer-events-auto'>
                     <div  ref={contentRef} className={`flex gap-2 items-center   `}>

@@ -15,12 +15,20 @@ import Toolbar from "./Toolbar/Toolbar.tsx";
 import { useImagePaste } from "@/hooks/useImagePaste.ts";
 import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
 import { useEditor } from "@/context/editor.tsx";
+import {zoomToBlock} from "@/hooks/blocks/imageHooks.ts"
 
 export default function Canvas(){
     const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks} = useData();
     const {getIdToken} = useAuth()
     const {setSelectedBlock, selectedBlockId, isEditingText, setIsEditingText, setEditingBlockId} = useEditor();
-
+    // Zoom and pan state
+    const [scale, setScale] = useState(1);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [isPanning, setIsPanning] = useState(false);
+    const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+    const [spacePressed, setSpacePressed] = useState(false);
+    
+    const canvasRef = useRef<HTMLDivElement>(null);
     if (!currentBoard){  return <p>Loading...</p>};
     console.log(currentBoard)
     console.log(blocks)
@@ -67,27 +75,18 @@ export default function Canvas(){
         setThemeColor(color);
     }
 
-    // Zoom and pan state
-    const [scale, setScale] = useState(1);
-    const [pan, setPan] = useState({ x: 0, y: 0 });
-    const [isPanning, setIsPanning] = useState(false);
-    const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-    const [spacePressed, setSpacePressed] = useState(false);
     
-    const canvasRef = useRef<HTMLDivElement>(null);
     
     // IMAGE PASTING 
     const handleImagePaste = async (file: File, x : number, y: number) => {
         
         const token = await getIdToken();
-        console.log("I get here, this is my token", token)
 
         if (token == null) return;
         // upload to firebase storage 
         const firebaseUrl = await uploadToFirebase({file, token});
 
         if (!firebaseUrl){
-            console.error('Oops failed');
             return;
         }
 
@@ -264,7 +263,6 @@ export default function Canvas(){
 
     // Z INDEX HANDLING 
     const bringToFront = async(id: string) => {
-        console.log("bring to front called")
         const block = blocks.find(b => b.id === id);
         if (!block) return;
 
@@ -279,9 +277,8 @@ export default function Canvas(){
         const one = sorted.find(b => b.id === id);
 
         if (!one){ 
-            console.log("bring to front stop 2")
             return;
-}
+        }
         const updated: Record<string, Partial<Block>> = {};
 
         others.forEach((block, index) => {
@@ -300,10 +297,50 @@ export default function Canvas(){
         },
         };
 
-        console.log("updated z index locations", updated);
         await batchUpdateBlocks(updated);
     }
 
+    const pushToBack = async(id: string) => {
+        const block = blocks.find(b => b.id === id);
+        if (!block) return;
+
+        const minZ = Math.min(...blocks.map(b => b.location.zIndex), 0);
+
+
+        const sorted = [...blocks].sort(
+            (a, b) => a.location.zIndex - b.location.zIndex
+        );
+
+        const others = sorted.filter(b => b.id !== id);
+        const one = sorted.find(b => b.id === id);
+
+        if (!one){ 
+            return;
+        }
+        const updated: Record<string, Partial<Block>> = {};
+
+        others.forEach((block, index) => {
+        updated[block.id] = {
+            location: {
+            ...block.location,
+            zIndex: index + 1,
+            },
+        };
+        });
+
+        updated[id] = {
+        location: {
+            ...one.location,
+            zIndex: 0,
+        },
+        };
+
+        console.log("updated z index locations", updated);
+        
+        await batchUpdateBlocks(updated);
+        setContextMenu(null);
+        setSelectedBlock(null);
+    }
     // useEffect(() =>{
     //     if (selectedBlockId!=null) bringToFront(selectedBlockId)
     // }, [selectedBlockId])
@@ -319,12 +356,19 @@ export default function Canvas(){
         }
     }
 
+    const handleZoomToBlock = (block: Block | null) => {
+        if (block==null) return;
+        if ( !isPanning && !spacePressed){
+            zoomToBlock(canvasRef, block, setScale, setPan)
+        }
+    }
+
     return (
     
     <>
     <div className="fixed inset-0 flex flex-col" >        
         <div className="">
-            <div className="absolute top-9 right-4 z-50 flex gap-2">
+            <div className="absolute top-9 right-4 z-50 flex gap-2 opacity-30 hover:opacity-100">
                 <input 
                     type="text"
                     value={title} 
@@ -401,6 +445,7 @@ export default function Canvas(){
                                 scale={scale}
                                 onSelected={() => handleBlockSelect(block)}
                                 bringToFront={bringToFront}
+                                zoomToBlock={handleZoomToBlock}
                                 shouldResize = {(!isPanning && !spacePressed)}
                             />
                         ))}
@@ -417,6 +462,8 @@ export default function Canvas(){
                 selected={selectedBlockId} 
                 parentId={currentBoard.id} 
                 setContextMenu={setContextMenu}
+                bringToFront= {bringToFront}
+                pushToBack={pushToBack}
             />
         }
         <Toolbar />
