@@ -14,7 +14,6 @@ import type {User} from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 
 import firebaseConfig from '../firebaseConfig.json';
-import { send } from 'vite';
 
 
 const app = initializeApp(firebaseConfig);
