@@ -156,58 +156,129 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         const dy = (e.clientY - drag.y) / scale;
 
         setDims(prev => {
+            const isImageBlock = node.type === "image";
+            
             let x = prev.x;
             let y = prev.y;
             let w = prev.width; 
-            let h = prev.height; 
+            let h = prev.height;
 
-            // horizontal handles
-            if (handle === "right") w += dx;
-            if (handle === "left") {
-                x +=dx;
-                w -= dx;
-            }
+            let aspectRatio = prev.width/prev.height;
+            if (isImageBlock) {
+                // aspectRatio = node.content.imgWidth/node.content.imgHeight;
+                // if (node.content.transforms?.crop){
+                //     aspectRatio = node.content.transforms.crop.widthRatio / node.content.transforms.crop.heightRatio;
+                // }
 
-            // vertical handles
-            if (handle === "bottom") h += dy;
-            if (handle=== "top"){
-                y += dy;
-                h -= dy;
-            }
-            // diagonal handles
-            if (handle === "top-left") {
-                y += dy;
-                x += dx;
-                w -= dx;
-                h -= dy;
-            }
-            if (handle === "top-right") {
-                y += dy;
-                w += dx;
-                h -= dy;
-            }
-            if (handle === "bottom-left") {
-                x +=dx; 
-                w -= dx;
-                h += dy;
-            }
-            if (handle === "bottom-right") {
-                w += dx;
-                h += dy;
+                // For images, maintain aspect ratio and anchor to opposite side
+                if (handle === "right") {
+                    w += dx;
+                    h = w / aspectRatio;
+                    y = prev.y + prev.height / 2 - h / 2; // Center vertically
+                } else if (handle === "left") {
+                    w -= dx;
+                    h = w / aspectRatio;
+                    x = prev.x + prev.width - w;
+                    y = prev.y + prev.height / 2 - h / 2; // Center vertically
+                } else if (handle === "bottom") {
+                    h += dy;
+                    w = h * aspectRatio;
+                    x = prev.x + prev.width / 2 - w / 2; // Center horizontally
+                } else if (handle === "top") {
+                    h -= dy;
+                    w = h * aspectRatio;
+                    y = prev.y + prev.height - h;
+                    x = prev.x + prev.width / 2 - w / 2; // Center horizontally
+                } else if (handle === "top-left") {
+                    // Diagonal: use average of dx and dy to maintain aspect ratio
+                    const avgDelta = (dx + dy) / 2;
+                    w -= avgDelta * aspectRatio;
+                    h -= avgDelta;
+                    x = prev.x + prev.width - w;
+                    y = prev.y + prev.height - h;
+                } else if (handle === "top-right") {
+                    const avgDelta = (dx - dy) / 2;
+                    w += avgDelta * aspectRatio;
+                    h += avgDelta;
+                    y = prev.y + prev.height - h;
+                } else if (handle === "bottom-left") {
+                    const avgDelta = (dy - dx) / 2;
+                    w += avgDelta * aspectRatio;
+                    h += avgDelta;
+                    x = prev.x + prev.width - w;
+                } else if (handle === "bottom-right") {
+                    const avgDelta = (dx + dy) / 2;
+                    w += avgDelta * aspectRatio;
+                    h += avgDelta;
+                }
+            } else {
+                // Original behavior for non-image blocks
+                if (handle === "right") w += dx;
+                if (handle === "left") {
+                    x += dx;
+                    w -= dx;
+                }
+                if (handle === "bottom") h += dy;
+                if (handle === "top") {
+                    y += dy;
+                    h -= dy;
+                }
+                if (handle === "top-left") {
+                    y += dy;
+                    x += dx;
+                    w -= dx;
+                    h -= dy;
+                }
+                if (handle === "top-right") {
+                    y += dy;
+                    w += dx;
+                    h -= dy;
+                }
+                if (handle === "bottom-left") {
+                    x += dx; 
+                    w -= dx;
+                    h += dy;
+                }
+                if (handle === "bottom-right") {
+                    w += dx;
+                    h += dy;
+                }
             }
             const minWidth = 50; 
             const minHeight = 50; 
             if (w < minWidth) {
-                if (drag.handle?.includes("left")) {
-                    x = prev.x + prev.width - minWidth;
+                if (isImageBlock) {
+                    w = minWidth;
+                    h = w / aspectRatio;
+                    if (handle?.includes("left")) {
+                        x = prev.x + prev.width - w;
+                    }
+                    if (handle === "top" || handle === "bottom") {
+                        x = prev.x + prev.width / 2 - w / 2;
+                    }
+                } else {
+                    if (drag.handle?.includes("left")) {
+                        x = prev.x + prev.width - minWidth;
+                    }
+                    w = minWidth;
                 }
-                w = minWidth;
             }
             if (h < minHeight) {
-                if (drag.handle?.includes("top")) {
-                    y = prev.y + prev.height - minHeight;
+                if (isImageBlock) {
+                    h = minHeight;
+                    w = h * aspectRatio;
+                    if (handle?.includes("top")) {
+                        y = prev.y + prev.height - h;
+                    }
+                    if (handle === "left" || handle === "right") {
+                        y = prev.y + prev.height / 2 - h / 2;
+                    }
+                } else {
+                    if (drag.handle?.includes("top")) {
+                        y = prev.y + prev.height - minHeight;
+                    }
+                    h = minHeight;
                 }
-                h = minHeight;
             }
         
             x = Math.max(0, x);

@@ -44,27 +44,16 @@ export function compileStyle(
         containerStyle.transform = transformParts.join(" ");
     }
 
-    // Crop using background-size and background-position
     if (transforms?.crop) {
         const { xRatio, yRatio, widthRatio, heightRatio } = transforms.crop;
-        console.log(xRatio, yRatio, widthRatio, heightRatio)
         
+        const bgWidthPercent = (1 / widthRatio) * 100;
+        const bgHeightPercent = (1 / heightRatio) * 100;
+        
+        const imgAspect = content.imgWidth / content.imgHeight;
         const cropAspect = widthRatio / heightRatio;
-        
-        const containerAspect = containerSize.width / containerSize.height;
-        
-
-        const baseWidthPercent = (1 / widthRatio) * 100;
-        const baseHeightPercent = (1 / heightRatio) * 100;
-        
-        let bgSize;
-        if (cropAspect > containerAspect) {
-            bgSize = `auto ${baseHeightPercent}%`;
-        } else {
-            bgSize = `${baseWidthPercent}% auto`;
-        }
-        
-        containerStyle.backgroundSize = bgSize;
+            
+        containerStyle.backgroundSize = `${bgWidthPercent}% ${bgHeightPercent}%`;
         
         const posXPercent = (xRatio / widthRatio) * 100;
         const posYPercent = (yRatio / heightRatio) * 100;

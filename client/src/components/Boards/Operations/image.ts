@@ -18,6 +18,7 @@ export const IMAGE_OPERATIONS: Operation[] = [
     group: 'crop',
     priority: 3,
     apply: (block, params) => {
+      console.log("these are the params", params)
       const imageBlock = block as ImageBlockType;
       return {
         content: {
@@ -26,6 +27,11 @@ export const IMAGE_OPERATIONS: Operation[] = [
             ...imageBlock.content.transforms,
             crop: params.crop
           }
+        },
+        location:{
+          ...imageBlock.location,
+          width: imageBlock.content.imgWidth*params.crop.widthRatio,
+          height: imageBlock.content.imgHeight*params.crop.heightRatio,
         }
       };
     }

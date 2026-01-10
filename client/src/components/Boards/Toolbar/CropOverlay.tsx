@@ -25,21 +25,17 @@ export default function CropOverlay({ block, onApply, onCancel }: CropOverlayPro
       const img = imageRef.current;
       const containerRect = containerRef.current.getBoundingClientRect();
       
-      // Get natural image dimensions
       const naturalWidth = block.content.imgWidth;
       const naturalHeight = block.content.imgHeight;
       const imageAspect = naturalWidth / naturalHeight;
       
-      // Container dimensions
       const containerWidth = containerRect.width;
       const containerHeight = containerRect.height;
       const containerAspect = containerWidth / containerHeight;
       
-      // Calculate actual displayed image size (object-contain behavior)
       let displayWidth, displayHeight, offsetX, offsetY;
       
       if (imageAspect > containerAspect) {
-        // Image is wider - fit to width
         displayWidth = containerWidth;
         displayHeight = containerWidth / imageAspect;
         offsetX = 0;
@@ -54,7 +50,6 @@ export default function CropOverlay({ block, onApply, onCancel }: CropOverlayPro
       
       setImageDisplaySize({ width: displayWidth, height: displayHeight, offsetX, offsetY });
       
-      // Initialize crop rectangle
       if (block.content.transforms?.crop) {
         const crop = block.content.transforms.crop;
         setCropRect({
