@@ -8,7 +8,7 @@ import Sidebar from './components/Sidebar.tsx'
 import Login from "./Login.tsx";
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import Board from "./components/Boards/Board.tsx";
-
+import EmailVerificationBanner from "./components/Info/EmailVerificationBanner.tsx";
 
 const App = () => {
   return (
@@ -16,7 +16,7 @@ const App = () => {
       <AuthProvider>
         <ThemeProvider>
           
-      
+        <EmailVerificationBanner/>
           
             <div className='flex h-screen w-screen  '>
               <div className="flex-1 relative overflow-hidden">

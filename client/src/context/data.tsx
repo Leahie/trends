@@ -43,6 +43,12 @@ interface DataContextType {
     lastSyncTime: Date | null;
     hasPendingChanges: boolean;
     boardLoadError: string | null;
+
+    // User info
+    userRole: string;
+    boardLimit: number;
+    canCreateBoard: boolean;
+    userVerified: boolean;
 }
 
 // context is created? 
@@ -63,16 +69,26 @@ export function DataProvider({children} : {children : ReactNode}){
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
     const [boardLoadError, setBoardLoadError] = useState<string | null>(null);
 
-
+    const [userRole, setUserRole] = useState<string>('user');
+    const [boardLimit, setBoardLimit] = useState(5);
 
     const pendingBlockChanges = useRef<Record<string, Partial<Block>>>({});
     const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const hasPendingChanges = Object.keys(pendingBlockChanges.current).length > 0;
+    // is user email verified
+    const userVerified = user?.emailVerified || false;
+
     useEffect(() => {
         const loadInitialData = async () => {
             if (!user) return;
             
+            const userData = await api.fetchUserInfo();
+            if (userData.success && userData.data) {
+                setUserRole(userData.data.role);
+                setBoardLimit(userData.data.boardLimit);
+            }
+
             setIsSyncing(true);
             const result = await api.fetchBoards();
             
@@ -197,6 +213,12 @@ export function DataProvider({children} : {children : ReactNode}){
 
 
     // Board Operations 
+
+    const canCreateBoard = useMemo(() => {
+        if (userRole === 'admin') return true;
+        return boards.length < boardLimit;
+    }, [boardLimit, boards.length, userRole]);
+
     const loadBoards = async () => {
         setIsSyncing(true);
         const result = await api.fetchBoards();
@@ -447,7 +469,7 @@ export function DataProvider({children} : {children : ReactNode}){
             blocks, dataMap,
             updateBlock, addBlock, removeBlock, duplicateBlock, batchUpdateBlocks, batchDeleteBlocks,
             syncNow, isSyncing, lastSyncTime, hasPendingChanges,
-            boardLoadError 
+            boardLoadError, userRole, boardLimit, canCreateBoard, userVerified
             }}>
             {children}
         </DataContext.Provider>

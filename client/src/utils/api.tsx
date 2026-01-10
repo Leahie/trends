@@ -343,4 +343,20 @@ export const api = {
       };
     }
   },
+
+  async fetchUserInfo(): Promise<ApiResponse<{role: string; boardLimit: number}>>{
+    try{
+      const {data} = await client.get('/user/info');
+      return{
+        success: true,
+        data
+      }
+    } catch(error){
+console.log('Failed to fetch user info:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown Error'
+    };
+    }
+  }
 };

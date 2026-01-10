@@ -11,7 +11,7 @@ import { useAuth } from '@/context/auth.tsx'
 
 
 export default function HomePage() {
-  const {boards, archivedBoards, archiveBoard,loadArchivedBoards, deleteBoard, restoreBoard, createBoard} = useData();
+  const {boards, archivedBoards, archiveBoard,loadArchivedBoards, deleteBoard, restoreBoard, createBoard, canCreateBoard, userRole, boardLimit, userVerified} = useData();
   const [isCreating, setIsCreating] = useState(false);
   const {firstName} = useAuth();
   const location = useLocation();
@@ -20,11 +20,19 @@ export default function HomePage() {
   const isArchived = location.pathname === '/archive';
   
   const handleCreateBoard = async () => {
+    if(!userVerified){
+      alert(`You have to verify your email before creating a board`);
+      return;
+    }
+    if(!canCreateBoard){
+      alert(`You've reached your limit of ${boardLimit} boards. Contact admin to upgrade!`);
+      return;
+    }
     setIsCreating(true);
     await createBoard("Untitled Board");
     setIsCreating(false);
   };
-  
+
   useEffect(() => {
     if (isArchived) {
       loadArchivedBoards();
@@ -57,13 +65,20 @@ export default function HomePage() {
           </p>
         </button>
       </div>
+      {isRecents && userRole === 'user' && (
+        <p className="text-sm text-gray-500">
+            Boards: {boards.length} / {boardLimit}
+        </p>
+      )}
       <div className='flex flex-wrap gap-7'>
         {isRecents ? (
           <>
             <button
               onClick={handleCreateBoard}
               disabled={isCreating}
-              className="flex flex-[0_0_calc(25%-1rem)] h-[150px] items-center justify-center bg-dark border-accent border-t-3 border-b-3 border-r-2 border-l-2 rounded-lg transition-all duration-300 hover:cursor-pointer disabled:opacity-50"
+              className={`flex flex-[0_0_calc(25%-1rem)] h-[150px] items-center justify-center bg-dark border-accent border-t-3 border-b-3 border-r-2 border-l-2 rounded-lg transition-all duration-300 disabled:opacity-50${
+                canCreateBoard ? 'hover:cursor-pointer' : 'opacity-50 cursor-not-allowed'
+              }`}
             >
               <span className="text-5xl text-light-accent font-light">+</span>
             </button>

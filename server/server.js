@@ -4,6 +4,8 @@ import blocksRouter from './routes/blocks.js';
 
 import imageRouter from './routes/image.js';
 
+import userRouter from "./routes/user.js"
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -13,6 +15,9 @@ app.use('/api/data', blocksRouter);
 
 // Image Routes
 app.use('/api/images/', imageRouter);
+
+// User Routes
+app.use('/api/user/', userRouter)
 
 // App is Listening on Port 5000
 const port = process.env.PORT || 5000; 

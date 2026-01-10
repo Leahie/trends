@@ -22,4 +22,19 @@ export default function EmailVerificationBanner(){
 
         setSending(false);
     };
+
+    return(
+        <div className="bg-yellow-500 text-black px-4 py-3 text-center">
+            <p className="text-sm">
+                Please verify your email to access all features
+                <button
+                    onClick={handleResend}
+                    disabled={sending || sent}
+                    className="ml-3 underline font-semibold cursor-pointer"
+                >
+                    {sent ? 'Email sent!' : 'Resend verification email'}
+                </button>
+            </p>
+        </div>
+    )
 }
