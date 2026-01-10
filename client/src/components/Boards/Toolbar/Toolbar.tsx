@@ -5,6 +5,8 @@ import type { Operation } from '@/types/editorTypes';
 import { Undo2, Redo2, MoreHorizontal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import Tool from './Tool';
+import CropOverlay from './CropOverlay';
+import type { ImageBlockType } from '@/types/types';
 
 interface ToolGroup {
   name: string;
@@ -30,6 +32,8 @@ export default function Toolbar(){
     const [showOverflow, setShowOverflow] = useState(false);
     const [visibleGroups, setVisibleGroups] = useState<string[]>([]);
     const [overflowGroups, setOverflowGroups] = useState<string[]>([]);
+    const [showCropOverlay, setShowCropOverlay] = useState(false);
+
 
     const toolbarRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -95,11 +99,15 @@ export default function Toolbar(){
         if (!selectedBlock) return;
 
         if (operation.requiresOverlay) {
-            // Skip for now 
+            if (operation.id === 'crop') {
+                setShowCropOverlay(true);
+                setPendingOperation(operation);
+            }
         }else{
             const before = { ...selectedBlock };
             const updates = operation.apply(selectedBlock, params );
             const after = { ...selectedBlock, ...updates };
+            console.log("Cheeck out these changess", before, after)
 
             await updateBlock(selectedBlock.id, updates);
             pushToHistory(selectedBlock.id, before, after);
@@ -108,6 +116,25 @@ export default function Toolbar(){
             setPendingOperation(null);
         }
     }
+
+    const handleCropApply = async (crop: { x: number; y: number; width: number; height: number }) => {
+        if (!selectedBlock || !pendingOperation) return;
+
+        const before = { ...selectedBlock };
+        const updates = pendingOperation.apply(selectedBlock, { crop });
+        const after = { ...selectedBlock, ...updates };
+
+        await updateBlock(selectedBlock.id, updates);
+        pushToHistory(selectedBlock.id, before, after);
+        
+        setShowCropOverlay(false);
+        setPendingOperation(null);
+    };
+
+    const handleCropCancel = () => {
+        setShowCropOverlay(false);
+        setPendingOperation(null);
+    };
 
     const visibleOps = groupedOperations.filter(g => visibleGroups.includes(g.name));
     const overflowOps = groupedOperations.filter(g => overflowGroups.includes(g.name));
@@ -255,6 +282,13 @@ export default function Toolbar(){
                 <div 
                 className='fixed inset-0 z-30' 
                 onClick={() => setShowOverflow(false)}
+                />
+            )}
+            {showCropOverlay && selectedBlock?.type === 'image' && (
+                <CropOverlay
+                    block={selectedBlock as ImageBlockType}
+                    onApply={handleCropApply}
+                    onCancel={handleCropCancel}
                 />
             )}
         </>

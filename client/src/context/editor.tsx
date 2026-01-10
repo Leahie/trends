@@ -1,6 +1,7 @@
-import React, {useState, useContext, useCallback, createContext, type ReactNode, useEffect} from 'react';
+import React, {useState, useContext, useCallback, createContext, type ReactNode, useEffect, useMemo} from 'react';
 import type { Block, BlockType } from "@/types/types";
 import type { HistoryEntry, Operation } from "@/types/editorTypes";
+import { useData } from './data';
 
 interface EditorContextType{
     selectedBlockId: string | null; 
@@ -31,14 +32,21 @@ interface EditorContextType{
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
 export function EditorProvider({children, updateBlock} : {children : ReactNode; updateBlock: (id: string, updates: Partial<Block>) => void}){
-    const [selectedBlock, setSelectedBlockState] = useState<Block | null>(null);
+    const { blocks } = useData();
+    const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+
     const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
     const [redoStack, setRedoStack] = useState<HistoryEntry[]>([]);
     const [activeOverlay, setActiveOverlay] = useState<string | null>(null);
     const [isEditingText, setIsEditingText] = useState(false);
     const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+    
+    // Use memo instead of taking a snapshot of it 
+    const selectedBlock = useMemo(() => {
+        if (!selectedBlockId) return null;
+        return blocks.find(b => b.id === selectedBlockId) ?? null;
+    }, [blocks, selectedBlockId]);
 
-    console.log("ARE WE EDITING BLOCKS", isEditingText)
 
     useEffect(() => {
         if (selectedBlock == null){
@@ -48,7 +56,7 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
     }, [selectedBlock])
 
     const setSelectedBlock = useCallback((block: Block | null) => {
-        setSelectedBlockState(block);
+        setSelectedBlockId(block?.id || null);
         setActiveOverlay(null);
     }, [])
 
@@ -67,9 +75,6 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
         setRedoStack(prev => [...prev, curr])
         setUndoStack(prev => prev.slice(0, -1));
         
-        if (selectedBlock?.id === curr.blockId) {
-            setSelectedBlockState(curr.before);
-        }
     }, [undoStack, updateBlock, selectedBlock])
 
     const redo = useCallback(async () => {
@@ -82,9 +87,6 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
         setUndoStack(prev => [...prev, entry]);
         setRedoStack(prev => prev.slice(0, -1));
         
-        if (selectedBlock?.id === entry.blockId) {
-            setSelectedBlockState(entry.after);
-        }
     }, [redoStack, updateBlock, selectedBlock]);
 
     const value: EditorContextType = {

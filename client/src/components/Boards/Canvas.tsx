@@ -90,6 +90,12 @@ export default function Canvas(){
             return;
         }
 
+        const img = new Image();
+        const dimensions: { width: number; height: number } = await new Promise((resolve, reject) => {
+            img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+            img.onerror = reject;
+            img.src = firebaseUrl;
+        });
 
         const maxZ = Math.max(...blocks.map(b => b.location.zIndex), 0);
 
@@ -99,13 +105,15 @@ export default function Canvas(){
             content: {
                 title: "Untitled",
                 url: firebaseUrl,
-                source: 'external'
+                source: 'external',
+                imgWidth: dimensions.width,   // <-- store original dimensions
+                imgHeight: dimensions.height
             },
             location: {
                 x,
                 y,
-                width: 300,
-                height: 300,
+                width: dimensions.width,
+                height: dimensions.height,
                 zIndex: maxZ + 1,
                 rotation: 0,
                 scaleX: 1,
@@ -200,6 +208,9 @@ export default function Canvas(){
         };
     }, [spacePressed, isEditingText]);
 
+    
+
+
     // Zoom with wheel
     const handleWheel = (e: React.WheelEvent) => {
         e.preventDefault();
@@ -246,6 +257,8 @@ export default function Canvas(){
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
+        e.stopPropagation();
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 

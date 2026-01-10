@@ -279,7 +279,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     
 
     return(     
-        <div className={`absolute resizeable ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}
+        <div className={`absolute  ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}
         `} 
             style={{...boxStyle, ...blockTheme} }  onMouseMove={() => handleMouseMove} 
             onClick={(e)=>{
@@ -303,7 +303,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                     startMove(e);
                 }}
             >
-                <Container node={node} />
+                <Container node={node} dims={dims} scale={scale} />
             </div>
 
             <div className="resize-handle top top-bottom"   onMouseDown={startResize("top")} />

@@ -64,7 +64,7 @@ export default function PaintTool({operation, selectedBlock, handleOperationClic
             <>
             <div className="fixed inset-0 z-10" onMouseDown={() => setIsOpen((prev)=> !prev)} />
 
-            <div className="absolute bottom-full mb-2 left-0 bg-dark border border-gray-600 rounded-xl shadow-lg z-20 p-3">
+            <div className="absolute bottom-full mb-2 left-0 bg-dark rounded-xl shadow-lg z-20 p-3">
                 <HexColorPicker
                 color={lastColor}
                 onChange={(color) => {

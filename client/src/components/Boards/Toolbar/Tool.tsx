@@ -1,18 +1,23 @@
 import type { Operation } from "@/types/editorTypes";
-import type { Block, TextBlockType } from "@/types/types";
-import PaintTool from "./Painttool";
+import type { Block, ImageBlockType, TextBlockType } from "@/types/types";
+import PaintTool from "./PaintTool";
+import OpacityTool from "./OpacityTool";
 
 export default function Tool({operation, selectedBlock, handleOperationClick}: {operation: Operation, selectedBlock: Block | null, handleOperationClick: (operation: Operation, params?: any) => void}){
     const isActive = selectedBlock && (() => {
                                         // Check if the operation is currently active TO DO: better check T_T
-                                        if (operation.id === 'bold') return (selectedBlock as any).content?.bold;
-                                        if (operation.id === 'italic') return (selectedBlock as any).content?.italic;
-                                        if (operation.id === 'underline') return (selectedBlock as any).content?.underline;
+                                        if (operation.id === 'opacity') return (selectedBlock as any).content?.transforms?.opacity && (selectedBlock as any).content?.transforms?.opacity != 1.0;
+                                        if (operation.id === 'flip-horizontal') return (selectedBlock as any).content?.transforms?.flip?.horizontal;
+                                        if (operation.id === 'flip-vertical') return (selectedBlock as any).content?.transforms?.flip?.vertical;
                                         if (operation.id === 'grayscale') return (selectedBlock as any).content?.transforms?.grayscale;
                                         return false;
                                     })();
     if (operation.id == "bg-color"){
         return (<PaintTool operation={operation} selectedBlock={selectedBlock as TextBlockType} handleOperationClick={handleOperationClick}/>)
+    }
+
+    if (operation.id == "opacity"){
+        return (<OpacityTool operation={operation} selectedBlock={selectedBlock as ImageBlockType} handleOperationClick={handleOperationClick} isActive={isActive} />)
     }
     return(
         <button

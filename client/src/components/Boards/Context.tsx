@@ -84,6 +84,13 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
                 return;
             }
             
+            const img = new Image();
+            const dimensions: { width: number; height: number } = await new Promise((resolve, reject) => {
+                img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+                img.onerror = reject;
+                img.src = firebaseUrl;
+            });
+
             const maxZ = Math.max(...blocks.map(b => b.location.zIndex), 0);
             
             const imageBlock:Partial<ImageBlockType> = {
@@ -92,9 +99,15 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
                 content: {
                     title: "Untitled",
                     url: firebaseUrl,
-                    source: 'external'
+                    source: 'external',
+                    imgWidth: dimensions.width,   // <-- store original dimensions
+                    imgHeight: dimensions.height
                 },
-                location: createDefaultLocation(canvasX, canvasY, maxZ + 1)
+                location: {
+                    ...createDefaultLocation(canvasX, canvasY, maxZ + 1),
+                    width: dimensions.width,
+                    height: dimensions.height,
+                }
             };
 
             await addBlock(imageBlock);
@@ -105,6 +118,7 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
         // Reset input so same file can be selected again
         e.target.value = '';
     };
+
 
     console.log("selected", selected);
     return(

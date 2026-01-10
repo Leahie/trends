@@ -1,8 +1,21 @@
-import type {ImageBlockType} from "@/types/types"
-export default function ImageBlock({id, type, content, boardId}: ImageBlockType){
+import { compileStyle } from "@/hooks/blocks/imageHooks";
+import type {ImageBlockType, Location} from "@/types/types"
+
+type ImageBlockProps = ImageBlockType & {
+  dims: Location;
+};
+
+export default function ImageBlock({id, type, content, location, boardId, dims}: ImageBlockProps){
+    const { containerStyle } = compileStyle(
+        content.transforms, 
+        content, 
+        { width: dims.width, height: dims.height }
+    );
+
     return( 
-        <div className="h-full w-full relative overflow-hidden">
-                <img className="max-w-full max-h-full object-coverabsolute inset-0 w-full h-full object-cover object-center" src={content.url} draggable={false}/>
-        </div>
+        <div 
+            className="h-full w-full relative overflow-hidden"
+            style={containerStyle}
+        />
     )
 }

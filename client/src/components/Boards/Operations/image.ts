@@ -1,5 +1,8 @@
 import {
-  Crop, Palette, FlipHorizontal, FlipVertical
+  Crop, Palette, FlipHorizontal, FlipVertical,
+  Eclipse,
+  SquareDashed,
+  Eraser
 } from "lucide-react";
 import type { Operation } from "@/types/editorTypes";
 import type { ImageBlockType } from "@/types/types";
@@ -77,7 +80,7 @@ export const IMAGE_OPERATIONS: Operation[] = [
   {
     id: 'grayscale',
     label: 'Grayscale',
-    icon: Palette,
+    icon: Eclipse,
     blockTypes: ['image'],
     category: 'image',
     group: 'filters',
@@ -99,9 +102,9 @@ export const IMAGE_OPERATIONS: Operation[] = [
   {
     id: 'opacity',
     label: 'Opacity',
-    icon: Palette,
+    icon: SquareDashed ,
     blockTypes: ['image'],
-    requiresOverlay: true,
+    requiresOverlay: false,
     category: 'image',
     group: 'filters',
     priority: 2,
@@ -114,6 +117,24 @@ export const IMAGE_OPERATIONS: Operation[] = [
             ...imageBlock.content.transforms,
             opacity: params.opacity
           }
+        }
+      };
+    }
+  },
+  {
+    id: 'remove-formatting',
+    label: 'Remove Formatting',
+    icon: Eraser,
+    blockTypes: ['image'],
+    category: 'image',
+    group: 'reset',
+    priority: 4,
+    apply: (block) => {
+      const imageBlock = block as ImageBlockType;
+      return {
+        content: {
+          ...imageBlock.content,
+          transforms: undefined // Remove all transforms
         }
       };
     }

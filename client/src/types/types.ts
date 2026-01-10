@@ -47,6 +47,8 @@ export interface ImageBlockType extends BaseBlock{
         url: string; 
         source: 'upload' | 'external';
         transforms?: ImageTransforms;
+        imgWidth: number;
+        imgHeight: number;
     }
 }
 
@@ -83,10 +85,10 @@ export type Block =  TextBlockType | ImageBlockType | BoardBlockType;
 
 export interface ImageTransforms {
   crop?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    xRatio: number;
+    yRatio: number;
+    widthRatio: number;
+    heightRatio: number;
   };
   flip?: {
     horizontal: boolean;
