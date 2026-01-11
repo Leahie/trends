@@ -31,8 +31,8 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
 ){
     if (!node) return null;
     const {updateBlock} = useData();
-    const { selectedBlockId, setIsEditingText, setEditingBlockId, isEditingText, editingBlockId, pushToHistory } = useEditor();
-    const selected = selectedBlockId === node.id;
+    const { selectedBlockIds, setIsEditingText, setEditingBlockId, isEditingText, editingBlockId, pushToHistory } = useEditor();
+    const selected = selectedBlockIds.includes(node.id);
     const isThisTextBlockEditing = editingBlockId === node.id;
 
     const navigate = useNavigate();

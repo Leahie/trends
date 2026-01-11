@@ -11,8 +11,12 @@ export const ALL_OPERATIONS = [
   ...TEXT_OPERATIONS 
 ]
 
-export function getOperationsForBlock(blockType: Block['type'] | null): Operation[] {
-  if (!blockType) return UNIVERSAL_OPERATIONS;
-  
-  return ALL_OPERATIONS.filter(op => op.blockTypes.includes(blockType) );
+export function getOperationsForBlockTypes(
+  blockTypes: Set<Block["type"]>
+  ): Operation[] {
+  if (blockTypes.size === 0) return UNIVERSAL_OPERATIONS;
+
+  return ALL_OPERATIONS.filter(op =>
+    [...blockTypes].every(type => op.blockTypes.includes(type))
+  );
 }

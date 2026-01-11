@@ -1,12 +1,13 @@
 import { useEditor } from '@/context/editor';
 import { useData } from '@/context/data';
-import { getOperationsForBlock } from '@/components/Boards/Operations/operation';
+import { getOperationsForBlockTypes } from '@/components/Boards/Operations/operation';
 import type { Operation } from '@/types/editorTypes';
 import { Undo2, Redo2, MoreHorizontal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import Tool from './Tool';
 import CropOverlay from './CropOverlay';
-import type { ImageBlockType } from '@/types/types';
+import type { Block, ImageBlockType } from '@/types/types';
+import { getBlockTypes } from '@/hooks/toolbarHooks';
 
 interface ToolGroup {
   name: string;
@@ -16,8 +17,7 @@ interface ToolGroup {
 
 export default function Toolbar(){
     const { 
-        selectedBlockType, 
-        selectedBlock, 
+        selectedBlockIds, 
         undo, 
         redo, 
         canUndo, 
@@ -27,19 +27,21 @@ export default function Toolbar(){
         setActiveOverlay
     } = useEditor();
     
-    const {updateBlock} = useData(); // switch to batch update when selection works
+    const {updateBlock, batchUpdateBlocks, syncNow, dataMap} = useData(); // switch to batch update when selection works
     const [pendingOperation, setPendingOperation] = useState<Operation | null>(null);
     const [showOverflow, setShowOverflow] = useState(false);
     const [visibleGroups, setVisibleGroups] = useState<string[]>([]);
     const [overflowGroups, setOverflowGroups] = useState<string[]>([]);
     const [showCropOverlay, setShowCropOverlay] = useState(false);
-
-
     const toolbarRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 
-    const operations = getOperationsForBlock(selectedBlockType);
 
+    const selectedBlock = selectedBlockIds.length == 1 ? dataMap[selectedBlockIds[0]] : null;
+    
+    const types = getBlockTypes(selectedBlockIds, dataMap);
+    const operations = getOperationsForBlockTypes(types);
+    
     const displayOperations = selectedBlock ? operations : []; // no additional operations if no block selected
 
     const groupedOperations: ToolGroup[] = displayOperations.reduce((acc, op) => {
@@ -96,28 +98,52 @@ export default function Toolbar(){
 
     const handleOperationClick = async(operation:Operation, params?:any) => {
 
-        if (!selectedBlock) return;
-
-        if (operation.requiresOverlay) {
+        if (selectedBlockIds.length==0) return;
+        console.log("is this workingg")
+         if (operation.requiresOverlay) {
             if (operation.id === 'crop') {
-                setShowCropOverlay(true);
-                setPendingOperation(operation);
+            setShowCropOverlay(true);
+            setPendingOperation(operation);
             }
-        }else{
-            const before = { ...selectedBlock };
-            const updates = operation.apply(selectedBlock, params );
-            const after = { ...selectedBlock, ...updates };
-            console.log("Cheeck out these changess", before, after)
-
-            await updateBlock(selectedBlock.id, updates);
-            pushToHistory(selectedBlock.id, before, after);
-            
-            setActiveOverlay(null);
-            setPendingOperation(null);
+            return;
         }
+        const before: Record<string, Block> = {};
+        const after: Record<string, Block> = {};
+        const batchUpdates: Record<string, Partial<Block>> = {};
+
+        for (const id of selectedBlockIds) {
+            const block = dataMap[id];
+            if (!block) continue;
+
+            before[id] = structuredClone(block);
+
+            const updates = operation.apply(block, params);
+            console.log("these are the updates", updates)
+            after[id] = {
+                ...block,
+                ...updates,
+                location: {
+                    ...block.location,
+                    ...(updates.location || {})
+                },
+                content: {
+                    ...block.content,
+                    ...(updates.content || {})
+                }
+            };
+
+            batchUpdates[id] = updates;
+        }
+
+        await batchUpdateBlocks(batchUpdates);
+        await syncNow();
+        pushToHistory(before, after);
+
+        setActiveOverlay(null);
+        setPendingOperation(null);
     }
 
-    const handleCropApply = async (crop: { x: number; y: number; width: number; height: number }) => {
+    const handleCropApply = async (crop: { xRatio: number; yRatio: number; widthRatio: number; heightRatio: number }) => {
         if (!selectedBlock || !pendingOperation) return;
 
         const before = { ...selectedBlock };

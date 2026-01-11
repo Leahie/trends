@@ -14,13 +14,16 @@ import { useNavigate } from "react-router-dom";
 // HOOKS 
 import { uploadToFirebase } from "@/hooks/uploadToFirebase";
 import { useAuth } from "@/context/auth";
-export default function Context({x, y, selected, parentId, canvasX, canvasY ,setContextMenu, bringToFront, pushToBack}:
-    {x:number, y:number, selected:string|null, parentId: string, canvasX: number, canvasY: number, 
+import { useEditor } from "@/context/editor";
+export default function Context({x, y, parentId, canvasX, canvasY ,setContextMenu, bringToFront, pushToBack}:
+    {x:number, y:number, selected:string[], parentId: string, canvasX: number, canvasY: number, 
         setContextMenu : (value: {x: number, y:number, canvasX:number, canvasY: number} | null) => void 
         bringToFront: (id: string) => void 
         pushToBack: (id:string) => void}){
     const {getIdToken} = useAuth()
     const {blocks, createBoard, removeBlock, addBlock} = useData();
+    const {selectedBlockIds} = useEditor();
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     
@@ -58,13 +61,14 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
         }
     };
     const handleDelete = async () => {
-        if (selected) {
+        for (const selected of selectedBlockIds) {
             const success = await removeBlock(selected);
             if (success) {
-                console.log('Block deleted successfully');
-                setContextMenu(null);
+            console.log('Block deleted successfully');
             }
         }
+
+        setContextMenu(null);
     };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +124,7 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
     };
 
 
-    console.log("selected", selected);
+    console.log("selected", selectedBlockIds);
     return(
         <>
         <input
@@ -153,11 +157,11 @@ export default function Context({x, y, selected, parentId, canvasX, canvasY ,set
                     </li>
                 </ul>
                 {
-                    selected!=null && 
+                    selectedBlockIds.length!=0 && 
                     <>
                     <hr className=" mt-2.5 ml-1 mr-4 text-light-accent/50" />
-                    <li className="context-li" onClick={()=> bringToFront(selected)}>Bring To Front</li>
-                    <li className="context-li" onClick={()=> pushToBack(selected)}>Push To Back</li>
+                    {/* <li className="context-li" onClick={()=> bringToFront(selected)}>Bring To Front</li>
+                    <li className="context-li" onClick={()=> pushToBack(selected)}>Push To Back</li> */}
                     <li className="context-li" onClick={()=> handleDelete()}>Delete</li>
                         
                     </>

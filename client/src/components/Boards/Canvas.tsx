@@ -10,6 +10,7 @@ import Context from "./Context.tsx";
 import ThemeModal from "./ThemeModal.tsx";
 import ResizeableContainer from "./ResizeableContainer.tsx"
 import Toolbar from "./Toolbar/Toolbar.tsx";
+import SelectionBox from "./SelectionBox.tsx";
 
 // HOOKS 
 import { useImagePaste } from "@/hooks/useImagePaste.ts";
@@ -20,18 +21,26 @@ import {zoomToBlock} from "@/hooks/blocks/imageHooks.ts"
 export default function Canvas(){
     const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks} = useData();
     const {getIdToken} = useAuth()
-    const {setSelectedBlock, selectedBlockId, isEditingText, setIsEditingText, setEditingBlockId} = useEditor();
+    const {toggleSelection, clearSelection, selectedBlockIds, isEditingText, setIsEditingText, setEditingBlockId} = useEditor();
     // Zoom and pan state
     const [scale, setScale] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [isPanning, setIsPanning] = useState(false);
     const [panStart, setPanStart] = useState({ x: 0, y: 0 });
     const [spacePressed, setSpacePressed] = useState(false);
-    
+    // Selection Box 
+    const [selectionBox, setSelectionBox] = useState<{startX: number, startY: number, 
+                                                        endX: number, endY: number
+                                                        } | null>(null);
+
+    const [isSelecting, setIsSelecting] = useState(false);
+
     const canvasRef = useRef<HTMLDivElement>(null);
     if (!currentBoard){  return <p>Loading...</p>};
     console.log(currentBoard)
     console.log(blocks)
+
+
     const [title, setTitle] = useState<string>(currentBoard.title);
     // Keep local title in sync when switching boards to avoid overwriting
     // the newly-opened board with a stale title from the previous board.
@@ -52,13 +61,19 @@ export default function Canvas(){
         updateTheme(currentBoard.colorscheme);
     }, [currentBoard.id]); //adds currentBoard.id as dependency to update theme when board changes
 
+
+
+    // helper function that I should probably use elsewhere
+    const screenToCanvas = (xAcc: number, yAcc:number) => {
+        return {x: ((xAcc - pan.x) / scale), y: ((yAcc - pan.y) / scale )}
+    }
     // Right-click logic
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
     
 
     // THeme logic
     
-    console.log("This is the selected block id", selectedBlockId);
+    console.log("This is the selected block ids", selectedBlockIds);
 
     const onClose = () => {
         setThemeModalOpen(false);
@@ -240,6 +255,22 @@ export default function Canvas(){
             setIsPanning(true);
             setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
         }
+
+        if (e.button === 0 && !spacePressed && !isPanning){
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const canvasCoords = screenToCanvas(e.clientX, e.clientY)
+            setIsSelecting(true);
+            setSelectionBox({
+                startX: canvasCoords.x, startY: canvasCoords.y,
+                endX: canvasCoords.x, endY: canvasCoords.y
+            })
+
+        }
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
@@ -249,10 +280,29 @@ export default function Canvas(){
                 y: e.clientY - panStart.y,
             });
         }
+        if (isSelecting && selectionBox){
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const canvasCoords = screenToCanvas(mouseX, mouseY);
+
+            setSelectionBox((prev) => {
+                if (!prev) return null;
+                return  {...prev, endX:canvasCoords.x, endY: canvasCoords.y, }
+            })
+        }
     };
 
     const handleMouseUp = () => {
         setIsPanning(false);
+
+        if (isSelecting) {
+            setSelectionBox(null);
+        }
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -352,7 +402,7 @@ export default function Canvas(){
         
         await batchUpdateBlocks(updated);
         setContextMenu(null);
-        setSelectedBlock(null);
+        clearSelection();
     }
     // useEffect(() =>{
     //     if (selectedBlockId!=null) bringToFront(selectedBlockId)
@@ -360,8 +410,9 @@ export default function Canvas(){
 
     
     const handleBlockSelect = (block: Block | null) => {
-        if (!isPanning && !spacePressed){ // don't want this behavior if I'm panning
-            setSelectedBlock(block);
+        if (!isPanning && !spacePressed && !isSelecting){ // don't want this behavior if I'm panning
+            if (block==null) clearSelection();
+            else toggleSelection(block.id);
             if (block && block.type !== "text") {
                 setIsEditingText(false);
                 setEditingBlockId(null);
@@ -375,6 +426,7 @@ export default function Canvas(){
             zoomToBlock(canvasRef, block, setScale, setPan)
         }
     }
+
 
     return (
     
@@ -427,13 +479,17 @@ export default function Canvas(){
                 ref={canvasRef}
                 className={`absolute inset-0 overflow-hidden ${
                     isPanning || spacePressed ? 'cursor-grab' : ''
-                } ${isPanning ? 'cursor-grabbing' : ''}`}
+                } ${isPanning ? 'cursor-grabbing' : ''} 
+                `}
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
-                onClick={() => {handleBlockSelect(null); setContextMenu(null)}}
+                onClick={(e) => {if (true) {
+                                handleBlockSelect(null);
+                                setContextMenu(null);
+                            }}}
                 onContextMenu={handleContextMenu}
                 onDrop={handleDrop}         
                 onDragOver={handleDragOver}
@@ -463,6 +519,11 @@ export default function Canvas(){
                             />
                         ))}
                     </div> 
+                    <SelectionBox 
+                                selectionBox={selectionBox}
+                                scale={scale}
+                                pan={pan}
+                            />
                 </div>
             </div>
         </div>
@@ -472,7 +533,7 @@ export default function Canvas(){
                 y={contextMenu.y} 
                 canvasX={contextMenu.canvasX} 
                 canvasY={contextMenu.canvasY} 
-                selected={selectedBlockId} 
+                selected={selectedBlockIds} 
                 parentId={currentBoard.id} 
                 setContextMenu={setContextMenu}
                 bringToFront= {bringToFront}

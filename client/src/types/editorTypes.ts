@@ -3,9 +3,8 @@ import type { Block } from "./types";
 import type { ComponentType  } from "react";
 
 export interface HistoryEntry {
-  blockId: string;
-  before: Block;
-  after: Block;
+  before: Record<string, Block>;
+  after: Record<string, Block>;
   timestamp: number;
 }
 

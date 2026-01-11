@@ -30,8 +30,8 @@ export const UNIVERSAL_OPERATIONS : Operation[] = [
         })
     },
     {
-        id: "align-center",
-        label: "Align Center",
+        id: "align-right",
+        label: "Align Right",
         icon: AlignRight,
         blockTypes: ["text", "image", "board_block"],
         category: "universal",

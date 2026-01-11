@@ -4,10 +4,12 @@ import type { HistoryEntry, Operation } from "@/types/editorTypes";
 import { useData } from './data';
 
 interface EditorContextType{
-    selectedBlockId: string | null; 
-    selectedBlockType: BlockType | null;
-    selectedBlock: Block | null;
-    setSelectedBlock: (block: Block | null) => void;
+    selectedBlockIds: string[]; 
+    addToSelection: (id: string) => void;
+    removeFromSelection: (id: string) => void;
+    setSelection: (ids: string[]) => void;
+    clearSelection: () => void;
+    toggleSelection: (id:string) => void;
 
     // text editing 
     isEditingText: boolean; 
@@ -23,7 +25,7 @@ interface EditorContextType{
     canUndo: boolean;
     canRedo: boolean;
 
-    pushToHistory: (blockId: string, before: Block, after: Block) => void;
+    pushToHistory: (before: Record<string, Block>, after: Record<string, Block>) => void;
 
     activeOverlay: string | null;
     setActiveOverlay: (overlayId: string | null) => void;
@@ -32,8 +34,8 @@ interface EditorContextType{
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
 export function EditorProvider({children, updateBlock} : {children : ReactNode; updateBlock: (id: string, updates: Partial<Block>) => void}){
-    const { blocks } = useData();
-    const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+    const { blocks, batchUpdateBlocks } = useData();
+    const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
 
     const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
     const [redoStack, setRedoStack] = useState<HistoryEntry[]>([]);
@@ -42,28 +44,47 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
     const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
     
     // Use memo instead of taking a snapshot of it 
-    const selectedBlock = useMemo(() => {
-        if (!selectedBlockId) return null;
-        return blocks.find(b => b.id === selectedBlockId) ?? null;
-    }, [blocks, selectedBlockId]);
+    // const selectedBlock = useMemo(() => {
+    //     if (!selectedBlockIds) return null;
+    //     return blocks.find(b => b.id === selectedBlockId) ?? null;
+    // }, [blocks, selectedBlockId]);
+    
+    const addToSelection = (id:string) => {
+        setSelectedBlockIds((prev)=>
+            [...prev, id]
+        )
+    }
+    const removeFromSelection = (id:string) => {
+        setSelectedBlockIds(prev => 
+            prev.filter(existingId => existingId != id)
+        )
+    }
+    const setSelection = (ids: string[]) => {
+        setSelectedBlockIds(ids);
+    }
+    const clearSelection = () => {
+        setSelectedBlockIds([]);
+    }
+    const toggleSelection = (id:string) => {
+        setSelectedBlockIds([id]);
+    }
 
 
     useEffect(() => {
-        if (selectedBlock == null){
+        if (selectedBlockIds.length==0){
             setIsEditingText(false);
             setEditingBlockId(null);
         }
-    }, [selectedBlock])
+    }, [selectedBlockIds])
 
-    const setSelectedBlock = useCallback((block: Block | null) => {
-        setSelectedBlockId(block?.id || null);
-        setActiveOverlay(null);
-    }, [])
 
-    const pushToHistory = useCallback((blockId: string, before: Block, after: Block) => {
+
+    const pushToHistory = useCallback((before: Record<string, Block>, after: Record<string, Block>) => {
         setUndoStack(prev => [...prev, {
-            blockId, before, after, timestamp: Date.now()
-        }])
+            before,
+            after,
+            timestamp: Date.now()
+        }]);
         setRedoStack([]);
     },[])
 
@@ -71,29 +92,49 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
         if (undoStack.length === 0) return;
 
         const curr = undoStack[undoStack.length-1];
-        await updateBlock(curr.blockId, curr.before);
+
+        await batchUpdateBlocks(
+            Object.fromEntries(
+                Object.entries(curr.before).map(([id, block]) => [
+                    id, 
+                    {location: block.location, content: block.content}
+                ])
+            )
+        );
+
         setRedoStack(prev => [...prev, curr])
         setUndoStack(prev => prev.slice(0, -1));
         
-    }, [undoStack, updateBlock, selectedBlock])
+    }, [undoStack, updateBlock, selectedBlockIds])
 
     const redo = useCallback(async () => {
         if (redoStack.length === 0) return;
         
         const entry = redoStack[redoStack.length - 1];
         
-        await updateBlock(entry.blockId, entry.after);
+        await batchUpdateBlocks(
+            Object.fromEntries(
+            Object.entries(entry.after).map(([id, block]) => [
+                id,
+                { location: block.location, content: block.content }
+            ])
+            )
+        );
         
         setUndoStack(prev => [...prev, entry]);
         setRedoStack(prev => prev.slice(0, -1));
         
-    }, [redoStack, updateBlock, selectedBlock]);
+    }, [redoStack, updateBlock, selectedBlockIds]);
 
     const value: EditorContextType = {
-        selectedBlockId: selectedBlock?.id || null,
-        selectedBlockType: selectedBlock?.type || null,
-        selectedBlock,
-        setSelectedBlock,
+        selectedBlockIds: selectedBlockIds,
+        addToSelection: addToSelection,
+        removeFromSelection: removeFromSelection,
+        setSelection: setSelection,
+        clearSelection: clearSelection,
+        toggleSelection: toggleSelection,
+
+
         undoStack,
         redoStack,
         undo,
@@ -124,3 +165,5 @@ export function useEditor(){
     }
     return context;
 }
+
+

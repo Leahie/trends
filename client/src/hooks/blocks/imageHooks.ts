@@ -8,7 +8,7 @@ export function compileStyle(
     containerSize: { width: number; height: number }
 ): { containerStyle: React.CSSProperties } {
     const containerStyle: React.CSSProperties = {
-        backgroundImage: `url(${content.url})`,
+        backgroundImage: `url("${encodeURI(content.url)}")`,
         backgroundRepeat: 'no-repeat',
     };
 
@@ -49,17 +49,12 @@ export function compileStyle(
         
         const bgWidthPercent = (1 / widthRatio) * 100;
         const bgHeightPercent = (1 / heightRatio) * 100;
-        
-        const imgAspect = content.imgWidth / content.imgHeight;
-        const cropAspect = widthRatio / heightRatio;
-            
+
+        const posXPercent = (xRatio / (1 - widthRatio)) * 100;
+        const posYPercent = (yRatio / (1 - heightRatio)) * 100;
+
         containerStyle.backgroundSize = `${bgWidthPercent}% ${bgHeightPercent}%`;
-        
-        const posXPercent = (xRatio / widthRatio) * 100;
-        const posYPercent = (yRatio / heightRatio) * 100;
-        
-        containerStyle.backgroundPosition = `${posXPercent}% ${posYPercent}%`;
-        
+        containerStyle.backgroundPosition = `${posXPercent}% ${posYPercent}%`;        
     } else {
         // No crop - standard background-size: cover
         containerStyle.backgroundSize = 'cover';

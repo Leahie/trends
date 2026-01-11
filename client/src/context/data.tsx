@@ -414,22 +414,26 @@ export function DataProvider({children} : {children : ReactNode}){
     }
 
     const batchUpdateBlocks = async (updates: Record<string, Partial<Block>>): Promise<boolean> => {
-        setBlocks((prev: Block[]) => {
-            const newBlocks = prev.map(b => {
+        setBlocks(prev =>
+            prev.map(b => {
                 if (!updates[b.id]) return b;
-                
+                const { type, ...rest } = updates[b.id]!;
+
                 return {
                     ...b,
-                    location: {
-                        ...b.location,
-                        ...(updates[b.id].location || {})
-                    }
-                } as Block;
-            });
+                    ...rest
+                } as Block; // cast explicitly
+            })
+        );
             
-            console.log('New blocks after batch update:', newBlocks);
-            return newBlocks;
+        Object.entries(updates).forEach(([id, update]) => {
+            const { type, ...rest } = update; // strip out `type` so we don't touch it
+                pendingBlockChanges.current[id] = {
+                    ...(pendingBlockChanges.current[id] || {}),
+                    ...rest
+                } as Partial<Block>;    
         });
+
         const result = await api.batchUpdateBlocks(updates);
 
         if (!result.success){
