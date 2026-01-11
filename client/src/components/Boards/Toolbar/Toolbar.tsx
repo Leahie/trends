@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import Tool from './Tool';
 import CropOverlay from './CropOverlay';
 import type { Block, ImageBlockType } from '@/types/types';
-import { getBlockTypes } from '@/hooks/toolbarHooks';
+import { getBlockTypes, getSelectionXStats } from '@/hooks/toolbarHooks';
 
 interface ToolGroup {
   name: string;
@@ -40,9 +40,9 @@ export default function Toolbar(){
     const selectedBlock = selectedBlockIds.length == 1 ? dataMap[selectedBlockIds[0]] : null;
     
     const types = getBlockTypes(selectedBlockIds, dataMap);
-    const operations = getOperationsForBlockTypes(types);
+    const operations = getOperationsForBlockTypes(types, selectedBlockIds.length>1);
     
-    const displayOperations = selectedBlock ? operations : []; // no additional operations if no block selected
+    const displayOperations = selectedBlockIds.length!=0 ? operations : []; // no additional operations if no block selected
 
     const groupedOperations: ToolGroup[] = displayOperations.reduce((acc, op) => {
         const existingGroup = acc.find(g => g.name === op.group);
@@ -86,6 +86,10 @@ export default function Toolbar(){
             
             setVisibleGroups(visible);
             setOverflowGroups(overflow);
+            console.log("toolbarWidth", toolbarWidth);
+            console.log("groups", groupedOperations.map(g => g.name));
+            console.log("visible", visible);
+            console.log("overflow", overflow);
         };
         
         calculateVisibleGroups();
@@ -106,6 +110,19 @@ export default function Toolbar(){
             setPendingOperation(operation);
             }
             return;
+        }
+        if (operation.group == "alignment"){
+            const { minX, maxX, centerX } = getSelectionXStats(selectedBlockIds, dataMap);
+
+            if (operation.id == "align-right"){
+                params = maxX;
+            }
+            else if (operation.id == "align-left"){
+                params = minX;
+            }
+            else{
+                params = centerX;
+            }
         }
         const before: Record<string, Block> = {};
         const after: Record<string, Block> = {};
@@ -245,7 +262,8 @@ export default function Toolbar(){
                                         <Tool 
                                             key={operation.id}
                                             operation={operation} 
-                                            selectedBlock={selectedBlock} 
+                                            selectedBlock={selectedBlock}
+                                            selectedBlockIds={selectedBlockIds} 
                                             handleOperationClick={handleOperationClick}
                                         />
                                 ))}
@@ -284,6 +302,7 @@ export default function Toolbar(){
                                         key={operation.id}
                                         operation={operation} 
                                         selectedBlock={selectedBlock} 
+                                        selectedBlockIds={selectedBlockIds}
                                         handleOperationClick={(op) => {
                                             handleOperationClick(op);
                                             setShowOverflow(false);

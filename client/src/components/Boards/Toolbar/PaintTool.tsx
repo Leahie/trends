@@ -5,9 +5,8 @@ import { useState } from "react";
 import { HexColorPicker } from "react-colorful";
 
 
-export default function PaintTool({operation, selectedBlock, handleOperationClick}: {operation: Operation, selectedBlock: TextBlockType | null, handleOperationClick: (operation: Operation, params: any) => void}){
-    if (selectedBlock == null) return;
-    const {updateBlock} = useData();
+export default function PaintTool({operation, selectedBlockIds, handleOperationClick}: {operation: Operation, selectedBlockIds: string[], handleOperationClick: (operation: Operation, params: any) => void}){
+    if (selectedBlockIds.length == 0) return;
     
     const [isOpen, setIsOpen] = useState(false);
     const [lastColor, setLastColor] = useState("#FFFFFF");
@@ -30,9 +29,9 @@ export default function PaintTool({operation, selectedBlock, handleOperationClic
             <button
             key={operation.id}
             onClick={() => setIsOpen((prev)=> !prev)}
-            disabled={!selectedBlock && operation.category !== 'universal'}
+            disabled={selectedBlockIds.length == 0 && operation.category !== 'universal'}
             className={`relative group px-3 py-2 rounded transition-colors ${  
-                selectedBlock || operation.category === 'universal'
+                selectedBlockIds.length != 0 || operation.category === 'universal'
                 ? ' hover:bg-highlight text-white'
                 : 'text-secondary cursor-not-allowed'
             }`}

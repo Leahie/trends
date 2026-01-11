@@ -3,7 +3,7 @@ import type { Block, ImageBlockType, TextBlockType } from "@/types/types";
 import PaintTool from "./PaintTool";
 import OpacityTool from "./OpacityTool";
 
-export default function Tool({operation, selectedBlock, handleOperationClick}: {operation: Operation, selectedBlock: Block | null, handleOperationClick: (operation: Operation, params?: any) => void}){
+export default function Tool({operation, selectedBlock, selectedBlockIds, handleOperationClick}: {operation: Operation, selectedBlock: Block | null, selectedBlockIds: string[], handleOperationClick: (operation: Operation, params?: any) => void}){
     const isActive = selectedBlock && (() => {
                                         // Check if the operation is currently active TO DO: better check T_T
                                         if (operation.id === 'opacity') return (selectedBlock as any).content?.transforms?.opacity && (selectedBlock as any).content?.transforms?.opacity != 1.0;
@@ -13,21 +13,21 @@ export default function Tool({operation, selectedBlock, handleOperationClick}: {
                                         return false;
                                     })();
     if (operation.id == "bg-color"){
-        return (<PaintTool operation={operation} selectedBlock={selectedBlock as TextBlockType} handleOperationClick={handleOperationClick}/>)
+        return (<PaintTool operation={operation}  selectedBlockIds={selectedBlockIds} handleOperationClick={handleOperationClick}/>)
     }
 
     if (operation.id == "opacity"){
-        return (<OpacityTool operation={operation} selectedBlock={selectedBlock as ImageBlockType} handleOperationClick={handleOperationClick} isActive={isActive} />)
+        return (<OpacityTool operation={operation} selectedBlock={selectedBlock as ImageBlockType} selectedBlockIds={selectedBlockIds} handleOperationClick={handleOperationClick} isActive={isActive} />)
     }
     return(
         <button
             key={operation.id}
             onClick={() => handleOperationClick(operation)}
-            disabled={!selectedBlock && operation.category !== 'universal'}
+            disabled={selectedBlockIds.length==0 && operation.category !== 'universal'}
             className={`relative group px-3 py-2 rounded transition-colors ${
                 isActive
                 ? 'bg-accent hover:bg-light-accent text-white'
-                : selectedBlock || operation.category === 'universal'
+                : selectedBlockIds.length!=0 || operation.category === 'universal'
                 ? ' hover:bg-highlight text-white'
                 : 'text-secondary cursor-not-allowed'
             }`}

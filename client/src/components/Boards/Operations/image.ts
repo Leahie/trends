@@ -16,6 +16,7 @@ export const IMAGE_OPERATIONS: Operation[] = [
     requiresOverlay: true,
     category: "image",
     group: 'crop',
+    multiSelection: false,
     priority: 3,
     apply: (block, params) => {
       console.log("these are the params", params)
@@ -43,6 +44,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     blockTypes: ["image"],
     category: "image",
     group: 'transform',
+    multiSelection: true,
+
     priority: 1,
     apply: (block) => {
       const imageBlock = block as ImageBlockType;
@@ -65,6 +68,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     blockTypes: ['image'],
     category: 'image',
     group: 'transform',
+    multiSelection: true,
+
     priority: 1,
     apply: (block) => {
       const imageBlock = block as ImageBlockType;
@@ -90,6 +95,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     blockTypes: ['image'],
     category: 'image',
     group: 'filters',
+    multiSelection: true,
+
     priority: 2,
     apply: (block) => {
       const imageBlock = block as ImageBlockType;
@@ -113,6 +120,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     requiresOverlay: false,
     category: 'image',
     group: 'filters',
+    multiSelection: true,
+
     priority: 2,
     apply: (block, params) => {
       const imageBlock = block as ImageBlockType;
@@ -134,6 +143,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
     blockTypes: ['image'],
     category: 'image',
     group: 'reset',
+    multiSelection: true,
+
     priority: 4,
     apply: (block) => {
       const imageBlock = block as ImageBlockType;

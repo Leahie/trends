@@ -11,12 +11,20 @@ import ThemeModal from "./ThemeModal.tsx";
 import ResizeableContainer from "./ResizeableContainer.tsx"
 import Toolbar from "./Toolbar/Toolbar.tsx";
 import SelectionBox from "./SelectionBox.tsx";
+import GroupResizeWrapper from "./GroupResizeWrapper.tsx";
+
 
 // HOOKS 
 import { useImagePaste } from "@/hooks/useImagePaste.ts";
 import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
 import { useEditor } from "@/context/editor.tsx";
 import {zoomToBlock} from "@/hooks/blocks/imageHooks.ts"
+
+interface GroupMoveState {
+    isActive: boolean;
+    offsetX: number;
+    offsetY: number;
+}
 
 export default function Canvas(){
     const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks} = useData();
@@ -34,6 +42,13 @@ export default function Canvas(){
                                                         } | null>(null);
 
     const [isSelecting, setIsSelecting] = useState(false);
+    const [isSelected, setIsSelected] = useState(false);
+
+    const [groupMoveState, setGroupMoveState] = useState<GroupMoveState>({
+        isActive: false,
+        offsetX: 0,
+        offsetY: 0
+    });
 
     const canvasRef = useRef<HTMLDivElement>(null);
     if (!currentBoard){  return <p>Loading...</p>};
@@ -47,6 +62,7 @@ export default function Canvas(){
     useEffect(() => {
         setTitle(currentBoard.title);
     }, [currentBoard.id]);
+    
     const [themeModalOpen, setThemeModalOpen] = useState(false);
     const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
     const {updateTheme} = useTheme();
@@ -70,6 +86,13 @@ export default function Canvas(){
     // Right-click logic
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
     
+     const handleGroupMove = (offsetX: number, offsetY: number, isMoving: boolean) => {
+        setGroupMoveState({
+            isActive: isMoving,
+            offsetX,
+            offsetY
+        });
+    };
 
     // THeme logic
     
@@ -89,8 +112,6 @@ export default function Canvas(){
     const onChange = (color:string) =>{
         setThemeColor(color);
     }
-
-    
     
     // IMAGE PASTING 
     const handleImagePaste = async (file: File, x : number, y: number) => {
@@ -302,6 +323,10 @@ export default function Canvas(){
 
         if (isSelecting) {
             setSelectionBox(null);
+            setIsSelecting(false);     
+            if (selectedBlockIds.length>0) setIsSelected(true); 
+            else setIsSelected(false);  
+            console.log(isSelected)
         }
     };
 
@@ -411,8 +436,9 @@ export default function Canvas(){
     
     const handleBlockSelect = (block: Block | null) => {
         if (!isPanning && !spacePressed && !isSelecting){ // don't want this behavior if I'm panning
-            if (block==null) clearSelection();
-            else toggleSelection(block.id);
+            
+            if (block==null) {clearSelection(); setIsSelected(false)}
+            else if(!selectedBlockIds.includes(block.id)) toggleSelection(block.id);
             if (block && block.type !== "text") {
                 setIsEditingText(false);
                 setEditingBlockId(null);
@@ -480,13 +506,15 @@ export default function Canvas(){
                 className={`absolute inset-0 overflow-hidden ${
                     isPanning || spacePressed ? 'cursor-grab' : ''
                 } ${isPanning ? 'cursor-grabbing' : ''} 
-                `}
+                ${
+                            selectionBox!=null ? 'cursor-crosshair' : ''
+                        }`}
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
-                onClick={(e) => {if (true) {
+                onClick={(e) => {if (!isSelected) {
                                 handleBlockSelect(null);
                                 setContextMenu(null);
                             }}}
@@ -516,13 +544,18 @@ export default function Canvas(){
                                 bringToFront={bringToFront}
                                 zoomToBlock={handleZoomToBlock}
                                 shouldResize = {(!isPanning && !spacePressed)}
+                                groupMoveState={groupMoveState}
+                                onGroupMove={handleGroupMove}
                             />
                         ))}
                     </div> 
+
+                    
                     <SelectionBox 
                                 selectionBox={selectionBox}
                                 scale={scale}
                                 pan={pan}
+                                groupMoveState={groupMoveState}
                             />
                 </div>
             </div>

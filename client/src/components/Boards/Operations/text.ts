@@ -15,6 +15,8 @@ export const TEXT_OPERATIONS: Operation[] = [
     category: 'text',
     group: 'colors',
     priority: 2,
+    multiSelection: true,
+
     apply: (block, params) => {
       const textBlock = block as TextBlockType;
       return {

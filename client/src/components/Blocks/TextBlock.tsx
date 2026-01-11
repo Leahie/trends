@@ -439,68 +439,56 @@ export default function TextBlock({id, type, content, boardId}: TextBlockType){
     }, []);
 
     const renderFormattedContent = useCallback(() => {
-        return value.map((node, i) => {
-            if (SlateElement.isElement(node)) {
-                const text = node.children.map((child, j) => {
-                    if ('text' in child) {
-                        let content = child.text;
-                        const style: React.CSSProperties = {};
-                        
-                        if (child.fontSize) {
-                            style.fontSize = child.fontSize;
-                        }
-                        if (child.color) {
-                            style.color = child.color;
-                        }
-                        if (child.backgroundColor) {
-                            style.backgroundColor = child.backgroundColor;
-                        }
-
-                        let element = <span key={j} style={style}>{content}</span>;
-                        
-                        if (child.bold) {
-                            element = <strong key={j} style={style}>{content}</strong>;
-                        }
-                        if (child.italic) {
-                            element = <em key={j} style={style}>{element}</em>;
-                        }
-                        if (child.underline) {
-                            element = <u key={j} style={style}>{element}</u>;
-                        }
-                        if (child.code) {
-                            element = <code key={j} style={style} className="bg-gray-800 px-1 rounded">{content}</code>;
-                        }
-                        
-                        return element;
-                    }
-                    return null;
-                });
-                
-                const style: React.CSSProperties = {};
-                if ('align' in node) {
-                    style.textAlign = node.align as any;
-                }
-                
-                switch (node.type) {
-                    case 'heading-one':
-                        return <h1 key={i} style={style} className="text-2xl font-bold">{text}</h1>;
-                    case 'heading-two':
-                        return <h2 key={i} style={style} className="text-xl font-bold">{text}</h2>;
-                    case 'block-quote':
-                        return <blockquote key={i} style={style} className="border-l-4 border-gray-500 pl-4 italic">{text}</blockquote>;
-                    case 'bulleted-list':
-                        return <ul key={i} style={style} className="list-disc ml-6">{text}</ul>;
-                    case 'numbered-list':
-                        return <ol key={i} style={style} className="list-decimal ml-6">{text}</ol>;
-                    case 'list-item':
-                        return <li key={i} style={style}>{text}</li>;
-                    default:
-                        return <p key={i} style={style}>{text}</p>;
-                }
-            }
-            return null;
-        });
+            return value.map((n, i) => renderNode(n, i));
     }, [value]);
+
+    const renderNode = (node: any, key: number | string) => {
+        if (SlateElement.isElement(node)) {
+            const children = node.children.map((n, i) => renderNode(n, i));
+
+            const style: React.CSSProperties = {};
+            if ('align' in node) style.textAlign = node.align;
+
+            switch (node.type) {
+            case 'numbered-list':
+                return <ol key={key} style={style} className="list-decimal ml-6">{children}</ol>;
+            case 'bulleted-list':
+                return <ul key={key} style={style} className="list-disc ml-6">{children}</ul>;
+            case 'list-item':
+                return <li key={key}>{children}</li>;
+            case 'heading-one':
+                return <h1 key={key} style={style}>{children}</h1>;
+            case 'heading-two':
+                return <h2 key={key} style={style}>{children}</h2>;
+            default:
+                return <p key={key} style={style}>{children}</p>;
+            }
+        }
+
+        // TEXT
+        let content = node.text;
+        const style: React.CSSProperties = {};
+        
+        if (node.fontSize) {
+            style.fontSize = node.fontSize;
+        }
+        if (node.color) {
+            style.color = node.color;
+        }
+        if (node.backgroundColor) {
+            style.backgroundColor = node.backgroundColor;
+        }
+
+        let el = <span key={key} style={style}>{content}</span>;
+
+        if (node.bold) el = <strong key={key}>{el}</strong>;
+        if (node.italic) el = <em key={key}>{el}</em>;
+        if (node.underline) el = <u key={key}>{el}</u>;
+        if (node.code) el = <code key={key}>{el}</code>;
+
+        return el;
+    };
+
 
     const scheme = content.bgColor ? generateScheme(content.bgColor) : null;
 

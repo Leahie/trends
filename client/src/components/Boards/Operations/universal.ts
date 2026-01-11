@@ -10,8 +10,10 @@ export const UNIVERSAL_OPERATIONS : Operation[] = [
         category: "universal",
         group: 'alignment',
         priority: 1,
-        apply: (block) => ({
-            location: {...block.location, x:0}
+        multiSelection: true,
+
+        apply: (block, params) => ({
+            location: {...block.location, x:params}
         })
     },
     {
@@ -22,10 +24,12 @@ export const UNIVERSAL_OPERATIONS : Operation[] = [
         category: "universal",
         group: 'alignment',
         priority: 1,
-        apply: (block) => ({
+        multiSelection: true,
+
+        apply: (block, params) => ({
         location: {
             ...block.location,
-            x: (4000 - block.location.width) / 2
+            x: params - block.location.width/2
         }
         })
     },
@@ -37,10 +41,12 @@ export const UNIVERSAL_OPERATIONS : Operation[] = [
         category: "universal",
         group: 'alignment',
         priority: 1,
-        apply: (block) => ({
+        multiSelection: true,
+
+        apply: (block, params) => ({
         location: {
             ...block.location,
-            x: 4000 - block.location.width
+            x: params- block.location.width
         }
         })
     },

@@ -16,6 +16,7 @@ export interface Operation {
   requiresOverlay?: boolean;
   category: 'universal' | 'image' | 'text';
   group: string;
+  multiSelection: boolean;
   priority?: number; 
   apply: (block: Block, params?: any) => Partial<Block>;
   isActive?: (block: Block) => boolean;

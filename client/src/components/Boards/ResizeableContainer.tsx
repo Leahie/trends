@@ -1,5 +1,5 @@
 import type {Block, Location} from "@/types/types"
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import Container from "./Container";
 import { useNavigate } from "react-router-dom";
 import {useData} from "@/context/data.tsx"
@@ -22,17 +22,31 @@ interface MoveTypes{
     y: number
 }
 
+interface GroupMoveState {
+    isActive: boolean;
+    offsetX: number;
+    offsetY: number;
+}
+
+
 export default function ResizeableContainer({node, blockLocation, scale, onSelected,
-    bringToFront, shouldResize, zoomToBlock
-}: {node: Block, blockLocation: Location, scale: number, onSelected: () => void,
-    bringToFront: (x: string) => void, shouldResize: boolean,
-    zoomToBlock: (x:Block) => void
+    bringToFront, shouldResize, zoomToBlock, groupMoveState, onGroupMove
+}: {node: Block,
+    blockLocation: Location,
+    scale: number,
+    onSelected: () => void,
+    bringToFront: (x: string) => void,
+    shouldResize: boolean,
+    zoomToBlock: (x:Block) => void,
+    groupMoveState: GroupMoveState,
+    onGroupMove: (offsetX: number, offsetY: number, isMoving: boolean) => void
 },
 ){
     if (!node) return null;
-    const {updateBlock} = useData();
+    const {updateBlock, batchUpdateBlocks, blocks} = useData();
     const { selectedBlockIds, setIsEditingText, setEditingBlockId, isEditingText, editingBlockId, pushToHistory } = useEditor();
     const selected = selectedBlockIds.includes(node.id);
+    const isMultiSelected = selectedBlockIds.length > 1 && selected; // is this in a group selection
     const isThisTextBlockEditing = editingBlockId === node.id;
 
     const navigate = useNavigate();
@@ -50,6 +64,8 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         x: 0, 
         y: 0
     })
+
+    const moveStartPosition = useRef<{x: number, y: number}>(null);
 
     // Track modifier key state
     useEffect(() => {
@@ -77,11 +93,55 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     useEffect(() => {
         const handleMouseUp = () => {
             if (drag.active || move.active) {
-                const before = node;
-                updateBlock(node.id, {location:dims});
+                if (isMultiSelected && move.active) {
+                    const updates: Record<string, Partial<Block>> = {};
+                    const before: Record<string, Block> = {};
+                    const after: Record<string, Block> = {};
 
-                if (before != node)
-                    pushToHistory(node.id, before, node) // probably wrong
+                    selectedBlockIds.forEach(id => {
+                        const block = blocks.find(b => b.id === id);
+                        if (!block) return;
+
+                        before[id] = { ...block };
+
+                        const newX = Math.max(0, block.location.x + groupMoveState.offsetX);
+                        const newY = Math.max(0, block.location.y + groupMoveState.offsetY);
+
+                        updates[id] = {
+                            location: {
+                                ...block.location,
+                                x: newX,
+                                y: newY
+                            }
+                        };
+
+                        after[id] = {
+                            ...block,
+                            location: {
+                                ...block.location,
+                                x: newX,
+                                y: newY
+                            }
+                        };
+                    });
+                    batchUpdateBlocks(updates);
+                    pushToHistory(before, after);
+
+                    onGroupMove(0,0,false);
+                }
+                else{
+                    const before: Record<string, Block> = { [node.id]: { ...node } };
+                    const after: Record<string, Block> = { 
+                        [node.id]: { 
+                            ...node, 
+                            location: dims 
+                        } 
+                    };
+
+                    updateBlock(node.id, {location: dims});
+                    pushToHistory(before, after);
+                }
+                moveStartPosition.current = null;
             }
             setDrag((d) => ({ ...d, active: false, handle: null }));
             setMove((m) => ({ ...m, active: false }));
@@ -110,36 +170,57 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     const startMove = (e: React.MouseEvent) => {
         if (!isEditMode) return;
         onSelected();
+        moveStartPosition.current = {
+            x: blockLocation.x,
+            y: blockLocation.y
+        };
+
         setMove({
             active: true, 
             x: e.clientX, 
             y: e.clientY
-        })
+        });
+
+        if (isMultiSelected) {
+            onGroupMove(0, 0, true);
+        }
+
+
     }
 
     const moveFrame = (e: MouseEvent) => {
         if (!isEditMode || !shouldResize ) return;
         if (isThisTextBlockEditing) return;
         if (!move.active) return; 
-        const dx = (e.clientX - move.x)/scale;
-        const dy = (e.clientY - move.y)/scale;
+        if (!moveStartPosition.current) return;
 
-        setDims(prev => { 
-            const newX = Math.max(0, prev.x+dx);
-            const newY = Math.max(0, prev.y+dy);
-            return { ...prev, x: newX, y: newY };
-        })
+        const totalDx = (e.clientX - move.x) / scale;
+        const totalDy = (e.clientY - move.y) / scale;
 
-        setMove(prev => ({
-            ...prev, x: e.clientX, 
-            y: e.clientY
-        }))
+        if (isMultiSelected) {
+            onGroupMove(totalDx, totalDy, true);
+            
+            setDims(prev => ({
+                ...prev,
+                x: Math.max(0, moveStartPosition.current!.x + totalDx),
+                y: Math.max(0, moveStartPosition.current!.y + totalDy)
+            }));
+        } else {
+            setDims(prev => {
+                const newX = Math.max(0, moveStartPosition.current!.x + totalDx);
+                const newY = Math.max(0, moveStartPosition.current!.y + totalDy);
+                return { ...prev, x: newX, y: newY };
+            });
+        }
+
     }
 
     // START AND STOP THE RESIZING
     const startResize = (drag: HandleType) => (e: React.MouseEvent) => {
         e.stopPropagation();
         onSelected();
+
+        if (isMultiSelected) return;
 
         setDrag({
             active: true, 
@@ -174,21 +255,21 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                 if (handle === "right") {
                     w += dx;
                     h = w / aspectRatio;
-                    y = prev.y + prev.height / 2 - h / 2; // Center vertically
+                    y = prev.y + prev.height / 2 - h / 2;
                 } else if (handle === "left") {
                     w -= dx;
                     h = w / aspectRatio;
                     x = prev.x + prev.width - w;
-                    y = prev.y + prev.height / 2 - h / 2; // Center vertically
+                    y = prev.y + prev.height / 2 - h / 2;
                 } else if (handle === "bottom") {
                     h += dy;
                     w = h * aspectRatio;
-                    x = prev.x + prev.width / 2 - w / 2; // Center horizontally
+                    x = prev.x + prev.width / 2 - w / 2;
                 } else if (handle === "top") {
                     h -= dy;
                     w = h * aspectRatio;
                     y = prev.y + prev.height - h;
-                    x = prev.x + prev.width / 2 - w / 2; // Center horizontally
+                    x = prev.x + prev.width / 2 - w / 2;
                 } else if (handle === "top-left") {
                     // Diagonal: use average of dx and dy to maintain aspect ratio
                     const avgDelta = (dx + dy) / 2;
@@ -294,7 +375,6 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     }
 
     const handleMouseMove = (e: MouseEvent) =>{
-        if (!shouldResize) return;
         if (drag.active){
             resizeFrame(e);
         }
@@ -316,15 +396,23 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         }
     };
 
+    const visualX = isMultiSelected && groupMoveState.isActive 
+        ? Math.max(0, blockLocation.x + groupMoveState.offsetX)
+        : dims.x;
+    
+    const visualY = isMultiSelected && groupMoveState.isActive
+        ? Math.max(0, blockLocation.y + groupMoveState.offsetY)
+        : dims.y;
+
     // This is the box style 
     const boxStyle = {
         width: `${dims.width}px`,
         height: `${dims.height}px`,
-        top: `${dims.y}px`, 
-        left: `${dims.x}px`,
+        top: `${visualY}px`,      
+        left: `${visualX}px`,    
         zIndex: selected ? 1000 : dims.zIndex, 
         overflow: isThisTextBlockEditing ? "visible" : "hidden",
-        userSelect: "none"
+        userSelect: "none" as const
     };
 
     // Location Syncing
@@ -349,6 +437,8 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     const blockTheme = scheme ? schemeToCSSVars(scheme) : undefined;
     
 
+    const showResizeHandles = selected && !isMultiSelected;
+
     return(     
         <div className={`absolute  ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}
         `} 
@@ -368,24 +458,26 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                 onMouseDown={(e) => {
                     if (!shouldResize) return;
                     e.stopPropagation();
-                    // Call bringToFront but DON'T await it
                     bringToFront(node.id);
-                    // Immediately start the move so event listeners are set up
                     startMove(e);
                 }}
             >
                 <Container node={node} dims={dims} scale={scale} />
             </div>
 
-            <div className="resize-handle top top-bottom"   onMouseDown={startResize("top")} />
-            <div className="resize-handle bottom top-bottom"  onMouseDown={startResize("bottom")} />
-            <div className="resize-handle left left-right" onMouseDown={startResize("left")} />
-            <div className="resize-handle right left-right" onMouseDown={startResize("right")} />
-            
-            <div className="resize-handle diagonal top-left" onMouseDown={startResize("top-left")} />
-            <div className="resize-handle diagonal top-right" onMouseDown={startResize("top-right")}  />
-            <div className="resize-handle diagonal bottom-left" onMouseDown={startResize("bottom-left")}/>
-            <div className="resize-handle diagonal bottom-right" onMouseDown={startResize("bottom-right")} />
+            {showResizeHandles && (
+                <>
+                    <div className="resize-handle top top-bottom" onMouseDown={startResize("top")} />
+                    <div className="resize-handle bottom top-bottom" onMouseDown={startResize("bottom")} />
+                    <div className="resize-handle left left-right" onMouseDown={startResize("left")} />
+                    <div className="resize-handle right left-right" onMouseDown={startResize("right")} />
+                    
+                    <div className="resize-handle diagonal top-left" onMouseDown={startResize("top-left")} />
+                    <div className="resize-handle diagonal top-right" onMouseDown={startResize("top-right")} />
+                    <div className="resize-handle diagonal bottom-left" onMouseDown={startResize("bottom-left")} />
+                    <div className="resize-handle diagonal bottom-right" onMouseDown={startResize("bottom-right")} />
+                </>
+            )}
         </div>
     )
 }

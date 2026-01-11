@@ -1,22 +1,24 @@
 import type { Operation } from "@/types/editorTypes";
 import type { ImageBlockType } from "@/types/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function OpacityTool({
   operation,
   selectedBlock,
+  selectedBlockIds,
   handleOperationClick,
   isActive
 }: {
   operation: Operation;
   selectedBlock: ImageBlockType | null;
+  selectedBlockIds: string[]
   handleOperationClick: (operation: Operation, params: any) => void;
   isActive: boolean
 }) {
-  if (selectedBlock == null) return null;
+  let currentOpacity = 1;
+  if (selectedBlock != null) {currentOpacity = selectedBlock.content.transforms?.opacity ?? 1;}
 
   const [isOpen, setIsOpen] = useState(false);
-  const currentOpacity = selectedBlock.content.transforms?.opacity ?? 1;
   const [opacity, setOpacity] = useState(currentOpacity);
 
   const handleOpacityChange = (value: number) => {
@@ -28,16 +30,19 @@ export default function OpacityTool({
     setOpacity(1);
     handleOperationClick(operation, { opacity: 1 });
   };
+  useEffect(() =>{
+    setOpacity(currentOpacity)
+  }, [selectedBlockIds])
 
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        disabled={!selectedBlock}
+        disabled={selectedBlockIds.length==0}
         className={`relative group px-3 py-2 rounded transition-colors ${
             isActive
                 ? 'bg-accent hover:bg-light-accent text-white'
-            : selectedBlock
+            : selectedBlockIds.length!=0
             ? "hover:bg-highlight text-white"
             : "text-secondary cursor-not-allowed"
         }`}

@@ -12,11 +12,14 @@ export const ALL_OPERATIONS = [
 ]
 
 export function getOperationsForBlockTypes(
-  blockTypes: Set<Block["type"]>
+  blockTypes: Set<Block["type"]>,
+  multiSelection: boolean
   ): Operation[] {
   if (blockTypes.size === 0) return UNIVERSAL_OPERATIONS;
-
-  return ALL_OPERATIONS.filter(op =>
-    [...blockTypes].every(type => op.blockTypes.includes(type))
+  console.log(blockTypes, multiSelection)
+  return ALL_OPERATIONS.filter(op =>{
+    console.log(op)
+    return ([...blockTypes].some(type => op.blockTypes.includes(type))
+    && (multiSelection ? op.multiSelection : true))}
   );
 }
