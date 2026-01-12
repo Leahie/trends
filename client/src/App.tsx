@@ -9,6 +9,7 @@ import Login from "./Login.tsx";
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import Board from "./components/Boards/Board.tsx";
 import EmailVerificationBanner from "./components/Info/EmailVerificationBanner.tsx";
+import SharedBoard from "./components/Boards/SharedBoard.tsx";
 
 const App = () => {
   return (
@@ -22,6 +23,7 @@ const App = () => {
               <div className="flex-1 relative overflow-hidden">
                 <Routes>
                   <Route path="/login" element={<Login />} />
+                  <Route path="/shared/:token" element={<SharedBoard />} />
                   
                   <Route element={<ProtectedRoute />}>
                     <Route path="/" element={
