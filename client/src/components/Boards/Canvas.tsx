@@ -12,6 +12,7 @@ import ResizeableContainer from "./ResizeableContainer.tsx"
 import Toolbar from "./Toolbar/Toolbar.tsx";
 import SelectionBox from "./SelectionBox.tsx";
 import GroupResizeWrapper from "./GroupResizeWrapper.tsx";
+import ShareModal from "./ShareModal.tsx";
 
 
 // HOOKS 
@@ -61,6 +62,9 @@ export default function Canvas(){
     const [title, setTitle] = useState<string>(currentBoard.title);
     // Keep local title in sync when switching boards to avoid overwriting
     // the newly-opened board with a stale title from the previous board.
+
+    //share modal
+    const [shareModalOpen, setShareModalOpen] = useState(false);
     useEffect(() => {
         setTitle(currentBoard.title);
     }, [currentBoard.id]);
@@ -534,6 +538,12 @@ export default function Canvas(){
                 >
                     Theme
                 </button>
+                <button
+                    onClick={() => setShareModalOpen(true)}
+                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
+                >
+                    Share
+                </button>
             </div>
         </div>    
 
@@ -614,6 +624,11 @@ export default function Canvas(){
         <Toolbar />
     </div>
     <ThemeModal open={themeModalOpen} baseColor = {themeColor} onClose={onClose} onSave = {onSave} onChange={onChange}/>
+    <ShareModal 
+        open={shareModalOpen} 
+        boardId={currentBoard.id} 
+        onClose={() => setShareModalOpen(false)} 
+    />
     </>
 )
 }

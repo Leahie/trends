@@ -2,6 +2,8 @@ import axios, { AxiosError } from 'axios';
 import type { Block, Board } from '../types/types';
 import { getAuth } from 'firebase/auth';
 
+
+const API_URL = 'http://localhost:5000/api/data'
 const client = axios.create({
   baseURL: 'http://localhost:5000/api',
   headers: {
@@ -358,5 +360,69 @@ console.log('Failed to fetch user info:', error);
       error: error instanceof Error ? error.message : 'Unknown Error'
     };
     }
-  }
+  },
+
+  // generate share link
+  async generateShareLink(boardId: string): Promise<ApiResponse<{shareToken: string}>>{
+    try {
+      const { data } = await client.post(`/data/boards/${boardId}/share`);
+      return { success: true, data };
+    } catch(error){
+      console.log('Failed to generate share link:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+  // fetching a specific board using id 
+  async fetchSharedBoard(token: string): Promise<ApiResponse<{ board: Board }>> {
+    try {
+      const response = await fetch(`${API_URL}/boards/shared/${token}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch shared board');
+      }
+      const data = await response.json();
+      console.log(`This is the data for shared board ${token}`, data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to fetch board:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
+  //fetch blocks for shared board
+  async fetchSharedBoardBlocks(token: string): Promise<ApiResponse<{ blocks: Block[] }>> {
+    try {
+      // Note: No auth headers for public route
+      const response = await fetch(`${API_URL}/boards/shared/${token}/blocks`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch shared blocks');
+    }
+    const data = await response.json();
+      console.log("This is the blocks for shared board", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to fetch shared blocks:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+  async revokeShareLink(boardId: string): Promise<ApiResponse<{ success: true }>> {
+    try {
+      const { data } = await client.delete(`/data/boards/${boardId}/share`);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to revoke share link:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
 };
