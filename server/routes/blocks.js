@@ -108,8 +108,24 @@ router.get("/boards/:boardId", async(req, res) => {
 // create board '/boards' route post
 router.post("/boards", async (req, res) => {
   try{
-  const {title} = req.body;
+  const {title, parentBoardBlockId} = req.body;
   const userId = req.user.uid;
+
+  // if parentdBoardBlockId is provided, verify it exists and belongs to user
+  if (parentBoardBlockId){
+    const parentBlockDoc = await db.collection("blocks").doc(parentBoardBlockId).get();
+    if (!parentBlockDoc.exists){
+      return res.status(404).send("Parent board block not found");
+    }
+    const parentBlock = parentBlockDoc.data();
+    if (parentBlock.userId !== userId){
+      return res.status(403).send("Forbidden");
+    }
+    if (parentBlock.type !== "board_block"){
+      return res.status(400).send("Parent block is not a board block");
+    }
+  }
+
 
   const boardId = uuidv4();
   const boardData = {
@@ -122,7 +138,15 @@ router.post("/boards", async (req, res) => {
     deletedAt: null
   };
   await db.collection("boards").doc(boardId).set(boardData);
-  res.status(201).send({board: boardData});}
+
+  if (parentBoardBlockId) {
+      await db.collection("blocks").doc(parentBoardBlockId).update({
+        linkedBoardId: boardId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+  }
+  res.status(201).send({board: boardData});
+}
   catch (error){
     console.log("Error creating board:", error);
     res.status(500).send("Internal Server Error");
@@ -193,12 +217,25 @@ router.delete("/boards/:id", async(req, res)=>{
     .get();
 
     const batch = db.batch();
+    const childBoardsToDelete = [];
+
     blocksSnapshot.docs.forEach((doc)=>{
       batch.update(doc.ref, {
         deletedAt: now, deletionId: deletedId
       });
+
+      if (block.type === "board_block" && block.linkedBoardId) {
+        childBoardsToDelete.push(block.linkedBoardId);
+      }
     })
+
     await batch.commit();
+    let totalDeletedBlocks = blocksSnapshot.docs.length;
+    for (const childBoardId of childBoardsToDelete) {
+      const childResult = await deleteBoardRecursively(childBoardId, userId, deletionId);
+      totalDeletedBlocks += childResult.deletedBlockCount;
+    }
+
     res.send({success: true, 
       boardId:id, 
       deletedId,
@@ -209,6 +246,51 @@ router.delete("/boards/:id", async(req, res)=>{
     res.status(500).send("Internal Server Error");
   }
 });
+
+async function deleteBoardRecursively(boardId, userId, deletionId) {
+  const boardRef = db.collection("boards").doc(boardId);
+  const boardDoc = await boardRef.get();
+
+  if (!boardDoc.exists) {
+    return { deletedBlockCount: 0 };
+  }
+
+  const board = boardDoc.data();
+  if (board.userId !== userId) {
+    throw new Error("Forbidden");
+  }
+
+  const now = admin.firestore.FieldValue.serverTimestamp();
+  await boardRef.update({deletedAt: now, deletionId: deletionId});
+  const blocksSnapshot = await db.collection("blocks")
+    .where("boardId", "==", boardId)
+    .where("deletedAt", "==", null)
+    .get();
+  const batch = db.batch();
+  const childBoardsToDelete = [];
+
+  blocksSnapshot.docs.forEach((doc) => {
+    const block = doc.data();
+    batch.update(doc.ref, {
+      deletedAt: now, 
+      deletionId: deletionId
+    });
+
+    if (block.type === "board_block" && block.linkedBoardId) {
+      childBoardsToDelete.push(block.linkedBoardId);
+    }
+  });
+
+  await batch.commit();
+
+  let totalDeletedBlocks = blocksSnapshot.docs.length;
+  for (const childBoardId of childBoardsToDelete) {
+    const childResult = await deleteBoardRecursively(childBoardId, userId, deletionId);
+    totalDeletedBlocks += childResult.deletedBlockCount;
+  }
+
+  return { deletedBlockCount: totalDeletedBlocks };
+}
 
 // Restore deleted boards (for undo) 'boards/:boardId/restore' route post
 router.post("/boards/:boardId/restore", async(req, res)=>{
@@ -293,6 +375,163 @@ router.delete("/boards/:boardId/permanent", async(req, res)=>{
     });
   }catch (error){
     console.log("Error permanently deleting board:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Spreading, flatten board block move all child blocks onto parent board and deleted board block 
+router.post("/boards/:boardId/blocks/:blockId/spread", async (req, res) => {
+  try {
+    const { boardId, blockId } = req.params;
+    const userId = req.user.uid;
+
+    const blockDoc = await db.collection("blocks").doc(blockId).get();
+    if (!blockDoc.exists) {
+      return res.status(404).send("Block not found");
+    }
+
+    const block = blockDoc.data();
+    if (block.userId !== userId) {
+      return res.status(403).send("Forbidden");
+    }
+    if (block.type !== "board_block") {
+      return res.status(400).send("Can only spread board_blocks");
+    }
+    if (block.boardId !== boardId) {
+      return res.status(400).send("Block does not belong to specified board");
+    }
+    if (!block.linkedBoardId) {
+      return res.status(400).send("Board block has no linked board");
+    }
+
+    const linkedBoardId = block.linkedBoardId;
+
+    const childBlocksSnapshot = await db.collection("blocks")
+    .where("boardId", "==", linkedBoardId)
+    .where("deletedAt", "==", null)
+    .get();
+
+    const batch = db.batch();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    const offsetX = block.location.x;
+    const offsetY = block.location.y;
+
+    childBlocksSnapshot.docs.forEach((doc) => {
+      const childBlock = doc.data();
+      batch.update(doc.ref, {
+        boardId: boardId,
+        location: {
+          ...childBlock.location,
+          x: childBlock.location.x + offsetX,
+          y: childBlock.location.y + offsetY
+        },
+        updatedAt: now
+      });
+    });
+
+    batch.update(db.collection("blocks").doc(blockId), {
+      deletedAt: now,
+      updatedAt: now
+    });
+
+    batch.update(db.collection("boards").doc(linkedBoardId), {
+      deletedAt: now
+    });
+
+    batch.update(db.collection("boards").doc(boardId), {
+      updatedAt: now
+    });
+
+    await batch.commit();
+
+    res.send({
+      success: true,
+      movedBlockCount: childBlocksSnapshot.docs.length,
+      deletedBoardBlockId: blockId,
+      deletedBoardId: linkedBoardId
+    });
+  } catch (error) {
+    console.log("Error spreading board block:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+router.post("/boards/:boardId/blocks/push", async (req, res) => {
+  try {
+    const {blockId} = req.body;
+    const {blockIds, targetBoardBlockId} = req.body;
+    const userId = req.user.uid;
+
+    if (!blockIds || !Array.isArray(blocksIds) || blockIds.length === 0){
+      return res.status(400).send("No block IDs provided");
+    }
+
+    const targetBlockDoc = await db.collection("blocks").doc(targetBoardBlockId).get();
+    if (!targetBlockDoc.exists) {
+      return res.status(404).send("Target board block not found");
+    }
+    const targetBlock = targetBlockDoc.data();
+    if (targetBlock.userId !== userId) {
+      return res.status(403).send("Forbidden");
+    }
+    if (targetBlock.type !== "board_block") {
+      return res.status(400).send("Target must be a board_block");
+    }
+    if (!targetBlock.linkedBoardId) {
+      return res.status(400).send("Target board_block has no linked board");
+    }
+    const targetBoardId = targetBlock.linkedBoardId;
+
+    const blockDocs = await Promise.all(
+      blockIds.map(id => db.collection("blocks").doc(id).get())
+    );
+
+    for (const doc of blockDocs){
+      if (!doc.exists){
+        return res.status(404).send(`Block with ID ${doc.id} not found`);
+      }
+      const block = doc.data();
+      if (block.userId !== userId){
+        return res.status(403).send("Forbidden");
+      }
+      if (block.boardId !== boardId){
+        return res.status(400).send(`Block with ID ${doc.id} does not belong to specified board`);
+      }
+    }
+
+    const batch = db.batch();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    const offsetX = targetBlock.location.x;
+    const offsetY = targetBlock.location.y;
+
+    blockDocs.forEach((doc) => {
+      const block = doc.data();
+      batch.update(doc.ref, {
+        boardId: targetBoardId, 
+        location: {
+          ...block.location, 
+          x: block.location.x + offsetX,
+          y: block.location.y + offsetY
+        },
+        updatedAt: now
+      });
+    });
+
+    batch.update(db.collection("boards").doc(targetBoardId), {updatedAt: now});
+    batch.update(db.collection("boards").doc(boardId), {updatedAt: now});
+
+    await batch.commit();
+
+    res.send({
+      success: true,
+      movedBlockIds: blockIds,
+      targetBlockId
+    })
+    
+  } catch (error) {
+    console.log("Error pushing blocks to board:", error);
     res.status(500).send("Internal Server Error");
   }
 });
@@ -410,9 +649,16 @@ router.post("/boards/:id/blocks", async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }
-  
-    await db.collection("blocks").doc(blockId).set(newBlock);
 
+    if (newBlock.type === "board_block" && !newBlock.linkedBoardId){
+      await db.collection("boards").doc(newBlock.linkedBoardId).update({
+        parentBoardBlockId: blockId, 
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+  
+    await db.collection("blocks").doc(blockId).set(newBlock); 
     await db.collection("boards").doc(boardId).update({
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
@@ -604,6 +850,90 @@ router.post("/blocks/:id/duplicate", async (req, res) => {
   }
 });
 
+// Move block(s) to another board 
+router.post("/blocks/move", async (req, res) => {
+  try{
+    const { blockIds, targetBoardId, offsetX = 0, offsetY = 0 } = req.body;
+    const userId = req.user.uid;
+
+    if (!blockIds || !Array.isArray(blockIds) || blockIds.length === 0){
+      return res.status(400).send("No block IDs provided.");
+    }
+
+    if (!targetBoardId){
+      return res.status(400).send("Target board ID is required.");
+    }
+
+    const targetBoardDoc = await db.collection("boards").doc(targetBoardId).get();
+    if (!targetBoardDoc.exists){
+      return res.status(404).send("Target board not found");
+    }
+    const targetBoard = targetBoardDoc.data();
+    if (targetBoard.userId !== userId) {
+      return res.status(403).send("Forbidden");
+    }
+    if (targetBoard.deletedAt !== null) {
+      return res.status(404).send("Target board is deleted");
+    }
+
+    // verify all blocks exist and belong to user
+    const blockDocs = await Promise.all(
+      blockIds.map(id => db.collection("blocks").doc(id).get())
+    );
+
+    const sourceBoardIds = new Set();
+
+    for (const doc of blockDocs) {
+      if (!doc.exists) {
+        return res.status(404).send(`Block ${doc.id} not found`);
+      }
+      const block = doc.data();
+      if (block.userId !== userId) {
+        return res.status(403).send("Forbidden");
+      }
+      sourceBoardIds.add(block.boardId);
+    }
+
+    const batch = db.batch();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    blockDocs.forEach((doc) => {
+      const block = doc.data();
+      batch.update(doc.ref, {
+        boardId: targetBoardId,
+        location: {
+          ...block.location,
+          x: block.location.x + offsetX,
+          y: block.location.y + offsetY
+        },
+        updatedAt: now
+      });
+    });
+
+    // Update timestamps on all affected boards
+    sourceBoardIds.forEach(boardId => {
+      batch.update(db.collection("boards").doc(boardId), { updatedAt: now });
+    });
+    batch.update(db.collection("boards").doc(targetBoardId), { updatedAt: now });
+
+    await batch.commit();
+
+    res.send({
+      success: true,
+      movedBlockIds: blockIds,
+      targetBoardId,
+      sourceBoardIds: Array.from(sourceBoardIds)
+    });
+
+  }
+  catch (error){
+    console.log("Error moving blocks:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+  
+// Copy 
+// Paste 
+
 // soft delete '/blocks/:id' route delete
 router.delete("/blocks/:id", async(req, res)=>{
   try{
@@ -611,9 +941,11 @@ router.delete("/blocks/:id", async(req, res)=>{
     const userId = req.user.uid;
     const blockRef = db.collection("blocks").doc(id);
     const blockDoc = await blockRef.get();
+
     if (!blockDoc.exists) {
       return res.status(404).send({ error: "Block not found." });
     }
+
     const block = blockDoc.data();
     if (block.userId !== userId){
       return res.status(403).send("Forbidden");
@@ -623,13 +955,17 @@ router.delete("/blocks/:id", async(req, res)=>{
       return res.status(404).send("Block is already deleted");
     }
 
-    await blockRef.update({
-      deletedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    const now = admin.firestore.FieldValue.serverTimestamp();
 
     if (block.boardId){
+      await blockRef.update({
+        deletedAt: now
+      });
+    }
+    
+    if (block.boardId){
       await db.collection("boards").doc(block.boardId).update({
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        updatedAt: now
       });
     }
     res.send({success: true, id});
