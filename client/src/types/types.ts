@@ -8,6 +8,7 @@ export interface Board{
     userId: string; 
     title: string;
     colorscheme: Theme; 
+    parentBoardBlockId: string | null;
     readonly createdAt: Date | null;
     readonly updatedAt: Date | null;
     readonly deletedAt: Date | null;

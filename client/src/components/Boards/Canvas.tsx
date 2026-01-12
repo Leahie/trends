@@ -28,6 +28,8 @@ interface GroupMoveState {
 
 export default function Canvas(){
     const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks} = useData();
+    const hasCenteredRef = useRef<string | null>(null);
+
     const {getIdToken} = useAuth()
     const {toggleSelection, clearSelection, selectedBlockIds, isEditingText, setIsEditingText, setEditingBlockId} = useEditor();
     // Zoom and pan state
@@ -63,6 +65,7 @@ export default function Canvas(){
         setTitle(currentBoard.title);
     }, [currentBoard.id]);
     
+    
     const [themeModalOpen, setThemeModalOpen] = useState(false);
     const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
     const {updateTheme} = useTheme();
@@ -71,7 +74,40 @@ export default function Canvas(){
         return [...blocks].sort(
             (a, b) => a.location.zIndex - b.location.zIndex
         );
+        
     }, [blocks]);
+    
+    useEffect(() => {
+        if (!currentBoard) return;
+        if (blocks.length === 0) return;
+        if (hasCenteredRef.current === currentBoard.id) return;
+
+        hasCenteredRef.current = currentBoard.id;
+
+        centerOnBlocks(blocks);
+    }, [blocks, currentBoard?.id]);
+    
+    function centerOnBlocks(blocks: Block[]) {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+
+        let sumX = 0, sumY = 0;
+
+        for (const b of blocks) {
+            sumX += b.location.x + b.location.width / 2;
+            sumY += b.location.y + b.location.height / 2;
+        }
+
+        const cx = sumX / blocks.length;
+        const cy = sumY / blocks.length;
+
+        setPan({
+            x: rect.width / 2 - cx * scale,
+            y: rect.height / 2 - cy * scale,
+        });
+    }
 
     useEffect(() =>{
         updateTheme(currentBoard.colorscheme);
@@ -83,6 +119,8 @@ export default function Canvas(){
     const screenToCanvas = (xAcc: number, yAcc:number) => {
         return {x: ((xAcc - pan.x) / scale), y: ((yAcc - pan.y) / scale )}
     }
+
+
     // Right-click logic
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
     

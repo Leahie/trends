@@ -31,8 +31,8 @@ export const IMAGE_OPERATIONS: Operation[] = [
         },
         location:{
           ...imageBlock.location,
-          width: imageBlock.content.imgWidth*params.crop.widthRatio,
-          height: imageBlock.content.imgHeight*params.crop.heightRatio,
+          width: imageBlock.content.imgWidth*params.crop.widthRatio*params.crop.scale,
+          height: imageBlock.content.imgHeight*params.crop.heightRatio*params.crop.scale,
         }
       };
     }

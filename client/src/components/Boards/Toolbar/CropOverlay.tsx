@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react";
 
 interface CropOverlayProps {
   block: ImageBlockType;
-  onApply: (crop: { xRatio: number; yRatio: number; widthRatio: number; heightRatio: number }) => void;
+  onApply: (crop: { xRatio: number; yRatio: number; widthRatio: number; heightRatio: number; scale: number }) => void;
   onCancel: () => void;
 }
 
@@ -149,13 +149,16 @@ export default function CropOverlay({ block, onApply, onCancel }: CropOverlayPro
 
   const handleApply = () => {
     const { width: imgWidth, height: imgHeight, offsetX, offsetY } = imageDisplaySize;
-    
+    if (!containerRef.current) return null;
+    const containerRect = containerRef.current.getBoundingClientRect();
+
     // Convert crop rectangle to ratios relative to the actual image
     const crop = {
       xRatio: (cropRect.x - offsetX) / imgWidth,
       yRatio: (cropRect.y - offsetY) / imgHeight,
       widthRatio: cropRect.width / imgWidth,
       heightRatio: cropRect.height / imgHeight,
+      scale: imgWidth/containerRect.width,
     };
 
     onApply(crop);
