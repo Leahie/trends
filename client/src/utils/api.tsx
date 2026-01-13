@@ -378,7 +378,8 @@ export const api = {
     }
   },
 
-  async fetchUserInfo(): Promise<ApiResponse<{role: string; boardLimit: number}>>{
+  // USER ROUTES 
+  async fetchUserInfo(): Promise<ApiResponse<{role: string; boardLimit: number; pinnedBoards: string[]}>>{
     try{
       const {data} = await client.get('/user/info');
       return{
@@ -386,13 +387,63 @@ export const api = {
         data
       }
     } catch(error){
-console.log('Failed to fetch user info:', error);
+    console.log('Failed to fetch user info:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Error'
     };
     }
   },
+
+  async pinBoard(boardId: string): Promise<ApiResponse<{
+    success: true;
+    boardId: string;
+    pinnedBoards: string[];
+  }>>{
+    try{
+      const {data} = await client.post('/user/pins', {boardId})
+      return {success: true, data}
+    } catch (error) {
+      console.log('Failed to pin board:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown Error'
+    };
+    }
+  },
+  async unpinBoard(boardId: string): Promise<ApiResponse<{
+  success: true;
+  boardId: string;
+  pinnedBoards: string[];
+}>> {
+  try {
+    const {data} = await client.delete(`/user/pins/${boardId}`);
+    return { success: true, data };
+  } catch(error) {
+    console.log('Failed to unpin board:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown Error'
+    };
+  }
+},
+
+async reorderPins(pinnedBoards: string[]): Promise<ApiResponse<{
+  success: true;
+  pinnedBoards: string[];
+}>> {
+  try {
+    const {data} = await client.patch('/user/pins/reorder', { pinnedBoards });
+    return { success: true, data };
+  } catch(error) {
+    console.log('Failed to reorder pins:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown Error'
+    };
+  }
+},
+
 
   // generate share link
   async generateShareLink(boardId: string): Promise<ApiResponse<{shareToken: string}>>{

@@ -3,8 +3,9 @@ import HomePage from "./HomePage.tsx";
 import { DataProvider } from './context/data.tsx'
 import { ThemeProvider } from "./context/theme.tsx";
 import { AuthProvider } from './context/auth.tsx'; // Import
+import { SidebarProvider } from "./context/sidebar.tsx";
 
-import Sidebar from './components/Sidebar.tsx'
+import Sidebar from './components/Sidebar/Sidebar.tsx'
 import Login from "./Login.tsx";
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import Board from "./components/Boards/Board.tsx";
@@ -29,7 +30,9 @@ const App = () => {
                     <Route path="/" element={
                       <DataProvider>
                       <div className='flex h-screen w-screen'>
-                        <Sidebar/>
+                        <SidebarProvider>
+                          <Sidebar/>
+                        </SidebarProvider>
                         <div className="flex-1 relative overflow-hidden">
                           <HomePage />
                         </div>
@@ -39,7 +42,9 @@ const App = () => {
                     <Route path="/archive" element={
                       <DataProvider>
                       <div className='flex h-screen w-screen'>
-                        <Sidebar/>
+                        <SidebarProvider>
+                          <Sidebar/>
+                        </SidebarProvider>
                         <div className="flex-1 relative overflow-hidden">
                           <HomePage />
                         </div>
@@ -49,7 +54,9 @@ const App = () => {
                     <Route path="/boards/:id" element={
                       <DataProvider>
                       <div className='flex h-screen w-screen'>
-                        <Sidebar/>
+                        <SidebarProvider>
+                          <Sidebar/>
+                        </SidebarProvider>
                         <div className="flex-1 relative overflow-hidden">
                           <Board />
                         </div>
