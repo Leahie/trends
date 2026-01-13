@@ -116,25 +116,32 @@ export const api = {
   },
 
   // deleting a board 
-  async deleteBoard(boardId: string): Promise<ApiResponse<{ boardId: string; deletionId: string; deletedBlockCount: number }>> {
-    try {
-      const { data } = await client.delete(`/data/boards/${boardId}`);
-      console.log(`This is the board deletion data`, data);
-      return { success: true, data };
-    } catch (error) {
-      console.log('Failed to delete board:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown Error'
-      };
-    }
-  },
+  async deleteBoard(boardId: string): Promise<ApiResponse<{ 
+  boardId: string; 
+  deletionId: string; 
+  deletedBoardCount: number;
+  deletedBlockCount: number;
+  boards: string[]; 
+  blocks: string[];
+}>> {
+  try {
+    const { data } = await client.delete(`/data/boards/${boardId}`);
+    console.log(`Board deletion data:`, data);
+    return { success: true, data };
+  } catch (error) {
+    console.log('Failed to delete board:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown Error'
+    };
+  }
+},
 
   // creating a board 
-  async createBoard(title?: string): Promise<ApiResponse<{ board: Board }>> {
+  async createBoard(title?: string, parentBoardBlockId?: string): Promise<ApiResponse<{ board: Board }>> {
     try {
       console.log("This is the title", title)
-      const { data } = await client.post("/data/boards", { title });
+      const { data } = await client.post("/data/boards", { title, parentBoardBlockId });
       console.log("This is the newly created board", data);
       return { success: true, data };
     } catch (error) {
@@ -158,6 +165,20 @@ export const api = {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
       };
+    }
+  },
+
+  async fetchBlocks(): Promise<ApiResponse<{blocks: Block[]}>>{
+    try {
+      const { data } = await client.get(`/data/blocks`);
+      console.log("This is the newly updated block data", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log('Failed to get blocks:', error);
+      return {
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      }
     }
   },
 
@@ -243,21 +264,32 @@ export const api = {
     }
   },
 
-  async deleteBlock(blockId: string): Promise<ApiResponse<{ success: true; id: string }>> {
-    try {
-      const { data } = await client.delete(`/data/blocks/${blockId}`);
-      return { success: true, data };
-    } catch (error) {
-      console.error(`Failed to delete block ${blockId}:`, error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to delete block'
-      };
-    }
-  },
+  async deleteBlock(blockId: string): Promise<ApiResponse<{ 
+    success: true; 
+    id: string;
+    boards: string[];
+    blocks: string[];
+}>> {
+  try {
+    const { data } = await client.delete(`/data/blocks/${blockId}`);
+    return { success: true, data };
+  } catch (error) {
+    console.error(`Failed to delete block ${blockId}:`, error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to delete block'
+    };
+  }
+},
 
   // batch delete blocks
-  async batchDeleteBlocks(blockIds: string[]): Promise<ApiResponse<{ deletedBlockIds: string[]; affectedBoards: string[] }>> {
+  async batchDeleteBlocks(blockIds: string[]): Promise<ApiResponse<{ 
+    deletedBlockIds: string[]; 
+    affectedBoards: string[];
+    cascadeDeletedBoards: number;
+    boards: string[];
+    blocks: string[];
+  }>> {
     try {
       const { data } = await client.post(`/data/blocks/batch-delete`, { blockIds });
       console.log("Batch deleted blocks", data);

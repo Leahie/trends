@@ -14,26 +14,14 @@ export function createDefaultTextBlock(parentId: string): Partial<TextBlockType>
   };
 }
 
-export function createDefaultImageBlock(parentId: string): Partial<ImageBlockType> {
-  return {
-    id:  uuidv4(),
-    type: "image",
-    boardId: parentId,
-    content: {
-        title: "Untitled",
-        url: "",
-        source: "external",
-    },
-  };
-}
 
-export function createDefaultBoardBlock(parentId: string, linkedBoardId: string): Partial<BoardBlockType> {
+
+export function createDefaultBoardBlock(parentId: string): Partial<BoardBlockType> {
   return {
     id:  uuidv4(),
     type: "board_block",
     boardId: parentId,
     // no linkedBoardId for now need to figure that out
-    linkedBoardId: linkedBoardId,
     content: {
       title: "Untitled",
     },

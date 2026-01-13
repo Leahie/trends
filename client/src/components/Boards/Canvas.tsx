@@ -553,10 +553,7 @@ export default function Canvas(){
                 ref={canvasRef}
                 className={`absolute inset-0 overflow-hidden ${
                     isPanning || spacePressed ? 'cursor-grab' : ''
-                } ${isPanning ? 'cursor-grabbing' : ''} 
-                ${
-                            selectionBox!=null ? 'cursor-crosshair' : ''
-                        }`}
+                } ${isPanning ? 'cursor-grabbing' : ''} `}
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}

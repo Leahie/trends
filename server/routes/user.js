@@ -11,6 +11,15 @@ router.get("/info", async(req, res) => {
         const userDoc = await db.collection("users").doc(userId).get();
 
         if(!userDoc){
+            const defaultUserData = {
+                email: req.user.email,
+                role: 'user',
+                boardLimit: 5,
+                pinnedBoards: [], // Array of board IDs
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            };
+            
             await db.collection("users").doc(userId).set({
                 email: req.user.email,
                 role: 'user',

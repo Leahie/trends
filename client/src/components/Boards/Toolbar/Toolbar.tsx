@@ -86,10 +86,7 @@ export default function Toolbar(){
             
             setVisibleGroups(visible);
             setOverflowGroups(overflow);
-            console.log("toolbarWidth", toolbarWidth);
-            console.log("groups", groupedOperations.map(g => g.name));
-            console.log("visible", visible);
-            console.log("overflow", overflow);
+
         };
         
         calculateVisibleGroups();
@@ -103,7 +100,6 @@ export default function Toolbar(){
     const handleOperationClick = async(operation:Operation, params?:any) => {
 
         if (selectedBlockIds.length==0) return;
-        console.log("is this workingg")
          if (operation.requiresOverlay) {
             if (operation.id === 'crop') {
             setShowCropOverlay(true);
@@ -135,7 +131,6 @@ export default function Toolbar(){
             before[id] = structuredClone(block);
 
             const updates = operation.apply(block, params);
-            console.log("these are the updates", updates)
             after[id] = {
                 ...block,
                 ...updates,

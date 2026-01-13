@@ -1,5 +1,5 @@
 import type {Block, Board} from "../types/types.ts";
-import {useState, useEffect} from 'react';  // will be used later when we fetch data 
+import {useState, useEffect, useCallback} from 'react';  // will be used later when we fetch data 
 import { useData } from "../context/data.tsx";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -18,9 +18,10 @@ function useIsCanvasLayout():boolean{
 export default function Sidebar(){
   
     const { logOut, user } = useAuth();
-    const {boards, currentBoard } = useData();
+    const {boards, currentBoard, isSyncing, getBlocks } = useData();
     const [open, setOpen] = useState<boolean>(true); // sets the Sidebar 
     const isCanvasLayout = useIsCanvasLayout();
+    const [globalBlocks, setGlobalBlocks] = useState<Block[]>([]);
 
     const navigate = useNavigate();
 
@@ -44,7 +45,52 @@ export default function Sidebar(){
       setIsHovered(false);
     }
 
-    
+    useEffect(() => {
+      async function getGlobalBlocks(){
+        try {
+          const blocks = await getBlocks()
+          if (blocks == null) setGlobalBlocks([])
+          else setGlobalBlocks(blocks);
+        } catch (error) {
+          console.error("Error fetching global blocks:", error);
+        }
+        
+      }
+
+      getGlobalBlocks();
+  }, [isSyncing]);
+
+  const renderBlocks = useCallback(
+    (boardId: string) => {
+      return globalBlocks
+        .filter(
+          (block) => (block.boardId === boardId && block.linkedBoardId !=null)
+        )
+        .map((block) => (
+          <li key={block.id} className="">
+            <div
+              className={`mb-1 flex flex-row gap-1 py-2 px-2 rounded-lg text-sm text-white cursor-pointer
+                ${currentBoard?.id === block.linkedBoardId ? "bg-accent" : ""}
+                hover:bg-highlight
+              `}
+              onClick={() =>
+                navigate(`/boards/${block.linkedBoardId}`)
+              }
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <span className="ml-3 flex-1">{block.content.title || "Untitled Block"}</span>
+            </div>
+
+            {/* Render children recursively */}
+            {block.linkedBoardId !=null  && (
+              <ul className="ml-4">{renderBlocks(block.linkedBoardId)} </ul>
+            )}
+          </li>
+        ));
+    },
+    [globalBlocks, currentBoard, navigate]
+  );
 
     if (!boards) {
         return (
@@ -167,24 +213,24 @@ export default function Sidebar(){
         {/* Body */}
         <nav className="mt-6 h-full overflow-y-auto ">
           <div className="pb-0 px-2 w-full flex flex-col flex-wrap">
-            <ul className="space-y-1 text-left">
+            <ul className=" text-left">
                 {boards.map((board:Board) => (
+                  ( board.parentBoardBlockId == null && 
                   <li key={board.id}>
-                    <a
-                        href={`/boards/${board.id}`}
-                        onClick={(e) => { e.preventDefault(); navigate(`/boards/${board.id}`); }}
-                        className={`${isCanvasLayout && currentBoard?.id==board.id ? "bg-accent" : ""} flex flex-row gap-1 py-2 px-2.5 text-sm text-white rounded-lg focus:outline-hidden  hover:bg-highlight cursor-pointer`}
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
-                    >
-                        <div className="flex-1 text-left">
-                        <p>{board.title || "Untitled"}</p>
+                    <div
+                  className={`mb-1 flex justify-between py-2 px-2.5 rounded-lg text-sm text-white cursor-pointer
+                    ${isCanvasLayout && currentBoard?.id === board.id ? "bg-accent" : ""}
+                    hover:bg-highlight/50
+                  `}
+                    onClick={() => navigate(`/boards/${board.id}`)}
+                  >
+                    <span>{board.title || "Untitled Board"}</span>
+                  </div>
 
-                        </div>
-                        <div className="flex-none" onClick={(e) => {e.stopPropagation();}}>
-                        </div>
-                    </a>
+                  {/* Render global blocks for this board */}
+                  <ul>{renderBlocks(board.id)}</ul>
                 </li>
+                  )
                 ))}
            
             </ul>

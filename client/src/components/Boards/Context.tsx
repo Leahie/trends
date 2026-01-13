@@ -1,7 +1,6 @@
 import { useData } from "@/context/data";
 import { 
   createDefaultTextBlock, 
-  createDefaultImageBlock, 
   createDefaultBoardBlock,
   createDefaultLocation 
 } from "@/utils/defaults";
@@ -21,7 +20,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         bringToFront: (id: string) => void 
         pushToBack: (id:string) => void}){
     const {getIdToken} = useAuth()
-    const {blocks, createBoard, removeBlock, addBlock} = useData();
+    const {blocks, createBoard, updateBlock, removeBlock, addBlock} = useData();
     const {selectedBlockIds} = useEditor();
     
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,19 +43,19 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
                 block = createDefaultTextBlock(parentId);
                 break;
             case "board_block":
-                const board = await createBoard();
-                if (board) {
-                    block = createDefaultBoardBlock(parentId, board.id);
-                    break;
-                }
-                else return;
+                block = createDefaultBoardBlock(parentId);
+                break;
+
         }
         
         const location = createDefaultLocation(canvasX, canvasY, maxZ + 1);
         
         console.log("BLOCK", block, "LOCATION", location,"PARENID", parentId )
         const success = await addBlock({...block, "location": {...location}, "boardId":parentId});
-        if (success) {
+        if (success != null) {
+            if (type == "board_block"){
+                await createBoard(undefined, success.id);
+            }
             setContextMenu(null);
         }
     };
