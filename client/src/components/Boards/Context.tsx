@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { uploadToFirebase } from "@/hooks/uploadToFirebase";
 import { useAuth } from "@/context/auth";
 import { useEditor } from "@/context/editor";
+import { useSidebar } from "@/context/sidebar";
 export default function Context({x, y, parentId, canvasX, canvasY ,setContextMenu, bringToFront, pushToBack}:
     {x:number, y:number, selected:string[], parentId: string, canvasX: number, canvasY: number, 
         setContextMenu : (value: {x: number, y:number, canvasX:number, canvasY: number} | null) => void 
@@ -21,6 +22,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         pushToBack: (id:string) => void}){
     const {getIdToken} = useAuth()
     const {blocks, createBoard, updateBlock, removeBlock, addBlock} = useData();
+    const {openBoard} = useSidebar();
     const {selectedBlockIds} = useEditor();
     
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +56,8 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         const success = await addBlock({...block, "location": {...location}, "boardId":parentId});
         if (success != null) {
             if (type == "board_block"){
-                await createBoard(undefined, success.id);
+                const result = await createBoard(undefined, success.id);
+                if (result != null) openBoard(result?.id);
             }
             setContextMenu(null);
         }

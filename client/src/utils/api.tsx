@@ -217,6 +217,25 @@ export const api = {
     }
   },
 
+  // move block 
+  async moveBlocks(blockIds: string[], targetBoardId: string, offsetX = 0, offsetY = 0): Promise<ApiResponse<{
+      success: true;
+      movedBlockIds: string[];
+      targetBoardId: string;
+      sourceBoardIds: string[];}>>{
+    try {
+      const {data} = await client.post(`/data/blocks/move`, {
+        blockIds: blockIds, 
+        targetBoardId: targetBoardId, 
+        offsetX: offsetX, 
+        offsetY: offsetY,
+      })
+      return {success:true, data}
+    } catch (error) {
+      return {success: false, error: error instanceof Error? error.message : "Unknown Error"}
+    }
+  },
+
   // fetch specific block  
   async fetchBlock(blockId: string): Promise<ApiResponse<{ block: Block }>> {
     try {

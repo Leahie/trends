@@ -8,10 +8,12 @@ import BoardDiv from '@/components/Home/BoardDiv.tsx'
 import ArchiveBoardDiv from '@/components/Home/ArchiveBoardDiv.tsx'
 import  Message from '@/components/Home/Message.tsx'
 import { useAuth } from '@/context/auth.tsx'
+import { useSidebar } from './context/sidebar'
 
 
 export default function HomePage() {
   const {boards, archivedBoards, archiveBoard,loadArchivedBoards, deleteBoard, restoreBoard, createBoard, canCreateBoard, userRole, boardLimit, userVerified} = useData();
+  const {openBoard} = useSidebar();
   const [isCreating, setIsCreating] = useState(false);
   const {firstName} = useAuth();
   const location = useLocation();
@@ -29,7 +31,10 @@ export default function HomePage() {
       return;
     }
     setIsCreating(true);
-    await createBoard("Untitled Board");
+    const result = await createBoard("Untitled Board");
+    if (result!=null){
+      openBoard(result.id);
+    }
     setIsCreating(false);
   };
 
