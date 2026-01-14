@@ -6,6 +6,62 @@ import { authenticateUser } from "../middleware/auth.js";
 const router = express.Router();
 import { v4 as uuidv4 } from 'uuid';
 
+// get board by share token
+router.get("/boards/shared/:token", async(req, res)=> {
+  try{
+    const { token } = req.params;
+
+    const boardSnapshot = await db.collection("boards")
+      .where("shareToken", "==" , token)
+      .where("deletedAt", "==", null)
+      .limit(1)
+      .get();
+
+    if(boardSnapshot.empty){
+      return res.status(404).send({ error: "Board not found or link is invalid." });
+    }
+    const boardDoc = boardSnapshot.docs[0];
+    const board = boardDoc.data();
+
+    res.send({ board: { id: boardDoc.id, ...board } });
+  } catch(error){
+    console.log("Error getting shared board:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+router.get("/boards/shared/:token/blocks",  async (req, res) => {
+  try{
+    const { token } = req.params;
+
+    const boardSnapshot = await db.collection("boards")
+      .where("shareToken", "==" , token)
+      .where("deletedAt", "==", null)
+      .limit(1)
+      .get();
+
+    if (boardSnapshot.empty) {
+        return res.status(404).send({ error: "Board not found." });
+    }
+    const boardId = boardSnapshot.docs[0].id;
+
+    const snapshot = await db.collection("blocks")
+    .where("boardId", "==", boardId)
+    .where("deletedAt", "==", null)
+    .orderBy("location.zIndex", "asc")
+    .get();
+
+    const blocks = snapshot.docs.map((doc) => ({
+      id: doc.id, 
+      ...doc.data()
+    }));
+    res.send({blocks});
+  }catch (error){
+    console.log("Error fetching blocks:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+
 router.use(authenticateUser);
 
 const DEFAULT_THEME = {
@@ -564,6 +620,72 @@ router.post("/boards/:boardId/blocks/push", async(req, res) => {
     console.log("Error pushing blocks:", error);
     res.status(500).send("Internal Server Error");
   }
+});
+
+router.post("/boards/:boardId/share", async (req, res) => {
+  try {
+    const { boardId } = req.params;
+    const userId = req.user.uid;
+
+    const boardRef = db.collection("boards").doc(boardId);   // ✅ declare once
+    const boardDoc = await boardRef.get();
+
+    if (!boardDoc.exists) {
+      return res.status(404).send({ error: "Board not found" });
+    }
+
+    const board = boardDoc.data();
+
+    if (board.userId !== userId) {
+      return res.status(403).send("Forbidden");
+    }
+
+    let shareToken = board.shareToken;
+
+    if (!shareToken) {
+      shareToken = uuidv4();
+      await boardRef.update({
+        shareToken,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    res.send({ shareToken });
+  } catch (error) {
+    console.error("Error generating share link:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Revoke share link (delete token)
+router.delete("/boards/:id/share", async(req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.uid;
+
+        const boardRef = db.collection("boards").doc(id);
+        const boardDoc = await boardRef.get();
+
+        if (!boardDoc.exists) {
+            return res.status(404).send({ error: "Board not found." });
+        }
+
+        const board = boardDoc.data();
+
+        if (board.userId !== userId) {
+            return res.status(403).send("Forbidden");
+        }
+
+        await boardRef.update({
+            shareToken: admin.firestore.FieldValue.delete(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        res.send({ success: true });
+    } catch (error) {
+        console.log("Error revoking share link:", error);
+        res.status(500).send("Internal Server Error");
+    }
 });
 
 // ============================================================================
