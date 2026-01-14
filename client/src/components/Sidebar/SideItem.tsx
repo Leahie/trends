@@ -1,5 +1,8 @@
+import { useSidebar } from "@/context/sidebar";
 import type { Board } from "@/types/types";
 import { useState } from "react";
+
+import { X } from "lucide-react";
 
 interface SideItemProps { 
     board: Board; 
@@ -23,11 +26,9 @@ interface SideItemProps {
 export default function SideItem({
   board,
   isActive,
-  isOpen,
   isPinned,
   depth,
   onNavigate,
-  onToggleOpen,
   onDelete,
   onTogglePin,
   onRename,
@@ -41,6 +42,11 @@ export default function SideItem({
     const [showMenu, setShowMenu] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+
+    const {openBoard, closeBoard, openBoards} = useSidebar()
+    
+
 
     const handleDragStart = (e: React.DragEvent) => {
         setIsDragging(true);
@@ -69,7 +75,7 @@ export default function SideItem({
     };
 
     return(
-        <li className="relative">
+        <li className="relative ">
             <div
                 draggable
                 onDragStart={handleDragStart}
@@ -83,7 +89,7 @@ export default function SideItem({
                 ${isDragOver ? 'bg-highlight/70 border-2 border-blue-400' : ''}
                 ${isDragging ? 'opacity-50' : ''}
                 hover:bg-highlight/50
-                transition-all
+                transition-all group
                 `}
                 style={{ paddingLeft: `${depth * 12 + 10}px` }}
             >
@@ -91,7 +97,7 @@ export default function SideItem({
                 <button
                     onClick={(e) => {
                     e.stopPropagation();
-                    onToggleOpen();
+                    setIsOpen(!isOpen);
                     }}
                     className="flex items-center justify-center w-4 h-4 hover:bg-white/10 rounded"
                 >
@@ -118,39 +124,47 @@ export default function SideItem({
                     {board.title || 'Untitled Board'}
                 </span>
 
+                
                 {/* more menu */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         setShowMenu(!showMenu);
                     }}
-                    className="flex items-center justify-center w-5 h-5 hover:bg-white/10 rounded opacity-0 group-hover:opacity-100"
+                    className="flex items-center justify-center w-5 h-5 hover:opacity-80 rounded opacity-0 group-hover:opacity-40"
                     >
+                        
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                     </svg>
                 </button>
+                {/* close the tab*/}
+                <button onClick={() => {closeBoard(board.id)}}
+                    className="hover:opacity-80 rounded opacity-0 group-hover:opacity-40"
+                    >
+                <X />
+                </button>
 
                 {showMenu && (
                 <div 
-                    className="absolute right-0 top-full mt-1 w-48 bg-dark border border-highlight rounded-lg shadow-xl z-50"
+                    className="absolute right-0 top-full mt-1 py-1 w-48 bg-dark border border-highlight rounded-lg shadow-xl z-50"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <button
                     onClick={() => { setShowMenu(false); onTogglePin(); }}
-                    className="w-full text-left px-4 py-2 hover:bg-highlight text-sm"
+                    className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm "
                     >
                     {isPinned ? ' Unpin' : ' Pin'}
                     </button>
                     <button
                     onClick={() => { setShowMenu(false); onAddChild(); }}
-                    className="w-full text-left px-4 py-2 hover:bg-highlight text-sm"
+                    className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
                     >
                      Add Child Board
                     </button>
                     <button
                     onClick={() => { setShowMenu(false); onRename(); }}
-                    className="w-full text-left px-4 py-2 hover:bg-highlight text-sm"
+                    className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
                     >
                      Rename
                     </button>

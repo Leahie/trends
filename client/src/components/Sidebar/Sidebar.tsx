@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import SideItem from './SideItem';
 import type { Board, Block } from '@/types/types';
 import Header from './Header';
+import { useSidebar } from '@/context/sidebar';
+import { useData } from '@/context/data';
 interface SidebarProps {
   boards: Board[];
   blocks: Block[];
@@ -58,6 +60,34 @@ export default function Sidebar(props: SidebarProps){
     location,
     navigate
   } = props;
+
+  const {setCurrentBoardId} = useData()
+  const {openBoard} = useSidebar();
+
+
+  useEffect(() => {
+  if (currentBoard?.id && currentBoard?.parentBoardBlockId==null) {
+    openBoard(currentBoard.id);
+    
+    console.log("I AM SETTINGA NEW OPEN BOARD")
+    // Also open all parent boards in the hierarchy
+    const openParentChain = (boardId: string) => {
+      // Find the board_block that links to this board
+      const parentBlock = blocks.find(
+        b => b.type === 'board_block' && b.linkedBoardId === boardId
+      );
+      
+      if (parentBlock?.boardId) {
+        openBoard(parentBlock.boardId);
+        // Recursively open parent's parent
+        openParentChain(parentBlock.boardId);
+      }
+    };
+    
+    openParentChain(currentBoard.id);
+  }
+}, [currentBoard?.id, blocks, openBoard]);
+
 
   console.log("THIS IS THE OPENBOARDS", openBoards);
 
@@ -154,11 +184,9 @@ export default function Sidebar(props: SidebarProps){
         key={board.id}
         board={board}
         isActive={isActive}
-        isOpen={isOpenBoard}
         isPinned={pinned}
         depth={depth}
-        onNavigate={() => navigate(`/boards/${board.id}`)}
-        onToggleOpen={() => toggleBoard(board.id)}
+        onNavigate={() => {console.log(board); navigate(`/boards/${board.id}`)}}
         onDelete={() => navOps.handleDelete(board.id)}
         onTogglePin={() => navOps.handleTogglePin(board.id)}
         onRename={() => navOps.handleRename(board.id, board.title)}

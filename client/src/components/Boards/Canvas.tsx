@@ -55,7 +55,7 @@ export default function Canvas(){
 
     const canvasRef = useRef<HTMLDivElement>(null);
     if (!currentBoard){  return <p>Loading...</p>};
-    console.log(currentBoard)
+    console.log("the current board", currentBoard)
     console.log(blocks)
 
 

@@ -4,6 +4,7 @@ import type { Block, Board  } from '../types/types';
 import {api} from "../utils/api"
 import { useAuth } from './auth';
 import { v4 as uuidv4 } from 'uuid';
+import { useParams, useNavigate } from "react-router-dom";
 
 
 
@@ -57,6 +58,8 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // provider component 
 export function DataProvider({children} : {children : ReactNode}){
+    const { id } = useParams();
+    const navigate = useNavigate();
     const {user} = useAuth();
     console.log(user?.getIdToken())
     const [boards, setBoards] = useState<Board[]>([]);
@@ -81,6 +84,12 @@ export function DataProvider({children} : {children : ReactNode}){
     const userVerified = user?.emailVerified || false;
 
     useEffect(() => {
+        if (id) {
+            setCurrentBoardId(id);
+        }
+    }, [id]);
+
+    useEffect(() => {
         const loadInitialData = async () => {
             if (!user) return;
             
@@ -96,8 +105,8 @@ export function DataProvider({children} : {children : ReactNode}){
             if (result.success && result.data) {
                 setBoards(result.data.boards);
                 
-                if (result.data.boards.length > 0) {
-                    setCurrentBoardId(result.data.boards[0].id); // no board currently selected
+                if (!id && result.data.boards.length > 0) {
+                    navigate(`/boards/${result.data.boards[0].id}`, { replace: true });
                 }
                 
                 setLastSyncTime(new Date());
