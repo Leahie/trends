@@ -27,7 +27,7 @@ interface DataContextType {
     blocks: Block[];
     dataMap: Record<string, Block>; 
 
-    // Block operations
+    // Block operations 
     getBlocks: () => Promise<Block[]| null>;
     updateBlock: (id: string, updates: Partial<Block>) => void;
     addBlock: (block: Partial<Block>) => Promise<Block | null>; 

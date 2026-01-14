@@ -32,9 +32,6 @@ export default function HomePage() {
     }
     setIsCreating(true);
     const result = await createBoard("Untitled Board");
-    if (result!=null){
-      openBoard(result.id);
-    }
     setIsCreating(false);
   };
 
@@ -60,7 +57,7 @@ export default function HomePage() {
         </button>
         <span className="text-xl font-semibold tracking-wide text-secondary select-none">|</span>
         <button
-          onClick={() => navigate('/archive')}
+          onClick={() => {navigate('/archive')}}
           className={`transition-colors duration-200 ${
             isArchived ? 'text-primary' : 'text-secondary hover:text-primary'
           }`}

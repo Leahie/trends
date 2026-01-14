@@ -2,11 +2,13 @@ import type {Board} from "@/types/types"
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useData } from "@/context/data.tsx";
+import { useSidebar } from "@/context/sidebar";
 
 export default function BoardDiv({id, title, updatedAt, userId}: Board){
     const updatedAtDate = new Date(updatedAt?._seconds * 1000);
     const navigate = useNavigate();
     const { updateBoard, archiveBoard, deleteBoard } = useData();
+    const { openBoard } = useSidebar()
     
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(title);
@@ -65,7 +67,7 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
         transition-border duration-300
         hover:cursor-pointer hover:border-light-accent hover:shadow-md shadow-accent
         "
-        onClick={() => navigate(`/boards/${id}`)} 
+        onClick={() => { openBoard(id) ;navigate(`/boards/${id}`)}} 
         >
             <div className="absolute inset-y-0 left-1 w- -translate-x-1/2 bg-black/30 pointer-events-none"></div>
             <div className="bg-highlight">

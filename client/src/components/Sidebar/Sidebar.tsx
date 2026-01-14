@@ -59,6 +59,7 @@ export default function Sidebar(props: SidebarProps){
     navigate
   } = props;
 
+  console.log("THIS IS THE OPENBOARDS", openBoards);
 
   const [open, setOpen] = useState<boolean>(true);
   const [draggedBoardId, setDraggedBoardId] = useState<string | null>(null);
@@ -183,6 +184,14 @@ export default function Sidebar(props: SidebarProps){
   const rootBoards = useMemo(() => {
     return boards.filter(b => !b.parentBoardBlockId);
   }, [boards]);
+
+  const boardsById = useMemo(() => {
+    const map = new Map<string, Board>();
+    for (const board of boards) {
+      map.set(board.id, board);
+    }
+    return map;
+}, [boards]);
 
   const pinnedBoardObjects = useMemo(() => {
     return pinnedBoards
@@ -387,30 +396,45 @@ export default function Sidebar(props: SidebarProps){
       {/* End Header */}
 
       {/* Body */}
-      <nav className="mt-6 h-full overflow-y-auto ">
+      <nav className="mt-6 h-full overflow-y-auto text-left">
         <div className="pb-0 px-2 w-full flex flex-col flex-wrap">
-          
-          <ul className=" text-left">
-              {boards.map((board:Board) => (
-                ( board.parentBoardBlockId == null && 
-                <li key={board.id}>
-                  <div
-                className={`mb-1 flex justify-between py-2 px-2.5 rounded-lg text-sm text-white cursor-pointer
-                  ${isCanvasLayout && currentBoard?.id === board.id ? "bg-accent" : ""}
-                  hover:bg-highlight/50
-                `}
-                  onClick={() => navigate(`/boards/${board.id}`)}
+          {/* Pinned Boards Section */}
+              {pinnedBoardObjects.length > 0 && (
+                <div
+                  className={`mb-4 ${dropZone === 'pinned' ? 'bg-yellow-500/20 border-2 border-yellow-500 rounded' : ''}`}
+                  onDragOver={handlePinnedDragOver}
+                  onDragLeave={() => setDropZone(null)}
+                  onDrop={handlePinnedDrop}
                 >
-                  <span>{board.title || "Untitled Board"}</span>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide mb-2 px-2">
+                    📌 Pinned
+                  </div>
+                  <ul>
+                    {pinnedBoardObjects.map(board => renderBoardTree(board, 0))}
+                  </ul>
                 </div>
+              )}
 
-                {/* Render global blocks for this board */}
-                <ul>{renderBlocks(board.id)}</ul>
-              </li>
-                )
-              ))}
+              {/* All Boards Section */}
           
-          </ul>
+              <div
+                className={`${dropZone === 'boards' ? 'bg-blue-500/20 border-2 border-blue-500 rounded' : ''}`}
+                onDragOver={handleBoardsDragOver}
+                onDragLeave={() => setDropZone(null)}
+                onDrop={handleBoardsDrop}
+              >
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-2 px-2">
+                  Boards
+                </div>
+                <ul>
+                  {[...openBoards].map(boardId => {
+                    const board = boardsById.get(boardId);
+                    if (!board) return null;
+
+                    return renderBoardTree(board, 0);
+                  })}
+                </ul>
+              </div>
         </div>
       </nav>
       {/* End Body */}
