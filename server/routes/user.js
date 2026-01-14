@@ -4,29 +4,44 @@ import { authenticateUser } from "../middleware/auth.js";
 
 const router = express.Router();
 
+router.use(authenticateUser);
+
 router.get("/info", async(req, res) => {
     try{
         const userId = req.user.uid;
 
         const userDoc = await db.collection("users").doc(userId).get();
 
-        if(!userDoc){
+        // Check if document exists AND has data
+        if(!userDoc.exists || !userDoc.data()){
+            console.log("Creating default user document for:", userId);
+            
             const defaultUserData = {
                 email: req.user.email,
                 role: 'user',
                 boardLimit: 5,
-                pinnedBoards: [], // Array of board IDs
+                pinnedBoards: [],
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             };
 
-            await db.collection("users").doc(userId).set(defaultUserData)
+            await db.collection("users").doc(userId).set(defaultUserData);
+            
             return res.send({
                 role: 'user',
-                boardLimit: 5
-            })
+                boardLimit: 5,
+                pinnedBoards: []
+            });
         }
+        
         const userData = userDoc.data();
+        
+        // Extra safety check
+        if (!userData) {
+            console.error("userData is null/undefined for existing document:", userId);
+            return res.status(500).send("Error reading user data");
+        }
+        
         res.send({
             role: userData.role || 'user',
             boardLimit: userData.boardLimit || 5,
