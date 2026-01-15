@@ -1,8 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { api } from '@/utils/api';
 
 interface SidebarContextType {
+  // toggle logic 
+  open: boolean; 
+  toggleOpen: () => void;
+
   // Session state (localStorage)
+
   openBoards: Set<string>;
   toggleBoard: (boardId: string) => void;
   openBoard: (boardId: string) => void;
@@ -22,8 +28,10 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 const STORAGE_KEY = 'sidebar_open_boards';
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState<boolean>(true);
+
   const [hydrated, setHydrated] = useState(false);
-    const [openBoards, setOpenBoards] = useState<Set<string>>(new Set());
+  const [openBoards, setOpenBoards] = useState<Set<string>>(new Set());
   const [pinnedBoards, setPinnedBoards] = useState<string[]>([]);
 
   // Load open boards from localStorage on mount
@@ -60,6 +68,10 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(openBoards)));
     }, [openBoards, hydrated]);
 
+  const toggleOpen = () => {
+    console.log("setting the open", !open)
+    setOpen((prev) => !prev);
+  }
   const toggleBoard = useCallback((boardId: string) => {
     setOpenBoards(prev => {
       const next = new Set(prev);
@@ -128,6 +140,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
   return (
     <SidebarContext.Provider value={{
+      open, toggleOpen,
       openBoards,
       toggleBoard,
       openBoard,

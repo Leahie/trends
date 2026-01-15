@@ -61,7 +61,7 @@ export default function Sidebar(props: SidebarProps){
   } = props;
 
   const {setCurrentBoardId, getParent, getChildren, isRootBoard} = useData();
-  const {openBoard} = useSidebar();
+  const {openBoard, open, toggleOpen} = useSidebar();
 
   useEffect(() => {
     if (currentBoard?.id) {
@@ -78,7 +78,6 @@ export default function Sidebar(props: SidebarProps){
 
   console.log("THE OPEN BOARDS", openBoards);
 
-  const [open, setOpen] = useState<boolean>(true);
   const [draggedBoardId, setDraggedBoardId] = useState<string | null>(null);
   const [dropZone, setDropZone] = useState<'pinned' | 'boards' | 'canvas' | null>(null);
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(new Set());
@@ -329,7 +328,9 @@ export default function Sidebar(props: SidebarProps){
   }
 
   return(
-    <div
+    <>
+     <Header open={open} setOpen={toggleOpen}/>
+     <div
       id="hs-sidebar-basic-usage"
       className={`
         h-full
@@ -338,21 +339,21 @@ export default function Sidebar(props: SidebarProps){
         }
         hs-overlay [--auto-close:lg] lg:block lg:translate-x-0 lg:end-auto lg:bottom-0
         hs-overlay-open:translate-x-0 -translate-x-full
-        transition-all duration-300 transform hidden
-        ${open ? "bg-dark" : "bg-transparent"}
+        transition-all duration-300 transform 
+        ${open ? "bg-dark" : "hidden"}
       `}
       role="dialog"
       tabIndex={-1}
       aria-label="Sidebar"
     > 
-         <Header open={open} setOpen={setOpen}/>
-      <div className={`relative flex flex-col h-full max-h-full ${!open && "hidden"}`}>
+        
+      <div className={`relative flex flex-col h-full max-h-full ${!open && ""}`}>
         <div className="block flex w-full float-right">
           <button
             type="button"
             className="float-right flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
             data-hs-overlay="#hs-sidebar-basic-usage" 
-            onClick={() => setOpen(!open)}
+            onClick={() => toggleOpen()}
             tabIndex={-1}
           >
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -473,5 +474,7 @@ export default function Sidebar(props: SidebarProps){
         </div>
       </div>
     </div>
+    </>
+    
   );
 }

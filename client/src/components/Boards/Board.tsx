@@ -5,19 +5,17 @@ import { EditorProvider } from "@/context/editor";
 import { KeyboardShortcuts } from '@/hooks/keyboardHooks';
 
 import Canvas from "./Canvas";
+import { useSidebar } from "@/context/sidebar";
 
 
 export default function Board(){
     const {currentBoard, setCurrentBoardId, isSyncing, boardLoadError,updateBlock } = useData()
+    const { open, toggleOpen} = useSidebar();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     
     const toggleSidebar = () => {
-        const sidebar = document.getElementById('hs-sidebar-basic-usage');
-        console.log(sidebar)
-        if (sidebar) {
-        sidebar.classList.toggle('hidden');
-        }
+         toggleOpen();
     };
     
     useEffect(() => {
