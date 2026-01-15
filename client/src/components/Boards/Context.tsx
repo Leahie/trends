@@ -18,12 +18,14 @@ import { useSidebar } from "@/context/sidebar";
 export default function Context({x, y, parentId, canvasX, canvasY ,setContextMenu, bringToFront, pushToBack}:
     {x:number, y:number, selected:string[], parentId: string, canvasX: number, canvasY: number, 
         setContextMenu : (value: {x: number, y:number, canvasX:number, canvasY: number} | null) => void 
-        bringToFront: (id: string) => void 
-        pushToBack: (id:string) => void}){
+        bringToFront: (id: string[]) => Promise<void> 
+        pushToBack: (id:string[]) => Promise<void>}){
     const {getIdToken} = useAuth()
-    const {blocks, createBoard, updateBlock, removeBlock, addBlock} = useData();
+    const {dataMap, blocks, createBoard, updateBlock, removeBlock, addBlock,
+        batchUpdateBlocks, syncNow
+    } = useData();
     const {openBoard} = useSidebar();
-    const {selectedBlockIds} = useEditor();
+    const {selectedBlockIds, pushToHistory} = useEditor();
     
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -125,6 +127,20 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         e.target.value = '';
     };
 
+    const handleOperationClick = async(func: (arg0: string[]) => Promise<void>) => {
+    
+            if (selectedBlockIds.length==0) return;
+
+            const before: Record<string, Block> = structuredClone(dataMap);
+    
+            await func(selectedBlockIds);
+            await syncNow();
+
+            const after: Record<string, Block> = structuredClone(dataMap);
+            pushToHistory(before, after);
+            setContextMenu(null);
+        }
+    
 
     console.log("selected", selectedBlockIds);
     return(
@@ -162,8 +178,8 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
                     selectedBlockIds.length!=0 && 
                     <>
                     <hr className=" mt-2.5 ml-1 mr-4 text-light-accent/50" />
-                    {/* <li className="context-li" onClick={()=> bringToFront(selected)}>Bring To Front</li>
-                    <li className="context-li" onClick={()=> pushToBack(selected)}>Push To Back</li> */}
+                    <li className="context-li" onClick={()=> handleOperationClick(bringToFront)}>Bring To Front</li>
+                    <li className="context-li" onClick={()=> handleOperationClick(pushToBack)}>Push To Back</li>
                     <li className="context-li" onClick={()=> handleDelete()}>Delete</li>
                         
                     </>

@@ -51,6 +51,11 @@ interface DataContextType {
     boardLimit: number;
     canCreateBoard: boolean;
     userVerified: boolean;
+
+    // Helpers 
+    getParent: (boardId: string) => Board | null;
+    getChildren: (boardId: string) => Board[];
+    isRootBoard: (boardId: string) => boolean;
 }
 
 // context is created? 
@@ -75,6 +80,7 @@ export function DataProvider({children} : {children : ReactNode}){
 
     const [userRole, setUserRole] = useState<string>('user');
     const [boardLimit, setBoardLimit] = useState(5);
+    const [allBlocks, setAllBlocks] = useState<Block[]>([]);
 
     const pendingBlockChanges = useRef<Record<string, Partial<Block>>>({});
     const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,6 +94,26 @@ export function DataProvider({children} : {children : ReactNode}){
             setCurrentBoardId(id);
         }
     }, [id]);
+
+    useEffect(() => {
+        const loadAllBlocks = async () => {
+            if (!user) return;
+            const result = await getBlocks();
+            if (result) {
+            setAllBlocks(result);
+            }
+        };
+        loadAllBlocks();
+    }, [user]);
+
+    useEffect(() => {
+        setAllBlocks(prev => {
+            // Remove blocks from current board
+            const filtered = prev.filter(b => b.boardId !== currentBoardId);
+            // Add updated blocks from current board
+            return [...filtered, ...blocks];
+        });
+    }, [blocks, currentBoardId]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -105,9 +131,9 @@ export function DataProvider({children} : {children : ReactNode}){
             if (result.success && result.data) {
                 setBoards(result.data.boards);
                 
-                if (!id && result.data.boards.length > 0) {
-                    navigate(`/boards/${result.data.boards[0].id}`, { replace: true });
-                }
+                // if (!id && result.data.boards.length > 0) {
+                //     navigate(`/boards/${result.data.boards[0].id}`, { replace: true });
+                // }
                 
                 setLastSyncTime(new Date());
             } else {
@@ -535,6 +561,32 @@ export function DataProvider({children} : {children : ReactNode}){
         return true;
     }
 
+    const getParent = useCallback((boardId: string): Board | null => {
+        const board = boards.find(b => b.id === boardId);
+        if (!board?.parentBoardBlockId) return null;
+        
+        const parentBlock = allBlocks.find(b => b.id === board.parentBoardBlockId);
+        if (!parentBlock?.boardId) return null;
+        
+        return boards.find(b => b.id === parentBlock.boardId) || null;
+    }, [boards, allBlocks]);
+
+    const getChildren = useCallback((boardId: string): Board[] => {
+        const boardBlocks = allBlocks.filter(
+            b => b.type === 'board_block' && b.boardId === boardId && b.linkedBoardId
+        );
+        
+        return boardBlocks
+            .map(block => boards.find(b => b.id === block.linkedBoardId))
+            .filter(Boolean) as Board[];
+    }, [boards, allBlocks]);
+
+    const isRootBoard = useCallback((boardId: string): boolean => {
+        const board = boards.find(b => b.id === boardId);
+        return board ? !board.parentBoardBlockId : false;
+    }, [boards]);
+
+
     return (
         <DataContext.Provider value = {{
             currentBoard, setCurrentBoardId, boards, archivedBoards,
@@ -542,7 +594,10 @@ export function DataProvider({children} : {children : ReactNode}){
             blocks, dataMap, getBlocks,
             updateBlock, addBlock, removeBlock, duplicateBlock, batchUpdateBlocks, batchDeleteBlocks,
             syncNow, isSyncing, lastSyncTime, hasPendingChanges,
-            boardLoadError, userRole, boardLimit, canCreateBoard, userVerified
+            boardLoadError, userRole, boardLimit, canCreateBoard, userVerified,
+            getParent,
+            getChildren,
+            isRootBoard
             }}>
             {children}
         </DataContext.Provider>

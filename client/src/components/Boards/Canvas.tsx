@@ -392,85 +392,89 @@ export default function Canvas(){
     }
 
     // Z INDEX HANDLING 
-    const bringToFront = async(id: string) => {
-        const block = blocks.find(b => b.id === id);
-        if (!block) return;
+    const bringToFront = async (ids: string[]) => {
+        if (!ids.length) return;
 
-        const maxZ = Math.max(...blocks.map(b => b.location.zIndex), 0);
-
+        const idSet = new Set(ids);
 
         const sorted = [...blocks].sort(
             (a, b) => a.location.zIndex - b.location.zIndex
         );
 
-        const others = sorted.filter(b => b.id !== id);
-        const one = sorted.find(b => b.id === id);
+        const moving = sorted.filter(b => idSet.has(b.id));
+        const others = sorted.filter(b => !idSet.has(b.id));
 
-        if (!one){ 
-            return;
-        }
+        if (!moving.length) return;
+
         const updated: Record<string, Partial<Block>> = {};
+        let z = 0;
 
-        others.forEach((block, index) => {
-        updated[block.id] = {
+        // Others stay first
+        for (const block of others) {
+            updated[block.id] = {
             location: {
-            ...block.location,
-            zIndex: index + 1,
+                ...block.location,
+                zIndex: z++,
             },
-        };
-        });
+            };
+        }
 
-        updated[id] = {
-        location: {
-            ...one.location,
-            zIndex: others.length + 2,
-        },
-        };
+        // Moving group goes on top, preserving internal order
+        for (const block of moving) {
+            updated[block.id] = {
+            location: {
+                ...block.location,
+                zIndex: z++,
+            },
+            };
+        }
 
         await batchUpdateBlocks(updated);
-    }
+    };
 
-    const pushToBack = async(id: string) => {
-        const block = blocks.find(b => b.id === id);
-        if (!block) return;
+    const pushToBack = async (ids: string[]) => {
+        if (!ids.length) return;
 
-        const minZ = Math.min(...blocks.map(b => b.location.zIndex), 0);
-
+        const idSet = new Set(ids);
 
         const sorted = [...blocks].sort(
             (a, b) => a.location.zIndex - b.location.zIndex
         );
 
-        const others = sorted.filter(b => b.id !== id);
-        const one = sorted.find(b => b.id === id);
+        const moving = sorted.filter(b => idSet.has(b.id));
+        const others = sorted.filter(b => !idSet.has(b.id));
 
-        if (!one){ 
-            return;
-        }
+        if (!moving.length) return;
+
         const updated: Record<string, Partial<Block>> = {};
+        let z = 0;
 
-        others.forEach((block, index) => {
-        updated[block.id] = {
+        // Moving group goes first
+        for (const block of moving) {
+            updated[block.id] = {
             location: {
-            ...block.location,
-            zIndex: index + 1,
+                ...block.location,
+                zIndex: z++,
             },
-        };
-        });
+            };
+        }
 
-        updated[id] = {
-        location: {
-            ...one.location,
-            zIndex: 0,
-        },
-        };
+        // Others go above them
+        for (const block of others) {
+            updated[block.id] = {
+            location: {
+                ...block.location,
+                zIndex: z++,
+            },
+            };
+        }
 
         console.log("updated z index locations", updated);
-        
+
         await batchUpdateBlocks(updated);
         setContextMenu(null);
         clearSelection();
-    }
+        };
     // useEffect(() =>{
     //     if (selectedBlockId!=null) bringToFront(selectedBlockId)
     // }, [selectedBlockId])

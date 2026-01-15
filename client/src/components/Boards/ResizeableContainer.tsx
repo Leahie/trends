@@ -35,7 +35,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     blockLocation: Location,
     scale: number,
     onSelected: () => void,
-    bringToFront: (x: string) => void,
+    bringToFront: (x: string[]) => void,
     shouldResize: boolean,
     zoomToBlock: (x:Block) => void,
     groupMoveState: GroupMoveState,
@@ -169,6 +169,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     // MOVING
     const startMove = (e: React.MouseEvent) => {
         if (!isEditMode) return;
+        if (e.button !== 0) return;
         onSelected();
         moveStartPosition.current = {
             x: blockLocation.x,
@@ -458,7 +459,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                 onMouseDown={(e) => {
                     if (!shouldResize) return;
                     e.stopPropagation();
-                    bringToFront(node.id);
+                    bringToFront([node.id]);
                     startMove(e);
                 }}
             >
