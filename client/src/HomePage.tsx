@@ -13,7 +13,7 @@ import { useSidebar } from './context/sidebar'
 
 export default function HomePage() {
   const {boards, archivedBoards, archiveBoard,loadArchivedBoards, deleteBoard, restoreBoard, createBoard, canCreateBoard, userRole, boardLimit, userVerified} = useData();
-  const {openBoard} = useSidebar();
+  const {pinnedBoards} = useSidebar()
   const [isCreating, setIsCreating] = useState(false);
   const {firstName} = useAuth();
   const location = useLocation();
@@ -72,8 +72,19 @@ export default function HomePage() {
             Boards: {boards.length} / {boardLimit}
         </p>
       )}
+
+      <div>
+        {isRecents && (
+          <div>
+
+          </div>
+
+        )}
+      </div>
       <div className='flex flex-wrap gap-7'>
         {isRecents ? (
+
+          
           <>
             <button
               onClick={handleCreateBoard}

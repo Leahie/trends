@@ -121,3 +121,28 @@
 .context-li:hover{
   background-color: var(--color-light-hover );
 }
+
+#hs-sidebar-basic-usage *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove focus outline from sidebar links */
+#hs-sidebar-basic-usage a:focus {
+  outline: none !important;
+}
+
+/* Remove focus outline from sidebar buttons */
+#hs-sidebar-basic-usage button:focus {
+  outline: none !important;
+}
+
+/* Remove focus outline from sidebar list items */
+#hs-sidebar-basic-usage li:focus {
+  outline: none !important;
+}
+
+
+.hidden {
+  display: none;
+}

@@ -7,7 +7,7 @@ import {
 
 import type { Block, ImageBlockType } from "@/types/types";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 // HOOKS 
@@ -28,7 +28,8 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
     const {selectedBlockIds, pushToHistory} = useEditor();
     
     const fileInputRef = useRef<HTMLInputElement>(null);
-
+    
+    const menuRef = useRef<HTMLDivElement | null>(null);
     
     const createNew = async (type: "text" | "image" | "board_block") => {
         // Get max z-index to place new block on top
@@ -141,6 +142,21 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
             setContextMenu(null);
         }
     
+        useEffect(() => {
+            const handlePointerDown = (e: PointerEvent) => {
+                if (!menuRef.current) return;
+
+                if (!menuRef.current.contains(e.target as Node)) {
+                setContextMenu(null);
+                }
+            };
+
+            document.addEventListener("pointerdown", handlePointerDown);
+
+            return () => {
+                document.removeEventListener("pointerdown", handlePointerDown);
+            };
+        }, [setContextMenu]);
 
     console.log("selected", selectedBlockIds);
     return(
@@ -154,7 +170,9 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         />
 
         <div className="text-left  absolute w-fit h-fit flex flex-col bg-white border text-black text-[11px] rounded shadow cursor-default " 
-        style={{ top: y, left: x, position: "absolute", }}>
+        style={{ top: y, left: x, position: "absolute", }}
+        ref = {menuRef}
+        >
             <ul className=" w-full py-3">
                 <li></li>
                 <li className="context-li">Add</li>

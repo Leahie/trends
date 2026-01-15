@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "@/context/data";
 import { useEffect, useState } from "react";
 import { EditorProvider } from "@/context/editor";
+import { KeyboardShortcuts } from '@/hooks/keyboardHooks';
 
 import Canvas from "./Canvas";
 
@@ -11,6 +12,13 @@ export default function Board(){
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     
+    const toggleSidebar = () => {
+        const sidebar = document.getElementById('hs-sidebar-basic-usage');
+        console.log(sidebar)
+        if (sidebar) {
+        sidebar.classList.toggle('hidden');
+        }
+    };
     
     useEffect(() => {
         if (id && id !== currentBoard?.id) {
@@ -34,14 +42,19 @@ export default function Board(){
 
     if ( !currentBoard) {
         return (
-            <div className="flex items-center justify-center h-screen">
+            <>
+             <div className="flex items-center justify-center h-screen">
                 <p className="text-white">Loading board...</p>
             </div>
+            </>
+            
         );
     }
 
     return (
         <EditorProvider updateBlock={updateBlock}>
+            <KeyboardShortcuts onToggleSidebar={toggleSidebar} />
+
             <Canvas />
         </EditorProvider>
     );
