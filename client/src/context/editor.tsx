@@ -11,6 +11,13 @@ interface EditorContextType{
     clearSelection: () => void;
     toggleSelection: (id:string) => void;
 
+    // clipboard
+    clipboard: Block[];
+    copyBlocks: (blockIds: string[]) => void;
+    cutBlocks: (blockIds: string[]) => void;
+    pasteBlocks: (canvasX: number, canvasY: number, parentId: string) => Promise<void>;
+ 
+
     // text editing 
     isEditingText: boolean; 
     setIsEditingText: (editing: boolean) => void; 
@@ -32,9 +39,11 @@ interface EditorContextType{
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
+const CLIPBOARD_KEY = 'board_clipboard';
 
 export function EditorProvider({children, updateBlock} : {children : ReactNode; updateBlock: (id: string, updates: Partial<Block>) => void}){
-    const { blocks, batchUpdateBlocks } = useData();
+    
+    const { blocks, addBlock,  batchUpdateBlocks, batchDeleteBlocks } = useData();
     const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
 
     const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
@@ -48,6 +57,19 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
     //     if (!selectedBlockIds) return null;
     //     return blocks.find(b => b.id === selectedBlockId) ?? null;
     // }, [blocks, selectedBlockId]);
+
+    const [clipboard, setClipboard] = useState<Block[]>(() => {
+        try {
+            const stored = localStorage.getItem(CLIPBOARD_KEY);
+            return stored ? JSON.parse(stored) : [];
+        } catch {
+            return [];
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(clipboard));
+    }, [clipboard]);
     
     const addToSelection = (id:string) => {
         setSelectedBlockIds((prev)=>
@@ -77,8 +99,61 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
         }
     }, [selectedBlockIds])
 
+    // clipboard ops
+    const copyBlocks = useCallback((blockIds: string[]) => {
+        const blocksToCopy = blocks.filter(b => blockIds.includes(b.id));
+        // Create deep copies (snapshots) of the blocks
+        const snapshots = blocksToCopy.map(block => structuredClone(block));
+        setClipboard(snapshots);
+    }, [blocks]);
+    
+    const cutBlocks = useCallback(async (blockIds: string[]) => {
+        const blocksToCut = blocks.filter(b => blockIds.includes(b.id));
+        const snapshots = blocksToCut.map(block => structuredClone(block));
+        setClipboard(snapshots);
+        
+        // Delete the blocks
+        await batchDeleteBlocks(blockIds);
+        clearSelection();
+    }, [blocks, batchDeleteBlocks, clearSelection]);
+
+     const pasteBlocks = useCallback(async (canvasX: number, canvasY: number, parentId: string) => {
+        if (clipboard.length === 0) return;
+
+        // Calculate the center point of all clipboard blocks
+        const minX = Math.min(...clipboard.map(b => b.location.x));
+        const minY = Math.min(...clipboard.map(b => b.location.y));
+        
+        const newBlockIds: string[] = [];
+
+        for (const block of clipboard) {
+            // Calculate offset from original top-left corner
+            const offsetX = block.location.x - minX;
+            const offsetY = block.location.y - minY;
+
+            const newBlock: Partial<Block> = {
+                ...structuredClone(block),
+                id: undefined, 
+                boardId: parentId,
+                location: {
+                    ...block.location,
+                    x: canvasX + offsetX,
+                    y: canvasY + offsetY,
+                    zIndex: 0 
+                }
+            };
+
+            const result = await addBlock(newBlock);
+            if (result) {
+                newBlockIds.push(result.id);
+            }
+        }
+
+        setSelection(newBlockIds);
+    }, [clipboard, addBlock, setSelection]);
 
 
+    // ctrl z + ctrl y ops
     const pushToHistory = useCallback((before: Record<string, Block>, after: Record<string, Block>) => {
         setUndoStack(prev => [...prev, {
             before,
@@ -134,6 +209,10 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
         clearSelection: clearSelection,
         toggleSelection: toggleSelection,
 
+        clipboard,
+        copyBlocks,
+        cutBlocks,
+        pasteBlocks,
 
         undoStack,
         redoStack,

@@ -25,7 +25,10 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         batchUpdateBlocks, syncNow
     } = useData();
     const {openBoard} = useSidebar();
-    const {selectedBlockIds, pushToHistory} = useEditor();
+    const {selectedBlockIds, pushToHistory, copyBlocks, 
+        cutBlocks, 
+        pasteBlocks,
+        clipboard} = useEditor();
     
     const fileInputRef = useRef<HTMLInputElement>(null);
     
@@ -65,6 +68,27 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
             setContextMenu(null);
         }
     };
+
+    const handleCopy = () => {
+        if (selectedBlockIds.length > 0) {
+            copyBlocks(selectedBlockIds);
+            setContextMenu(null);
+        }
+    };
+
+    const handleCut = async () => {
+        if (selectedBlockIds.length > 0) {
+            await cutBlocks(selectedBlockIds);
+            setContextMenu(null);
+        }
+    };
+
+    const handlePaste = async () => {
+        await pasteBlocks(canvasX, canvasY, parentId);
+        setContextMenu(null);
+    };
+
+    
     const handleDelete = async () => {
         for (const selected of selectedBlockIds) {
             const success = await removeBlock(selected);
@@ -192,6 +216,24 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
                         Board Block
                     </li>
                 </ul>
+                {/* Clipboard operations */}
+                {selectedBlockIds.length > 0 && (
+                    <>
+                        <hr className="mt-2.5 ml-1 mr-4 text-light-accent/50" />
+                        <li className="context-li" onClick={handleCopy}>Copy</li>
+                        <li className="context-li" onClick={handleCut}>Cut</li>
+                    </>
+                )}
+
+                {clipboard.length > 0 && (
+                    <>
+                        <hr className="mt-2.5 ml-1 mr-4 text-light-accent/50" />
+                        <li className="context-li" onClick={handlePaste}>
+                            Paste ({clipboard.length} block{clipboard.length !== 1 ? 's' : ''})
+                        </li>
+                    </>
+                )}
+
                 {
                     selectedBlockIds.length!=0 && 
                     <>

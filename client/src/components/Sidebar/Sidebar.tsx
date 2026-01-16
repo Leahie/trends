@@ -333,6 +333,7 @@ export default function Sidebar(props: SidebarProps){
      <div
       id="hs-sidebar-basic-usage"
       className={`
+          border-highlight/40 border-r-1
         h-full
         ${isCanvasLayout ? 'fixed top-0 start-0 bottom-0 z-60 w-64'
           : 'relative w-64 flex-shrink-0'

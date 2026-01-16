@@ -23,6 +23,8 @@ import { useImagePaste } from "@/hooks/useImagePaste.ts";
 import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
 import { useEditor } from "@/context/editor.tsx";
 import {zoomToBlock} from "@/hooks/blocks/imageHooks.ts"
+import { useSidebar } from "@/context/sidebar.tsx";
+import Header from "./Header.tsx";
 
 interface GroupMoveState {
     isActive: boolean;
@@ -31,7 +33,8 @@ interface GroupMoveState {
 }
 
 export default function Canvas(){
-    const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks} = useData();
+    const {blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks, getParent} = useData();
+    const {open, toggleOpen}  = useSidebar()
     const hasCenteredRef = useRef<string | null>(null);
 
     const {getIdToken} = useAuth()
@@ -639,11 +642,13 @@ export default function Canvas(){
         }
     }
 
+    console.log("currentid", currentBoard.id)
 
     return (
     
     <>
     <div className="fixed inset-0 flex flex-col" >        
+<<<<<<< Updated upstream
         <div className="">
             <div className="absolute top-9 right-4 z-50 flex gap-2 opacity-30 hover:opacity-100">
                 <input 
@@ -695,6 +700,10 @@ export default function Canvas(){
                     <Download size={18}/>
                 </button>
             </div>
+=======
+        <div className={`${open ? "" : "hidden"}`}>
+            <Header parent={getParent(currentBoard.id)} title={title} scale={scale} setPan={setPan} setTitle={setTitle} setScale={setScale} setThemeModalOpen={setThemeModalOpen} setShareModalOpen={setShareModalOpen} />
+>>>>>>> Stashed changes
         </div>    
 
         {/* Canvas - this is the infinite canvas area */}

@@ -26,6 +26,8 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'sidebar_open_boards';
+const MAX_AGE_MS = 1000*60*60*24; // 24 hours
+
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState<boolean>(true);
@@ -40,10 +42,20 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     if (stored) {
     try {
         const parsed = JSON.parse(stored);
-        console.log("These are the saved data", parsed);
-        setOpenBoards(new Set(parsed));
+
+        const isExpired =
+          !parsed.savedAt || Date.now() - parsed.savedAt > MAX_AGE_MS;
+
+        if (isExpired) {
+          console.log("Sidebar state expired, clearing");
+          localStorage.removeItem(STORAGE_KEY);
+        } else {
+          setOpenBoards(new Set(parsed.value || []));
+        }
         } catch (error) {
         console.error('Failed to parse open boards from localStorage:', error);
+              localStorage.removeItem(STORAGE_KEY);
+
         }
     }
     setHydrated(true);
@@ -64,8 +76,12 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
 
-    console.log("I SAVED TO MY LOCAL STORAGE", Array.from(openBoards));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(openBoards)));
+    const payload = {
+      value: Array.from(openBoards),
+      savedAt: Date.now(),
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     }, [openBoards, hydrated]);
 
   const toggleOpen = () => {

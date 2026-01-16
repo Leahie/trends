@@ -4,14 +4,17 @@ import { useState } from "react";
 import { useData } from "@/context/data.tsx";
 import { useSidebar } from "@/context/sidebar";
 
-export default function BoardDiv({id, title, updatedAt, userId}: Board){
+export default function BoardDiv({id, title, updatedAt, userId, parentBoardBlockId}: Board){
+
     const updatedAtDate = new Date(updatedAt?._seconds * 1000);
     const navigate = useNavigate();
-    const { updateBoard, archiveBoard, deleteBoard } = useData();
+    const { getParent, getChildren, updateBoard, archiveBoard, deleteBoard } = useData();
     const { openBoard } = useSidebar()
     
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(title);
+    const parent = parentBoardBlockId ? getParent(id) : null;
+    const children = getChildren(id);
 
     const handleTitleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -156,7 +159,40 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
                 </div>
                 
                 </div>
+                
             </div>
+            {/* Parent-Child Relationships */}
+                <div className="text-sm text-gray-600 space-y-1 text-left p-2">
+                    {parent && (
+                        <div className="flex items-center gap-1">
+                            <span className="text-gray-400">Parent:</span>
+                            <span className="font-medium truncate">
+                                {parent.title || "Untitled"}
+                            </span>
+                        </div>
+                    )}
+
+                    {children.length > 0 && (
+                        <div className="flex items-baseline gap-1 ">
+                            <span className="text-subtext">Children:</span>
+                            <div className="flex flex-wrap gap-1 align-end">
+                                {children.map((child, idx) => (
+                                    <span
+                                        key={child.id}
+                                        className="text-xs"
+                                    >
+                                        {child.title || "Untitled"}
+                                        {idx < children.length - 1 ? "," : ""}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {!parent && children.length === 0 && (
+                        <div className="text-subtext italic">No relationships</div>
+                    )}
+                </div>
             <p className="text-sm mt-auto text-right pr-2 pb-2 text-subtext">{updatedAtDate.toLocaleString()}</p>
 
         </div>

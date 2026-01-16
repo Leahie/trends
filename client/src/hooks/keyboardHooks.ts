@@ -1,14 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useEditor } from '@/context/editor';
 import { useData } from '@/context/data';
 
 interface KeyboardShortcutsProps {
   onToggleSidebar?: () => void;
+  getCurrentCanvasPosition?: () => { x: number; y: number; parentId: string };
+
 }
 
-export function useKeyboardShortcuts({ onToggleSidebar }: KeyboardShortcutsProps = {}) {
-  const { selectedBlockIds, clearSelection, undo, redo, isEditingText } = useEditor();
-  const { batchDeleteBlocks } = useData();
+export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition  }: KeyboardShortcutsProps = {}) {
+  const { selectedBlockIds, copyBlocks, clearSelection, undo, redo, isEditingText, pasteBlocks, cutBlocks } = useEditor();
+  const { batchDeleteBlocks,  currentBoard} = useData();
+  const lastCursorPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
@@ -18,6 +21,43 @@ export function useKeyboardShortcuts({ onToggleSidebar }: KeyboardShortcutsProps
         if (e.key === 'Escape') {
           clearSelection();
         }
+        return;
+      }
+
+      // Copy (Ctrl+C or Cmd+C)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        if (selectedBlockIds.length > 0) {
+          e.preventDefault();
+          copyBlocks(selectedBlockIds);
+        }
+        return;
+      }
+
+      // Cut (Ctrl+X or Cmd+X)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+        if (selectedBlockIds.length > 0) {
+          e.preventDefault();
+          await cutBlocks(selectedBlockIds);
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        
+        if (!currentBoard) return;
+
+        let canvasX = lastCursorPos.current.x;
+        let canvasY = lastCursorPos.current.y;
+
+        // Try to get current cursor position
+        if (getCurrentCanvasPosition) {
+          const pos = getCurrentCanvasPosition();
+          canvasX = pos.x;
+          canvasY = pos.y;
+        }
+
+        await pasteBlocks(canvasX, canvasY, currentBoard.id);
         return;
       }
 
@@ -65,6 +105,11 @@ export function useKeyboardShortcuts({ onToggleSidebar }: KeyboardShortcutsProps
       }
     };
 
+    // Track mouse position for paste location
+    const handleMouseMove = (e: MouseEvent) => {
+      lastCursorPos.current = { x: e.clientX, y: e.clientY };
+    };
+    
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
