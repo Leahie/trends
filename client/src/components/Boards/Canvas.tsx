@@ -648,62 +648,8 @@ export default function Canvas(){
     
     <>
     <div className="fixed inset-0 flex flex-col" >        
-<<<<<<< Updated upstream
-        <div className="">
-            <div className="absolute top-9 right-4 z-50 flex gap-2 opacity-30 hover:opacity-100">
-                <input 
-                    type="text"
-                    value={title} 
-                    onChange={(e) => {
-                        e.stopPropagation();
-                        return setTitle(e.target.value)}}
-                    placeholder="Title"
-                    className = "px-3 py-1 bg-dark text-white rounded hover:bg-dark outline-none"
-                />      
-                <button 
-                    onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
-                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
-                >
-                    −
-                </button>
-                <span className="px-3 py-1 bg-dark text-white rounded">
-                    {(scale * 100).toFixed(0)}%
-                </span>
-                <button 
-                    onClick={() => setScale(s => Math.min(s * 1.2, 5))} 
-                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
-                >
-                    +
-                </button>
-                <button 
-                    onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
-                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
-                >
-                    Reset
-                </button>
-                <button 
-                    onClick={() => { setThemeModalOpen(true) }} 
-                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
-                >
-                    Theme
-                </button>
-                <button
-                    onClick={() => setShareModalOpen(true)}
-                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
-                >
-                    <Share size={18}/>
-                </button>
-                <button
-                    onClick={handleExportPDF}
-                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
-                >
-                    <Download size={18}/>
-                </button>
-            </div>
-=======
         <div className={`${open ? "" : "hidden"}`}>
             <Header parent={getParent(currentBoard.id)} title={title} scale={scale} setPan={setPan} setTitle={setTitle} setScale={setScale} setThemeModalOpen={setThemeModalOpen} setShareModalOpen={setShareModalOpen} />
->>>>>>> Stashed changes
         </div>    
 
         {/* Canvas - this is the infinite canvas area */}
