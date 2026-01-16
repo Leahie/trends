@@ -4,6 +4,9 @@ import { useData } from "@/context/data.tsx";
 import { useAuth } from "@/context/auth.tsx";
 import { useTheme } from "@/context/theme.tsx";
 import {generateScheme} from "@/utils/theme.tsx"
+import { Download, Share } from "lucide-react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 // Components 
 import Context from "./Context.tsx";
@@ -390,7 +393,144 @@ export default function Canvas(){
         setContextMenu({ x: mouseX, y: mouseY, canvasX, canvasY });
 
     }
+    // Handles exporting as pdf
 
+    const getContentBounds= () => {
+        if (blocks.length === 0) return null;
+
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+
+        for(const block of blocks){
+            const{x, y, width, height} = block.location;
+            minX = Math.min(x, minX);
+            minY = Math.min(y, minY);
+            maxX = Math.max(maxX, x+width);
+            maxY = Math.max(maxY, y+height);
+        }
+        // add padding
+
+        const padding = 50
+        return{
+            x: minX - padding,
+            y: minY - padding,
+            width: maxX - minX + padding *2,
+            height: maxY - minY + padding *2
+        }
+
+    };
+    const handleExportPDF = async () => {
+        const bounds = getContentBounds();
+        if(!bounds) return;
+
+        //return current view
+        const prevScale = scale;
+        const prevPan = {...pan};
+
+        setScale(1);
+        setPan({x: -bounds.x, y: -bounds.y});
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const canvas = canvasRef.current;
+        if(!canvas) return;
+
+        try{
+            const screenshot = await html2canvas(canvas, {
+                x: 0,
+                y: 0,
+                width: bounds.width,
+                height: bounds.height,
+                backgroundColor: getComputedStyle(document.documentElement)
+                .getPropertyValue('--color-dark') || '#1a1a1a',
+                useCORS: true,
+            allowTaint: false,
+            onclone: async (clonedDoc) => {
+                // Convert Firebase images to base64 to avoid CORS
+                const images = clonedDoc.querySelectorAll('img');
+                
+                await Promise.all(
+                    Array.from(images).map(async (img) => {
+                        if (img.src.includes('firebasestorage')) {
+                            try {
+                                const response = await fetch(img.src, { mode: 'cors' });
+                                const blob = await response.blob();
+                                const base64 = await new Promise<string>((resolve) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(reader.result as string);
+                                    reader.readAsDataURL(blob);
+                                });
+                                img.src = base64;
+                            } catch (e) {
+                                console.warn('Failed to convert image:', e);
+                                // Hide failed images instead of breaking
+                                img.style.opacity = '0';
+                            }
+                        }
+                    })
+                );
+            }
+            });
+
+            const imgData = screenshot.toDataURL('image/png');
+            const orientation = bounds.width > bounds.height ? 'l': 'p';
+            const pdf = new jsPDF(orientation, 'px', [bounds.width, bounds.height]);
+
+            pdf.addImage(imgData, 'PNG', 0, 0, bounds.width, bounds.height);
+            pdf.save(`${title || 'board'}.pdf`);
+        }finally{
+            setScale(prevScale);
+            setPan(prevPan)
+        }
+
+    // // Create hidden container
+    // const container = document.createElement('div');
+    // container.style.cssText = `
+    //     position: absolute;
+    //     left: -99999px;
+    //     top: 0;
+    //     width: ${bounds.width}px;
+    //     height: ${bounds.height}px;
+    //     background: var(--color-dark, #1a1a1a);
+    //     overflow: hidden;
+    // `;
+    // document.body.appendChild(container);
+
+    // // Clone each block element into the container
+    // for (const block of blocks) {
+    //     const el = document.querySelector(`[data-block-id="${block.id}"]`);
+    //     if (!el) continue;
+
+    //     const clone = el.cloneNode(true) as HTMLElement;
+    //     clone.style.position = 'absolute';
+    //     clone.style.left = `${block.location.x - bounds.x}px`;
+    //     clone.style.top = `${block.location.y - bounds.y}px`;
+    //     clone.style.width = `${block.location.width}px`;
+    //     clone.style.height = `${block.location.height}px`;
+    //     clone.style.transform = 'none';
+    //     container.appendChild(clone);
+    // }
+
+    // // Small delay for images to load in cloned elements
+    // await new Promise(r => setTimeout(r, 200));
+
+    // try {
+    //     const screenshot = await html2canvas(container, {
+    //         backgroundColor: '#1a1a1a',
+    //         useCORS: true,  // Important for external images
+    //         allowTaint: true,
+    //     });
+
+    //     const imgData = screenshot.toDataURL('image/png');
+    //     const orientation = bounds.width > bounds.height ? 'l' : 'p';
+    //     const pdf = new jsPDF(orientation, 'px', [bounds.width, bounds.height]);
+    //     pdf.addImage(imgData, 'PNG', 0, 0, bounds.width, bounds.height);
+    //     pdf.save(`${title || 'board'}.pdf`);
+
+    // } finally {
+    //     document.body.removeChild(container);
+    // }
+    }
     // Z INDEX HANDLING 
     const bringToFront = async (ids: string[]) => {
         if (!ids.length) return;
@@ -546,7 +686,13 @@ export default function Canvas(){
                     onClick={() => setShareModalOpen(true)}
                     className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
                 >
-                    Share
+                    <Share size={18}/>
+                </button>
+                <button
+                    onClick={handleExportPDF}
+                    className="px-3 py-1 bg-dark text-white rounded hover:bg-dark"
+                >
+                    <Download size={18}/>
                 </button>
             </div>
         </div>    

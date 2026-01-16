@@ -441,7 +441,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     const showResizeHandles = selected && !isMultiSelected;
 
     return(     
-        <div className={`absolute  ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}
+        <div data-block-id={node.id} className={`absolute  ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}
         `} 
             style={{...boxStyle, ...blockTheme} }  onMouseMove={() => handleMouseMove} 
             onClick={(e)=>{
