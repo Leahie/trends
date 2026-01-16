@@ -9,20 +9,21 @@ interface KeyboardShortcutsProps {
 }
 
 export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition  }: KeyboardShortcutsProps = {}) {
-  const { selectedBlockIds, copyBlocks, clearSelection, undo, redo, isEditingText, pasteBlocks, cutBlocks } = useEditor();
-  const { batchDeleteBlocks,  currentBoard} = useData();
+  const { selectedBlockIds, copyBlocks, clearSelection, undo, redo, isEditingText, pasteBlocks, cutBlocks, 
+    pushToHistory
+
+   } = useEditor();
+  const { dataMap, batchDeleteBlocks,  currentBoard} = useData();
   const lastCursorPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
+    console.log(isEditingText)
+    if (!isEditingText) {
     const handleKeyDown = async (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when editing text
-      if (isEditingText) {
-        // Allow Escape to exit text editing
-        if (e.key === 'Escape') {
-          clearSelection();
-        }
-        return;
-      }
+      console.log(isEditingText)
+      
+
+      
 
       // Copy (Ctrl+C or Cmd+C)
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
@@ -65,7 +66,17 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
       if (e.key === 'Backspace' || e.key === 'Delete') {
         if (selectedBlockIds.length > 0) {
           e.preventDefault();
+          const before: Record<string, any> = {};
+          selectedBlockIds.forEach(id => {
+            const block = dataMap[id];
+            if (block) before[id] = structuredClone(block);
+          });
+            console.log("deleting", selectedBlockIds);
+
+
           await batchDeleteBlocks(selectedBlockIds);
+
+          pushToHistory(before, {});
           clearSelection();
         }
         return;
@@ -115,6 +126,7 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
+    }
   }, [
     selectedBlockIds,
     isEditingText,

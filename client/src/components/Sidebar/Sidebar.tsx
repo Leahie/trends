@@ -6,6 +6,8 @@ import { useSidebar } from '@/context/sidebar';
 import { useData } from '@/context/data';
 import { Bookmark, ChevronDown, ChevronUp } from 'lucide-react';
 import PinItem from './PinItem';
+import { X, XCircle } from 'lucide-react';
+
 
 interface SidebarProps {
   boards: Board[];
@@ -61,9 +63,10 @@ export default function Sidebar(props: SidebarProps){
   } = props;
 
   const {setCurrentBoardId, getParent, getChildren, isRootBoard} = useData();
-  const {openBoard, open, toggleOpen} = useSidebar();
-
+  const { openBoard, open, toggleOpen, clearOpenBoards } = useSidebar();
+  
   useEffect(() => {
+    console.log("This is when it updates in the useEffect")
     if (currentBoard?.id) {
       openBoard(currentBoard.id);
       
@@ -75,8 +78,6 @@ export default function Sidebar(props: SidebarProps){
       }
     }
   }, [currentBoard?.id, openBoard, getParent]);
-
-  console.log("THE OPEN BOARDS", openBoards);
 
   const [draggedBoardId, setDraggedBoardId] = useState<string | null>(null);
   const [dropZone, setDropZone] = useState<'pinned' | 'boards' | 'canvas' | null>(null);
@@ -165,12 +166,10 @@ export default function Sidebar(props: SidebarProps){
     const pinned = isPinned(board.id);
     const boardIsOpen = isOpen(board.id);
 
-        console.log("YO I'm rendingering a tree", children)
 
 
     // Filter children: only show child if it's in openBoards OR parent is expanded
     const visibleChildren = children.filter(child => {
-      console.log(child.id, isOpen(child.id));
       return isOpen(child.id) || isExpanded});
 
     return (
@@ -406,6 +405,7 @@ export default function Sidebar(props: SidebarProps){
         </header>
         
         <hr className="ml-1 mr-4 text-highlight"></hr>
+       
 
         <nav className="mt-6 h-full overflow-y-auto text-left">
           <div className="pb-0 px-2 w-full flex flex-col flex-wrap">
@@ -451,9 +451,24 @@ export default function Sidebar(props: SidebarProps){
               onDragLeave={() => setDropZone(null)}
               onDrop={handleBoardsDrop}
             >
-              <div className="text-xs text-gray-400 uppercase tracking-wide mb-2 px-2">
-                Boards
-              </div>
+               <div className="flex items-center justify-between px-2 mb-2">
+        <div className="text-xs text-gray-400 uppercase tracking-wide">
+          Boards
+        </div>
+        {openBoards.size > 0 && (
+          <button
+            onClick={() => {
+              if (window.confirm('Close all open boards in sidebar?')) {
+                clearOpenBoards();
+              }
+            }}
+            className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
+            title="Clear all open boards"
+          >
+            Clear
+          </button>
+        )}
+      </div>
               <ul>
                 {visibleRootBoards.map(board => renderBoardTree(board, 0))}
               </ul>

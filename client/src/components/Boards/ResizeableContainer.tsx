@@ -387,10 +387,15 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     // Double clicking on text blocks result in entering edit mode 
     const handleDoubleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
         if (node.type === "text") {
             setIsEditingText(true);
             setEditingBlockId(node.id);
             onSelected();
+
+            setTimeout(() => {
+            // The TextBlock component will handle focus
+        }, 0);
         }
         if (node.type == "image"){
             zoomToBlock(node);
@@ -458,6 +463,10 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                 className="absolute inset-0 "
                 onMouseDown={(e) => {
                     if (!shouldResize) return;
+                    if (isThisTextBlockEditing && node.type === "text") {
+                        e.stopPropagation();
+                        return;
+                    }
                     e.stopPropagation();
                     bringToFront([node.id]);
                     startMove(e);

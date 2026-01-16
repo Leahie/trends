@@ -62,7 +62,7 @@ export default function Canvas(){
     const canvasRef = useRef<HTMLDivElement>(null);
     if (!currentBoard){  return <p>Loading...</p>};
     console.log("the current board", currentBoard)
-    console.log(blocks)
+    console.log("the blocks", blocks)
 
 
     const [title, setTitle] = useState<string>(currentBoard.title);
@@ -144,7 +144,6 @@ export default function Canvas(){
 
     // THeme logic
     
-    console.log("This is the selected block ids", selectedBlockIds);
 
     const onClose = () => {
         setThemeModalOpen(false);
@@ -374,7 +373,6 @@ export default function Canvas(){
             setIsSelecting(false);     
             if (selectedBlockIds.length>0) setIsSelected(true); 
             else setIsSelected(false);  
-            console.log(isSelected)
         }
     };
 
@@ -612,7 +610,6 @@ export default function Canvas(){
             };
         }
 
-        console.log("updated z index locations", updated);
 
         await batchUpdateBlocks(updated);
         setContextMenu(null);
@@ -642,7 +639,6 @@ export default function Canvas(){
         }
     }
 
-    console.log("currentid", currentBoard.id)
 
     return (
     

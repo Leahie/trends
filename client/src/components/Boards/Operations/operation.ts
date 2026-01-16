@@ -16,9 +16,7 @@ export function getOperationsForBlockTypes(
   multiSelection: boolean
   ): Operation[] {
   if (blockTypes.size === 0) return UNIVERSAL_OPERATIONS;
-  console.log(blockTypes, multiSelection)
   return ALL_OPERATIONS.filter(op =>{
-    console.log(op)
     return ([...blockTypes].some(type => op.blockTypes.includes(type))
     && (multiSelection ? op.multiSelection : true))}
   );

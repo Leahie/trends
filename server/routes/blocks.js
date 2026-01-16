@@ -226,6 +226,28 @@ router.patch("/boards/:id", async (req, res) => {
     }
 
     await boardRef.update({...updates, updatedAt: admin.firestore.FieldValue.serverTimestamp()});
+
+    // update the parent board block
+    if (updates.title && board.parentBoardBlockId) {
+      const parentBlockRef = db.collection("blocks").doc(board.parentBoardBlockId);
+      const parentBlockDoc = await parentBlockRef.get();
+      
+      if (parentBlockDoc.exists) {
+        const parentBlock = parentBlockDoc.data();
+        await parentBlockRef.update({
+          'content.title': updates.title,
+          updatedAt: now
+        });
+        
+        // Also update the parent board's timestamp
+        if (parentBlock.boardId) {
+          await db.collection("boards").doc(parentBlock.boardId).update({
+            updatedAt: now
+          });
+        }
+      }
+    }
+
     const updatedBoardDoc = await boardRef.get();
     res.send({board: { id: updatedBoardDoc.id, ...updatedBoardDoc.data() }});
   } catch (error) {
@@ -261,6 +283,20 @@ router.delete("/boards/:id", async(req, res) => {
     // Soft delete this board
     await boardRef.update({deletedAt: now, deletionId: deletionId});
 
+    // If this board has a parent board_block, delete that too
+    if (board.parentBoardBlockId) {
+      const parentBlockRef = db.collection("blocks").doc(board.parentBoardBlockId);
+      const parentBlockDoc = await parentBlockRef.get();
+      
+      if (parentBlockDoc.exists) {
+        await parentBlockRef.update({
+          deletedAt: now,
+          deletionId: deletionId
+        });
+        result.blocks.push(board.parentBoardBlockId);
+      }
+    }
+
     // Get all blocks in this board
     const blocksSnapshot = await db.collection("blocks")
       .where("boardId", "==", id)
@@ -291,6 +327,21 @@ router.delete("/boards/:id", async(req, res) => {
     // Recursively delete child boards
     for (const childBoardId of childBoardsToDelete) {
       await deleteBoardRecursively(childBoardId, userId, deletionId, result);
+    }
+
+    // Remove from user's pinned boards
+    const userRef = db.collection("users").doc(userId);
+    const userDoc = await userRef.get();
+    
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      const pinnedBoards = userData.pinnedBoards || [];
+      
+      if (pinnedBoards.includes(id)) {
+        await userRef.update({
+          pinnedBoards: admin.firestore.FieldValue.arrayRemove(id)
+        });
+      }
     }
 
     res.send({
@@ -885,6 +936,9 @@ router.patch("/blocks/batch", async (req, res) => {
     const batch = db.batch();
     const now = admin.firestore.FieldValue.serverTimestamp();
 
+    const boardBlockTitleUpdates = [];
+
+
     Object.entries(updatesArray).forEach(([id, updates]) => {
       const blockRef = db.collection("blocks").doc(id);
       const existingBlock = blockDataMap[id];
@@ -897,11 +951,31 @@ router.patch("/blocks/batch", async (req, res) => {
         };
       }
       batch.update(blockRef, {...processedUpdates, updatedAt: now});
+
+      if (existingBlock.type === 'board_block' && 
+          updates.content?.title && 
+          existingBlock.linkedBoardId) {
+        boardBlockTitleUpdates.push({
+          boardId: existingBlock.linkedBoardId,
+          newTitle: updates.content.title
+        });
+      }
+    });
+
+    // update board block titles as well
+
+    boardBlockTitleUpdates.forEach(({boardId, newTitle}) => {
+      const boardRef = db.collection("boards").doc(boardId);
+      batch.update(boardRef, { 
+        title: newTitle,
+        updatedAt: now 
+      });
     });
 
     boardIds.forEach((boardId) => {
       const boardRef = db.collection("boards").doc(boardId);
       batch.update(boardRef, { updatedAt: now });
+
     });
 
     await batch.commit();
@@ -951,6 +1025,15 @@ router.patch("/blocks/:id", async (req, res) => {
     }
 
     await blockRef.update({...safeUpdates, updatedAt: admin.firestore.FieldValue.serverTimestamp()});
+
+    if (block.type === 'board_block' && 
+        safeUpdates.content?.title && 
+        block.linkedBoardId) {
+      await db.collection("boards").doc(block.linkedBoardId).update({
+        title: safeUpdates.content.title,
+        updatedAt: now
+      });
+    }
     
     if (block.boardId) {
       await db.collection("boards").doc(block.boardId).update({

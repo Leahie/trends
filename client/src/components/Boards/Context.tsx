@@ -8,7 +8,7 @@ import {
 import type { Block, ImageBlockType } from "@/types/types";
 
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 // HOOKS 
 import { uploadToFirebase } from "@/hooks/uploadToFirebase";
@@ -16,10 +16,12 @@ import { useAuth } from "@/context/auth";
 import { useEditor } from "@/context/editor";
 import { useSidebar } from "@/context/sidebar";
 export default function Context({x, y, parentId, canvasX, canvasY ,setContextMenu, bringToFront, pushToBack}:
+    
     {x:number, y:number, selected:string[], parentId: string, canvasX: number, canvasY: number, 
         setContextMenu : (value: {x: number, y:number, canvasX:number, canvasY: number} | null) => void 
         bringToFront: (id: string[]) => Promise<void> 
         pushToBack: (id:string[]) => Promise<void>}){
+    const navigate = useNavigate();
     const {getIdToken} = useAuth()
     const {dataMap, blocks, createBoard, updateBlock, removeBlock, addBlock,
         batchUpdateBlocks, syncNow
@@ -39,7 +41,6 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         const maxZ = Math.max(...Object.values(blocks).map(b => b.location.zIndex), 0);
         
         let block: Partial<Block>;
-        console.log(parentId);
         
         if (type === "image") {
             fileInputRef.current?.click();
@@ -58,15 +59,18 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         
         const location = createDefaultLocation(canvasX, canvasY, maxZ + 1);
         
-        console.log("BLOCK", block, "LOCATION", location,"PARENID", parentId )
         const success = await addBlock({...block, "location": {...location}, "boardId":parentId});
         if (success != null) {
             if (type == "board_block"){
                 const result = await createBoard(undefined, success.id);
                 if (result != null) openBoard(result?.id);
+                navigate(`/boards/${success.id}`)
             }
             setContextMenu(null);
+            pushToHistory({}, {success});
         }
+        syncNow();
+        
     };
 
     const handleCopy = () => {
@@ -90,12 +94,22 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
 
     
     const handleDelete = async () => {
+        if (selectedBlockIds.length === 0) return;
+
+        const before: Record<string, Block> = {};
+        selectedBlockIds.forEach(id => {
+            const block = dataMap[id];
+            if (block) before[id] = structuredClone(block);
+        });
+
         for (const selected of selectedBlockIds) {
             const success = await removeBlock(selected);
             if (success) {
             console.log('Block deleted successfully');
             }
         }
+
+        pushToHistory(before, {});
 
         setContextMenu(null);
     };
@@ -182,7 +196,6 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
             };
         }, [setContextMenu]);
 
-    console.log("selected", selectedBlockIds);
     return(
         <>
         <input

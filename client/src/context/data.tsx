@@ -34,6 +34,7 @@ interface DataContextType {
     addBlock: (block: Partial<Block>) => Promise<Block | null>; 
     removeBlock: (id: string) => Promise<boolean>;
     duplicateBlock: (blockId: string, targetBoardId?: string) => Promise<boolean>;
+    restoreBlock: (id: string) => Promise<boolean>;
 
     // Batch operations
     batchUpdateBlocks: (updates: Record<string, Partial<Block>>) => Promise<boolean>;
@@ -66,7 +67,6 @@ export function DataProvider({children} : {children : ReactNode}){
     const { id } = useParams();
     const navigate = useNavigate();
     const {user} = useAuth();
-    console.log(user?.getIdToken())
     const [boards, setBoards] = useState<Board[]>([]);
     const [archivedBoards, setArchivedBoards] = useState<Board[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
@@ -396,12 +396,13 @@ export function DataProvider({children} : {children : ReactNode}){
 
 
     const addBlock = async(block: Partial<Block>): Promise<Block | null> => {
-        console.log(currentBoardId)
         if (!currentBoardId) return null; // i.e. not event on a board rn
         
-        const blockId = block.id || uuidv4();
+        const blockId = block.id ?? uuidv4();
+
         const targetBoardId = block.boardId || currentBoardId;
         const newBlock: Block = {
+            ...block,
             id : blockId, 
             boardId: targetBoardId, 
             userId: user?.uid || '', 
@@ -423,12 +424,10 @@ export function DataProvider({children} : {children : ReactNode}){
             deletionId: null, 
             createdAt: null, 
             updatedAt: null, 
-            ...block
         } as Block;
 
 
         setBlocks((prev: Block[]) => [...prev, newBlock]);
-        console.log("here's my info", currentBoardId, block)
         // Persist to server for the explicit target board
         const result = await api.addBlock(targetBoardId, newBlock);
                 
@@ -561,6 +560,22 @@ export function DataProvider({children} : {children : ReactNode}){
         return true;
     }
 
+    const restoreBlock = async (id: string): Promise<boolean> => {
+        const result = await api.restoreBlock(id);
+        
+        if (result.success && result.data) {
+            const restoredBlock = result.data.block;
+            
+            // Add block back to state if it belongs to current board
+            if (restoredBlock.boardId === currentBoardId) {
+                setBlocks(prev => [...prev, restoredBlock]);
+            }
+            
+            return true;
+        }
+        return false;
+    };
+
     const getParent = useCallback((boardId: string): Board | null => {
         const board = boards.find(b => b.id === boardId);
         if (!board?.parentBoardBlockId) return null;
@@ -592,7 +607,7 @@ export function DataProvider({children} : {children : ReactNode}){
             currentBoard, setCurrentBoardId, boards, archivedBoards,
             loadBoards, loadArchivedBoards, createBoard, archiveBoard, restoreBoard, deleteBoard, updateBoard: updateBoardFunc, 
             blocks, dataMap, getBlocks,
-            updateBlock, addBlock, removeBlock, duplicateBlock, batchUpdateBlocks, batchDeleteBlocks,
+            updateBlock, addBlock, removeBlock, duplicateBlock, batchUpdateBlocks, batchDeleteBlocks, restoreBlock,
             syncNow, isSyncing, lastSyncTime, hasPendingChanges,
             boardLoadError, userRole, boardLimit, canCreateBoard, userVerified,
             getParent,

@@ -19,7 +19,6 @@ export const IMAGE_OPERATIONS: Operation[] = [
     multiSelection: false,
     priority: 3,
     apply: (block, params) => {
-      console.log("these are the params", params)
       const imageBlock = block as ImageBlockType;
       return {
         content: {

@@ -15,7 +15,6 @@ interface HeaderProps {
 
 }
 export default function Header({parent, title, setTitle, setScale, scale, setPan, setThemeModalOpen, setShareModalOpen}: HeaderProps){
-            console.log(parent)
 
                 return (<div className="absolute top-0 w-full gap-2 border-highlight/40 border-b-1 bg-dark/90 z-50 flex justify-end  pt-2 pb-2 px-4 text-primary">
                     {parent && 

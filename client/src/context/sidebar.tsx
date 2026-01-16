@@ -8,12 +8,12 @@ interface SidebarContextType {
   toggleOpen: () => void;
 
   // Session state (localStorage)
-
   openBoards: Set<string>;
   toggleBoard: (boardId: string) => void;
   openBoard: (boardId: string) => void;
   closeBoard: (boardId: string) => void;
   isOpen: (boardId: string) => boolean;
+  clearOpenBoards: () => void;
 
   // Pinned boards (backend + state)
   pinnedBoards: string[];
@@ -21,17 +21,18 @@ interface SidebarContextType {
   unpinBoard: (boardId: string) => Promise<boolean>;
   reorderPins: (newOrder: string[]) => Promise<boolean>;
   isPinned: (boardId: string) => boolean;
+
+  // Board management
+  addNewRootBoard: (boardId: string) => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'sidebar_open_boards';
-const MAX_AGE_MS = 1000*60*60*24; // 24 hours
-
+const MAX_AGE_MS = 1000 * 60 * 60 * 24; // 24 hours
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState<boolean>(true);
-
   const [hydrated, setHydrated] = useState(false);
   const [openBoards, setOpenBoards] = useState<Set<string>>(new Set());
   const [pinnedBoards, setPinnedBoards] = useState<string[]>([]);
@@ -40,7 +41,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-    try {
+      try {
         const parsed = JSON.parse(stored);
 
         const isExpired =
@@ -52,11 +53,10 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         } else {
           setOpenBoards(new Set(parsed.value || []));
         }
-        } catch (error) {
+      } catch (error) {
         console.error('Failed to parse open boards from localStorage:', error);
-              localStorage.removeItem(STORAGE_KEY);
-
-        }
+        localStorage.removeItem(STORAGE_KEY);
+      }
     }
     setHydrated(true);
   }, []);
@@ -82,12 +82,12 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    }, [openBoards, hydrated]);
+  }, [openBoards, hydrated]);
 
   const toggleOpen = () => {
-    console.log("setting the open", !open)
     setOpen((prev) => !prev);
-  }
+  };
+
   const toggleBoard = useCallback((boardId: string) => {
     setOpenBoards(prev => {
       const next = new Set(prev);
@@ -115,6 +115,15 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const isOpen = useCallback((boardId: string) => {
     return openBoards.has(boardId);
   }, [openBoards]);
+
+  const clearOpenBoards = useCallback(() => {
+    setOpenBoards(new Set());
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  const addNewRootBoard = useCallback((boardId: string) => {
+    setOpenBoards(prev => new Set(prev).add(boardId));
+  }, []);
 
   const pinBoard = useCallback(async (boardId: string): Promise<boolean> => {
     const result = await api.pinBoard(boardId);
@@ -156,17 +165,20 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
   return (
     <SidebarContext.Provider value={{
-      open, toggleOpen,
+      open, 
+      toggleOpen,
       openBoards,
       toggleBoard,
       openBoard,
       closeBoard,
       isOpen,
+      clearOpenBoards,
       pinnedBoards,
       pinBoard,
       unpinBoard,
       reorderPins,
-      isPinned
+      isPinned,
+      addNewRootBoard
     }}>
       {children}
     </SidebarContext.Provider>
