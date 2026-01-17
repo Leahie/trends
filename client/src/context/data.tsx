@@ -16,6 +16,8 @@ interface DataContextType {
     // Boards
     boards: Board[];
     archivedBoards: Board[];
+    boardsMap: Record<string, Board>;
+
     loadBoards: () => Promise<void>;
     loadArchivedBoards: () => Promise<void>;
     createBoard: (title?: string, parentBoardBlockId?:string) => Promise<Board | null>;
@@ -39,6 +41,8 @@ interface DataContextType {
     // Batch operations
     batchUpdateBlocks: (updates: Record<string, Partial<Block>>) => Promise<boolean>;
     batchDeleteBlocks: (blockIds: string[]) => Promise<boolean>;
+    batchAddBlocks: (blocks: Partial<Block>[]) => Promise<Block[]>;
+
 
     // Syncing
     syncNow: () => Promise<void>;
@@ -108,10 +112,13 @@ export function DataProvider({children} : {children : ReactNode}){
 
     useEffect(() => {
         setAllBlocks(prev => {
-            // Remove blocks from current board
             const filtered = prev.filter(b => b.boardId !== currentBoardId);
-            // Add updated blocks from current board
-            return [...filtered, ...blocks];
+
+            // Merge filtered + blocks and dedupe by id
+            const merged = [...filtered, ...blocks];
+            const deduped = Array.from(new Map(merged.map(b => [b.id, b])).values());
+
+            return deduped;
         });
     }, [blocks, currentBoardId]);
 
@@ -192,6 +199,9 @@ export function DataProvider({children} : {children : ReactNode}){
         return Object.fromEntries(blocks.map((b) => [b.id, b]));
     }, [blocks]);
 
+    const boardsMap = useMemo(() => {
+        return Object.fromEntries(boards.map((b) => [b.id, b]));
+    }, [boards]);
 
     const scheduledSync = useCallback( () => {
         if (syncTimeout.current){
@@ -205,30 +215,25 @@ export function DataProvider({children} : {children : ReactNode}){
     const performSync = async () => {
         const blockChanges = {...pendingBlockChanges.current};
 
-        if (Object.keys(blockChanges).length === 0) return;
+        if (Object.keys(blockChanges).length === 0) return true;
 
         setIsSyncing(true);
-        let hasErrors = false;
 
         try {
-            if (Object.keys(blockChanges).length > 0) {
-                console.log("I AM REUPDATING HERE")
-                const result = await api.batchUpdateBlocks(blockChanges);
-                if (result.success) {
-                    pendingBlockChanges.current = {};
-                    setLastSyncTime(new Date());
-                } else {
-                    hasErrors = true;
-                }
+            const result = await api.batchUpdateBlocks(blockChanges);
+            if (result.success) {
+                pendingBlockChanges.current = {};
+                setLastSyncTime(new Date());
+                return true;
             }
+            console.error('Sync failed:', result.error);
+            return false;
         } catch (error) {
             console.error('Sync error:', error);
-            hasErrors = true;
+            return false;
         } finally {
             setIsSyncing(false);
         }
-
-        return !hasErrors;
     };
     
     const syncNow = async () => {
@@ -278,7 +283,6 @@ export function DataProvider({children} : {children : ReactNode}){
         if (result.success && result.data) {
             const newBoard = result.data.board;
             setBoards((prev:Board[]) => [newBoard, ...prev]);
-            setCurrentBoardId(newBoard.id);
             return newBoard;
         }
         return null;
@@ -560,6 +564,73 @@ export function DataProvider({children} : {children : ReactNode}){
         return true;
     }
 
+    const batchAddBlocks = async (blocksToAdd: Partial<Block>[]): Promise<Block[]> => {
+        if (!currentBoardId) return [];
+        
+        const newBlocks: Block[] = [];
+        
+        // Create all blocks with IDs
+        const blocksWithIds = blocksToAdd.map(block => {
+            const blockId = block.id ?? uuidv4();
+            const targetBoardId = block.boardId || currentBoardId;
+            
+            const newBlock: Block = {
+                ...block,
+                id: blockId,
+                boardId: targetBoardId,
+                userId: user?.uid || '',
+                type: block.type || 'text',
+                location: {
+                    x: block.location?.x || 0,
+                    y: block.location?.y || 0,
+                    width: block.location?.width || 200,
+                    height: block.location?.height || 200,
+                    zIndex: block.location?.zIndex || 0,
+                    rotation: block.location?.rotation || 0,
+                    scaleX: block.location?.scaleX || 1,
+                    scaleY: block.location?.scaleY || 1,
+                },
+                content: block.content || {},
+                linkedBoardId: block.linkedBoardId || null,
+                deletedAt: null,
+                deletionId: null,
+                createdAt: null,
+                updatedAt: null,
+            } as Block;
+            
+            newBlocks.push(newBlock);
+            return newBlock;
+        });
+        
+        // Optimistically update UI
+        setBlocks((prev: Block[]) => [...prev, ...newBlocks]);
+        
+        // Persist to server
+        const result = await api.batchAddBlocks(currentBoardId, blocksWithIds);
+        
+        if (!result.success) {
+            // Rollback on failure
+            const newBlockIds = new Set(newBlocks.map(b => b.id));
+            setBlocks((prev: Block[]) => prev.filter(b => !newBlockIds.has(b.id)));
+            console.error('Failed to batch add blocks:', result.error);
+            return [];
+        }
+        
+        if (result.data?.blocks) {
+            // Update with server response
+            const serverBlocks = result.data.blocks;
+            const serverBlockMap = new Map(serverBlocks.map((b:Block) => [b.id, b]));
+            
+            setBlocks((prev: Block[]) => 
+                prev.map(b => serverBlockMap[b.id] || b)
+            );
+            
+            return serverBlocks;
+        }
+        
+        return newBlocks;
+    };
+
     const restoreBlock = async (id: string): Promise<boolean> => {
         const result = await api.restoreBlock(id);
         
@@ -576,30 +647,34 @@ export function DataProvider({children} : {children : ReactNode}){
         return false;
     };
 
+
     const getParent = useCallback((boardId: string): Board | null => {
-        const board = boards.find(b => b.id === boardId);
+        const board = boardsMap[boardId];
         if (!board?.parentBoardBlockId) return null;
         
         const parentBlock = allBlocks.find(b => b.id === board.parentBoardBlockId);
         if (!parentBlock?.boardId) return null;
         
-        return boards.find(b => b.id === parentBlock.boardId) || null;
-    }, [boards, allBlocks]);
+        return boardsMap[parentBlock.boardId] || null;
+    }, [boardsMap, allBlocks]);
 
     const getChildren = useCallback((boardId: string): Board[] => {
         const boardBlocks = allBlocks.filter(
             b => b.type === 'board_block' && b.boardId === boardId && b.linkedBoardId
         );
+
+                console.log("all blocks", allBlocks)
+
         
         return boardBlocks
-            .map(block => boards.find(b => b.id === block.linkedBoardId))
+            .map(block => boardsMap[block.linkedBoardId!])
             .filter(Boolean) as Board[];
-    }, [boards, allBlocks]);
+    }, [boardsMap, allBlocks]);
 
     const isRootBoard = useCallback((boardId: string): boolean => {
-        const board = boards.find(b => b.id === boardId);
+        const board = boardsMap[boardId];
         return board ? !board.parentBoardBlockId : false;
-    }, [boards]);
+    }, [boardsMap]);
 
 
     return (
@@ -612,6 +687,8 @@ export function DataProvider({children} : {children : ReactNode}){
             boardLoadError, userRole, boardLimit, canCreateBoard, userVerified,
             getParent,
             getChildren,
+            boardsMap,
+            batchAddBlocks,
             isRootBoard
             }}>
             {children}

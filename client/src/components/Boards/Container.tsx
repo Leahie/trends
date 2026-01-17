@@ -6,7 +6,7 @@ import TextBlock from "@/components/Blocks/TextBlock";
 export default function Container({node, dims, scale} : {node: BaseBlock, dims:any, scale:number}){
     return(
     <div className="h-full w-full">
-        {node["type"] === "text" && <TextBlock {...(node as TextBlockType)} />}
+        {node["type"] === "text" && <TextBlock {...(node as TextBlockType)} dims={dims} />}
         
         {node.type === "image" && (
         <ImageBlock

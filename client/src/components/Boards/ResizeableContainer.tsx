@@ -1,3 +1,4 @@
+// Updated ResizableContainer.tsx to account for subtitle overflow
 import type {Block, Location} from "@/types/types"
 import {useState, useEffect, useRef} from "react";
 import Container from "./Container";
@@ -5,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import {useData} from "@/context/data.tsx"
 import { useEditor } from "@/context/editor.tsx";
 import { generateScheme, schemeToCSSVars } from "@/utils/theme";
-
 
 type HandleType = "right" | "left" | "bottom" | "top" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | null;
 
@@ -28,7 +28,6 @@ interface GroupMoveState {
     offsetY: number;
 }
 
-
 export default function ResizeableContainer({node, blockLocation, scale, onSelected,
     bringToFront, shouldResize, zoomToBlock, groupMoveState, onGroupMove
 }: {node: Block,
@@ -46,7 +45,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     const {updateBlock, batchUpdateBlocks, blocks} = useData();
     const { selectedBlockIds, setIsEditingText, setEditingBlockId, isEditingText, editingBlockId, pushToHistory } = useEditor();
     const selected = selectedBlockIds.includes(node.id);
-    const isMultiSelected = selectedBlockIds.length > 1 && selected; // is this in a group selection
+    const isMultiSelected = selectedBlockIds.length > 1 && selected;
     const isThisTextBlockEditing = editingBlockId === node.id;
 
     const navigate = useNavigate();
@@ -67,7 +66,9 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
 
     const moveStartPosition = useRef<{x: number, y: number}>(null);
 
-    // Track modifier key state
+    // Check if this block has a subtitle
+    const hasSubtitle = node.type === "image" && node.content.subtitle;
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.ctrlKey || e.metaKey) {
@@ -138,8 +139,19 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                         } 
                     };
 
-                    updateBlock(node.id, {location: dims});
-                    pushToHistory(before, after);
+                    const moved =
+                        node.location.x !== dims.x ||
+                        node.location.y !== dims.y ||
+                        node.location.width !== dims.width ||
+                        node.location.height !== dims.height ||
+                        node.location.rotation !== dims.rotation ||
+                        node.location.scaleX !== dims.scaleX ||
+                        node.location.scaleY !== dims.scaleY;
+
+                    if (moved) {
+                        updateBlock(node.id, { location: dims });
+                        pushToHistory(before, after);
+                    }
                 }
                 moveStartPosition.current = null;
             }
@@ -166,7 +178,6 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         }
     }, [drag.active, move.active, drag.handle, drag.x, drag.y, move.x, move.y, dims, node.id]);
 
-    // MOVING
     const startMove = (e: React.MouseEvent) => {
         if (!isEditMode) return;
         if (e.button !== 0) return;
@@ -185,8 +196,6 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         if (isMultiSelected) {
             onGroupMove(0, 0, true);
         }
-
-
     }
 
     const moveFrame = (e: MouseEvent) => {
@@ -195,6 +204,9 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         if (!move.active) return; 
         if (!moveStartPosition.current) return;
 
+        const start = moveStartPosition.current;
+        if (!start || start.x == null || start.y == null) return;
+
         const totalDx = (e.clientX - move.x) / scale;
         const totalDy = (e.clientY - move.y) / scale;
 
@@ -202,21 +214,19 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
             onGroupMove(totalDx, totalDy, true);
             
             setDims(prev => ({
-                ...prev,
-                x: Math.max(0, moveStartPosition.current!.x + totalDx),
-                y: Math.max(0, moveStartPosition.current!.y + totalDy)
+            ...prev,
+            x: Math.max(0, start.x + totalDx),
+            y: Math.max(0, start.y + totalDy),
             }));
         } else {
             setDims(prev => {
-                const newX = Math.max(0, moveStartPosition.current!.x + totalDx);
-                const newY = Math.max(0, moveStartPosition.current!.y + totalDy);
-                return { ...prev, x: newX, y: newY };
+            const newX = Math.max(0, start.x + totalDx);
+            const newY = Math.max(0, start.y + totalDy);
+            return { ...prev, x: newX, y: newY };
             });
         }
-
     }
 
-    // START AND STOP THE RESIZING
     const startResize = (drag: HandleType) => (e: React.MouseEvent) => {
         e.stopPropagation();
         onSelected();
@@ -247,12 +257,6 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
 
             let aspectRatio = prev.width/prev.height;
             if (isImageBlock) {
-                // aspectRatio = node.content.imgWidth/node.content.imgHeight;
-                // if (node.content.transforms?.crop){
-                //     aspectRatio = node.content.transforms.crop.widthRatio / node.content.transforms.crop.heightRatio;
-                // }
-
-                // For images, maintain aspect ratio and anchor to opposite side
                 if (handle === "right") {
                     w += dx;
                     h = w / aspectRatio;
@@ -272,7 +276,6 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                     y = prev.y + prev.height - h;
                     x = prev.x + prev.width / 2 - w / 2;
                 } else if (handle === "top-left") {
-                    // Diagonal: use average of dx and dy to maintain aspect ratio
                     const avgDelta = (dx + dy) / 2;
                     w -= avgDelta * aspectRatio;
                     h -= avgDelta;
@@ -294,7 +297,6 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                     h += avgDelta;
                 }
             } else {
-                // Original behavior for non-image blocks
                 if (handle === "right") w += dx;
                 if (handle === "left") {
                     x += dx;
@@ -384,7 +386,6 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         }
     }
 
-    // Double clicking on text blocks result in entering edit mode 
     const handleDoubleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
@@ -410,18 +411,16 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         ? Math.max(0, blockLocation.y + groupMoveState.offsetY)
         : dims.y;
 
-    // This is the box style 
     const boxStyle = {
         width: `${dims.width}px`,
         height: `${dims.height}px`,
         top: `${visualY}px`,      
         left: `${visualX}px`,    
         zIndex: selected ? 1000 : dims.zIndex, 
-        overflow: isThisTextBlockEditing ? "visible" : "hidden",
+        overflow: isThisTextBlockEditing ? "visible" : (hasSubtitle ? "visible" : "hidden"),
         userSelect: "none" as const
     };
 
-    // Location Syncing
     useEffect(() => {
         if (blockLocation.zIndex !== dims.zIndex) {
             setDims(prev => ({...prev, zIndex: blockLocation.zIndex}));
@@ -437,18 +436,16 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
         }
     }, [blockLocation, drag.active, move.active]);
 
-
     const scheme = node.type == "text" && node.content.bgColor ? generateScheme(node.content.bgColor) : null;
-    
     const blockTheme = scheme ? schemeToCSSVars(scheme) : undefined;
-    
-
     const showResizeHandles = selected && !isMultiSelected;
 
     return(     
-        <div data-block-id={node.id} className={`absolute  ${node.type == "text" && "text-block"}  ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}
-        `} 
-            style={{...boxStyle, ...blockTheme} }  onMouseMove={() => handleMouseMove} 
+        <div 
+            data-block-id={node.id} 
+            className={`absolute flex flex-col ${node.type == "text" && "text-block"} ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
+            style={{...boxStyle, ...blockTheme}} 
+            onMouseMove={() => handleMouseMove} 
             onClick={(e)=>{
                 if (!shouldResize) return;
                 e.stopPropagation(); 
@@ -458,9 +455,10 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                     navigate(`/boards/${node.linkedBoardId}`)
                 }
             }}
-            onDoubleClick={handleDoubleClick}>
+            onDoubleClick={handleDoubleClick}
+        >
             <div
-                className="absolute inset-0 "
+                className="absolute inset-0"
                 onMouseDown={(e) => {
                     if (!shouldResize) return;
                     if (isThisTextBlockEditing && node.type === "text") {

@@ -43,7 +43,7 @@ const CLIPBOARD_KEY = 'board_clipboard';
 
 export function EditorProvider({children, updateBlock} : {children : ReactNode; updateBlock: (id: string, updates: Partial<Block>) => void}){
     
-    const { blocks, addBlock,  batchUpdateBlocks, batchDeleteBlocks, restoreBlock  } = useData();
+    const { blocks, addBlock, batchAddBlocks, batchUpdateBlocks, batchDeleteBlocks, restoreBlock  } = useData();
     const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
 
     const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
@@ -128,8 +128,8 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
         const minX = Math.min(...clipboard.map(b => b.location.x));
         const minY = Math.min(...clipboard.map(b => b.location.y));
         
-        const newBlockIds: string[] = [];
-        const after: Record<string, Block> = {};
+        const blocksToAdd: Partial<Block>[] = [];
+
 
         for (const block of clipboard) {
             // Calculate offset from original top-left corner
@@ -138,7 +138,7 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
 
             const newBlock: Partial<Block> = {
                 ...structuredClone(block),
-                id : undefined,
+                id: undefined, // Let server generate new IDs
                 boardId: parentId,
                 location: {
                     ...block.location,
@@ -148,20 +148,28 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
                 }
             };
 
-            const result = await addBlock(newBlock);
-            if (result) {
-                newBlockIds.push(result.id);
-                after[result.id] = result;
-            }
+            blocksToAdd.push(newBlock);
         }
 
+        const results = await batchAddBlocks(blocksToAdd);
+
+
+        if (results.length > 0) {
+        const after: Record<string, Block> = {};
+        results.forEach((block:Block) => {
+            after[block.id] = block;
+        });
+        
         pushToHistory({}, after);
-        setSelection(newBlockIds);
+        setSelection(results.map((b:Block) => b.id));
+    }
     }, [clipboard, addBlock, setSelection]);
 
 
     // ctrl z + ctrl y ops
     const pushToHistory = useCallback((before: Record<string, Block>, after: Record<string, Block>) => {
+        console.log("on the stack", before)
+        console.log("on the stack after", after)
         setUndoStack(prev => [...prev, {
             before,
             after,
@@ -171,6 +179,7 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
     },[])
 
     const undo = useCallback(async()=>{
+        console.log("undo stack", undoStack)
         if (undoStack.length === 0) return;
 
         const curr = undoStack[undoStack.length-1];
@@ -188,6 +197,8 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
                     ])
                 )
             );
+                                console.log("I am updating")
+
         }
 
         // case 2: deletion blocks -> no blocks, restore
@@ -196,12 +207,16 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
             for (const id of beforeIds) {
                 await restoreBlock(id);
             }
+                    console.log("I am restoring")
+
         }
 
         // case 3: addition no blocks -> blocks, deletion
         else if (beforeIds.length === 0 && afterIds.length > 0) {
             // Delete the added blocks
             await batchDeleteBlocks(afterIds);
+                                console.log("I am deleting")
+
         }
 
         setRedoStack(prev => [...prev, curr])

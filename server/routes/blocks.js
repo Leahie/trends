@@ -991,6 +991,7 @@ router.patch("/blocks/batch", async (req, res) => {
   }
 });
 
+
 // Update single block
 router.patch("/blocks/:id", async (req, res) => {
   try {
@@ -1416,6 +1417,85 @@ router.post("/blocks/batch-delete", async (req, res) => {
   } catch (error) {
     console.log("Error in batch deleting blocks:", error);
     return res.status(500).send("Internal Server Error");
+  }
+});
+
+router.post("/boards/:id/blocks/batch", async (req, res) => {
+  try {
+    const { blocks: blocksData } = req.body;
+    const { id: boardId } = req.params;
+    const userId = req.user.uid;
+
+    if (!blocksData || !Array.isArray(blocksData) || blocksData.length === 0) {
+      return res.status(400).send("No blocks provided");
+    }
+
+    // Verify board exists and belongs to user
+    const boardDoc = await db.collection("boards").doc(boardId).get();
+    if (!boardDoc.exists) {
+      return res.status(404).send("Board not found");
+    }
+    
+    const board = boardDoc.data();
+    if (board.userId !== userId) {
+      return res.status(403).send("Forbidden");
+    }
+    if (board.deletedAt !== null) {
+      return res.status(404).send("Board not found");
+    }
+
+    const batch = db.batch();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    const newBlocks = [];
+
+    for (const blockData of blocksData) {
+      const blockId = blockData.id || uuidv4();
+
+      const newBlock = {
+        id: blockId,
+        boardId,
+        userId,
+        type: blockData.type || "text",
+        location: {
+          x: blockData.location?.x ?? blockData.x ?? 0,
+          y: blockData.location?.y ?? blockData.y ?? 0,
+          width: blockData.location?.width ?? blockData.width ?? 100,
+          height: blockData.location?.height ?? blockData.height ?? 100,
+          zIndex: blockData.location?.zIndex ?? blockData.zIndex ?? 0,
+          rotation: blockData.location?.rotation ?? blockData.rotation ?? 0,
+          scaleX: blockData.location?.scaleX ?? blockData.scaleX ?? 1,
+          scaleY: blockData.location?.scaleY ?? blockData.scaleY ?? 1,
+        },
+        content: blockData.content || {},
+        linkedBoardId: blockData.linkedBoardId || null,
+        deletedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      // If creating a board_block with a linkedBoardId, update that board's parentBoardBlockId
+      if (newBlock.type === "board_block" && newBlock.linkedBoardId) {
+        batch.update(db.collection("boards").doc(newBlock.linkedBoardId), {
+          parentBoardBlockId: blockId,
+          updatedAt: now
+        });
+      }
+
+      batch.set(db.collection("blocks").doc(blockId), newBlock);
+      newBlocks.push(newBlock);
+    }
+
+    // Update parent board timestamp
+    batch.update(db.collection("boards").doc(boardId), {
+      updatedAt: now
+    });
+
+    await batch.commit();
+
+    return res.status(201).send({ blocks: newBlocks });
+  } catch (error) {
+    console.log("Error batch adding blocks:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 

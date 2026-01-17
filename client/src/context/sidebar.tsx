@@ -36,7 +36,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [openBoards, setOpenBoards] = useState<Set<string>>(new Set());
   const [pinnedBoards, setPinnedBoards] = useState<string[]>([]);
-
+  console.log("open boards", ...openBoards)
   // Load open boards from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -52,7 +52,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem(STORAGE_KEY);
         } else {
           setOpenBoards(new Set(parsed.value || []));
-        }
+        } 
       } catch (error) {
         console.error('Failed to parse open boards from localStorage:', error);
         localStorage.removeItem(STORAGE_KEY);

@@ -321,6 +321,24 @@ export const api = {
       };
     }
   },
+    async batchAddBlocks(boardId: string, blocks: Partial<Block>[]): Promise<ApiResponse<{ blocks: Block[] }>> {
+      try {
+          console.log('Attempting to batch add blocks to board:', boardId);
+          const { data } = await client.post(`/data/boards/${boardId}/blocks/batch`, { blocks });
+          console.log('Blocks added successfully:', data);
+          return { success: true, data };
+      } catch (error) {
+          console.error('Failed to batch add blocks:', error);
+          if (axios.isAxiosError(error)) {
+              console.error('Response data:', error.response?.data);
+              console.error('Response status:', error.response?.status);
+          }
+          return { 
+              success: false, 
+              error: error instanceof Error ? error.message : 'Failed to batch add blocks'
+          };
+      }
+  },
 
   // restore a block
   async restoreBlock(blockId: string): Promise<ApiResponse<{ block: Block }>> {

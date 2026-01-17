@@ -56,7 +56,7 @@ export default function ShareModal({ open, boardId, onClose }: ShareModalProps) 
             >
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold">Share Board</h2>
-                    <button onClick={onClose} className="hover:bg-gray-700 p-1 rounded">
+                    <button onClick={onClose} className="hover:bg-highlight p-1 rounded">
                         <X size={20} />
                     </button>
                 </div>

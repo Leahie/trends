@@ -69,7 +69,6 @@ export default function Sidebar(props: SidebarProps){
     console.log("This is when it updates in the useEffect")
     if (currentBoard?.id) {
       openBoard(currentBoard.id);
-      
       // Open all parent boards in the hierarchy
       let parent = getParent(currentBoard.id);
       while (parent) {
@@ -160,6 +159,8 @@ export default function Sidebar(props: SidebarProps){
 
   const renderBoardTree = useCallback((board: Board, depth: number = 0) => {
     const children = getChildren(board.id);
+      console.log("visible boards", board, children, depth)
+
     const hasChildren = children.length > 0;
     const isExpanded = expandedBoards.has(board.id);
     const isActive = currentBoard?.id === board.id;
@@ -325,7 +326,7 @@ export default function Sidebar(props: SidebarProps){
   if (!boards) {
     return <></>;
   }
-
+  console.log("visible root boards", visibleRootBoards)
   return(
     <>
      <Header open={open} setOpen={toggleOpen}/>

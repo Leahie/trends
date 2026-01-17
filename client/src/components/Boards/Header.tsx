@@ -8,13 +8,11 @@ interface HeaderProps {
     setTitle: React.Dispatch<React.SetStateAction<string>>;
     setScale: React.Dispatch<React.SetStateAction<number>>;
     setThemeModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-
     setShareModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    handleExportPDF: () => Promise<void>
-
+    handleExportPDF: () => Promise<void>setHelpModalOpen:  React.Dispatch<React.SetStateAction<boolean>>;
 
 }
-export default function Header({parent, title, setTitle, setScale, scale, setPan, setThemeModalOpen, setShareModalOpen, handleExportPDF}: HeaderProps){
+export default function Header({parent, title, setTitle, setScale, scale, setPan, setThemeModalOpen, setShareModalOpen, handleExportPDF, setHelpModalOpen}: HeaderProps){
 
                 return (<div className="absolute top-0 w-full gap-2 border-highlight/40 border-b-1 bg-dark/90 z-50 flex justify-end  pt-2 pb-2 px-4 text-primary">
                     {parent && 
@@ -50,17 +48,18 @@ export default function Header({parent, title, setTitle, setScale, scale, setPan
                     >
                         +
                     </button>
-                    <button 
-                        onClick={() => { setScale(1); setPan({ x: 0, y: 0 }); }} 
-                        className="px-3 py-1   rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
-                    >
-                        Reset
-                    </button>
+
                     <button 
                         onClick={() => { setThemeModalOpen(true) }} 
                         className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
                         Theme
+                    </button>
+                    <button
+                        onClick={() => setHelpModalOpen(true)}
+                        className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
+                    >
+                        Help
                     </button>
                     <button
                         onClick={() => setShareModalOpen(true)}
@@ -74,5 +73,6 @@ export default function Header({parent, title, setTitle, setScale, scale, setPan
                     >
                         <Download size={18}/>
                     </button>
+                    
                 </div>)
 }

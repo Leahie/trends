@@ -50,6 +50,7 @@ export interface ImageBlockType extends BaseBlock{
         transforms?: ImageTransforms;
         imgWidth: number;
         imgHeight: number;
+        subtitle?: boolean;
     }
 }
 

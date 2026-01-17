@@ -34,7 +34,7 @@ export default function ThemeModal({
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded bg-dark hover:bg-gray-700 text-white border border-accent"
+            className="px-4 py-2 rounded bg-dark hover:bg-highlight text-white border border-accent"
           >
             Cancel
           </button>

@@ -84,8 +84,12 @@ export default function Toolbar(){
                 }
             }
             
-            setVisibleGroups(visible);
-            setOverflowGroups(overflow);
+            setVisibleGroups(prev => 
+                JSON.stringify(prev) !== JSON.stringify(visible) ? visible : prev
+            );
+            setOverflowGroups(prev => 
+                JSON.stringify(prev) !== JSON.stringify(overflow) ? overflow : prev
+            );
 
         };
         
@@ -101,6 +105,7 @@ export default function Toolbar(){
 
         if (selectedBlockIds.length==0) return;
          if (operation.requiresOverlay) {
+            console.log("entering crop")
             if (operation.id === 'crop') {
             setShowCropOverlay(true);
             setPendingOperation(operation);
@@ -158,13 +163,24 @@ export default function Toolbar(){
     const handleCropApply = async (crop: { xRatio: number; yRatio: number; widthRatio: number; heightRatio: number }) => {
         if (!selectedBlock || !pendingOperation) return;
 
-        const before = { ...selectedBlock };
+        const imageBlock = selectedBlock as ImageBlockType
+        const beforeBlock = JSON.parse(JSON.stringify(imageBlock)); // deep clone
+        const before = { [imageBlock.id]: beforeBlock };
+
+        const blockForUpdate = JSON.parse(JSON.stringify(imageBlock));
+        if (!blockForUpdate.content.transforms?.crop) {
+            blockForUpdate.content.transforms = {
+            ...blockForUpdate.content.transforms,
+            crop: { xRatio: 1, yRatio: 1, widthRatio: 1, heightRatio: 1 }
+            };
+        }
         const updates = pendingOperation.apply(selectedBlock, { crop });
-        const after = { ...selectedBlock, ...updates };
+        const after = { [imageBlock.id]: {...imageBlock, ...updates} };
 
         await updateBlock(selectedBlock.id, updates);
-        pushToHistory(selectedBlock.id, before, after);
-        
+        pushToHistory(before, after);
+                console.log(before, after)
+
         setShowCropOverlay(false);
         setPendingOperation(null);
     };
