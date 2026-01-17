@@ -24,6 +24,7 @@ import {zoomToBlock} from "@/hooks/blocks/imageHooks.ts"
 import { useSidebar } from "@/context/sidebar.tsx";
 import Header from "./Header.tsx";
 import HelpModal from "./HelpModal.tsx";
+import { KeyboardShortcuts } from "@/hooks/keyboardHooks.ts";
 
 interface GroupMoveState {
     isActive: boolean;
@@ -33,9 +34,13 @@ interface GroupMoveState {
 
 export default function Canvas(){
     const {hasPendingChanges, syncNow, blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks, getParent} = useData();
-    const {open, toggleOpen}  = useSidebar()
+    const {open, toggleOpen, }  = useSidebar()
+    const toggleSidebar = () => {
+         toggleOpen();
+    };
+    
     const hasCenteredRef = useRef<string | null>(null);
-
+    
     const {getIdToken} = useAuth()
     const {toggleSelection, clearSelection, selectedBlockIds, isEditingText, setIsEditingText, setEditingBlockId} = useEditor();
     
@@ -198,13 +203,7 @@ export default function Canvas(){
         await addBlock(imageBlock); 
     };
 
-    // Use image paste hook
-    useImagePaste({
-        onImagePaste: handleImagePaste, 
-        canvasRef, 
-        scale, 
-        pan
-    });
+
    
     // Drag and drop for images
     const handleDrop = async (e: React.DragEvent) => {
@@ -330,8 +329,10 @@ export default function Canvas(){
             setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
         }
 
+
         if (e.button === 0 && !spacePressed && !isPanning) {
             const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+            console.log("These the acc cords", canvasCoords.x, canvasCoords.y)
             setIsSelecting(true);
             setSelectionBox({
                 startX: canvasCoords.x, 
@@ -379,14 +380,15 @@ export default function Canvas(){
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        const canvasX = (mouseX - pan.x);
-        const canvasY = (mouseY - pan.y);
-
-        setContextMenu({ x: mouseX, y: mouseY, canvasX, canvasY });
+        const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+            setIsSelecting(true);
+            setSelectionBox({
+                startX: canvasCoords.x, 
+                startY: canvasCoords.y,
+                endX: canvasCoords.x, 
+                endY: canvasCoords.y
+            });
+        setContextMenu({ x: e.clientX, y: e.clientY, canvasX: canvasCoords.x, canvasY:canvasCoords.y });
     }
 
     // Export PDF
@@ -646,6 +648,7 @@ export default function Canvas(){
                         pushToBack={pushToBack}
                     />
                 }
+                {canvasRef.current != undefined && <KeyboardShortcuts onToggleSidebar={toggleSidebar} pan={pan} scale={scale} canvasRef={canvasRef} />}
                 <Toolbar />
             </div>
 

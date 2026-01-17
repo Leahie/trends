@@ -10,10 +10,12 @@ import type { Block } from '@/types/types';
 interface KeyboardShortcutsProps {
   onToggleSidebar?: () => void;
   getCurrentCanvasPosition?: () => { x: number; y: number; parentId: string };
-
+  pan: {x: number, y:number}; 
+  scale: number;
+  canvasRef: React.RefObject<HTMLDivElement>;
 }
 
-export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition  }: KeyboardShortcutsProps = {}) {
+export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition, pan, scale, canvasRef }: KeyboardShortcutsProps ) {
   const { selectedBlockIds, copyBlocks, clearSelection, undo, redo, isEditingText, pasteBlocks, cutBlocks, 
     pushToHistory, clipboard
 
@@ -23,6 +25,19 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
   const {getIdToken} = useAuth()
   const lastBlockCopyTime = useRef<number>(0);
 
+  const screenToCanvas = (clientX: number, clientY: number) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { x: 0, y: 0 };
+        
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = clientX - rect.left;
+        const mouseY = clientY - rect.top;
+        
+        return {
+            x: (mouseX - pan.x) / scale,
+            y: (mouseY - pan.y) / scale
+        };
+    };
   
   useEffect(() => {
     if (isEditingText) return;
@@ -314,7 +329,7 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
 
     // Track mouse position for paste location
     const handleMouseMove = (e: MouseEvent) => {
-      lastCursorPos.current = { x: e.clientX, y: e.clientY };
+      lastCursorPos.current = screenToCanvas( e.clientX, e.clientY) ;
     };
     
     document.addEventListener('copy', handleCopy);

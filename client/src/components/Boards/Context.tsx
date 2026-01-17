@@ -36,6 +36,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
     
     const menuRef = useRef<HTMLDivElement | null>(null);
     
+    console.log("yo this the context cords", x, y, canvasX, canvasY);
     const createNew = async (type: "text" | "image" | "board_block") => {
         // Get max z-index to place new block on top
         const maxZ = Math.max(...Object.values(blocks).map(b => b.location.zIndex), 0);
@@ -58,7 +59,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         }
         
         const location = createDefaultLocation(canvasX, canvasY, maxZ + 1);
-        
+
         const success = await addBlock({...block, "location": {...location}, "boardId":parentId});
         if (success != null) {
             if (type == "board_block"){

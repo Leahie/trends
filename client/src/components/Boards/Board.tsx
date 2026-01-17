@@ -51,7 +51,6 @@ export default function Board(){
 
     return (
         <EditorProvider updateBlock={updateBlock}>
-            <KeyboardShortcuts onToggleSidebar={toggleSidebar} />
 
             <Canvas />
         </EditorProvider>

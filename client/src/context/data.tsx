@@ -663,7 +663,6 @@ export function DataProvider({children} : {children : ReactNode}){
             b => b.type === 'board_block' && b.boardId === boardId && b.linkedBoardId
         );
 
-                console.log("all blocks", allBlocks)
 
         
         return boardBlocks

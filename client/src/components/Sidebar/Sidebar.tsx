@@ -159,7 +159,6 @@ export default function Sidebar(props: SidebarProps){
 
   const renderBoardTree = useCallback((board: Board, depth: number = 0) => {
     const children = getChildren(board.id);
-      console.log("visible boards", board, children, depth)
 
     const hasChildren = children.length > 0;
     const isExpanded = expandedBoards.has(board.id);
@@ -326,7 +325,6 @@ export default function Sidebar(props: SidebarProps){
   if (!boards) {
     return <></>;
   }
-  console.log("visible root boards", visibleRootBoards)
   return(
     <>
      <Header open={open} setOpen={toggleOpen}/>
