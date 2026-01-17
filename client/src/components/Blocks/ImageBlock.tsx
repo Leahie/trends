@@ -9,7 +9,7 @@ type ImageBlockProps = ImageBlockType & {
 };
 
 export default function ImageBlock({id, type, content, location, boardId, dims}: ImageBlockProps){
-    const {updateBoard} = useData();
+    const {updateBlock} = useData();
     const {setIsEditingText} = useEditor();
     const [title, setTitle] = useState(content.title);
     const { containerStyle } = compileStyle(
@@ -20,7 +20,7 @@ export default function ImageBlock({id, type, content, location, boardId, dims}:
 
     const handleTitleBlur = async () => {
         if (title.trim() && title !== content.title) 
-            await updateBoard(id, { title: title });
+            await updateBlock(id, {content:{ ...content,title: title} });
             setIsEditingText(false);
     };
 

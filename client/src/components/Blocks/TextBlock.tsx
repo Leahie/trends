@@ -668,7 +668,7 @@ export default function TextBlock({id, type, content, boardId, location, dims}: 
         
         if (node.fontSize) {
             const baseSize = parseInt(node.fontSize);
-            style.fontSize = `${baseSize * fontSizeMultiplier}px`;
+            style.fontSize = node.fontSize; 
         }
         if (node.color) {
             style.color = node.color;
@@ -745,7 +745,7 @@ export default function TextBlock({id, type, content, boardId, location, dims}: 
                         
                         <Editable
                             className="text-body flex-1 outline-none m-5"
-                            style={{ fontSize: `${15 * fontSizeMultiplier}px` }}
+                            style={{ }}
                             renderLeaf={renderLeaf}
                             renderElement={renderElement}
                             onKeyDown={handleKeyDown}
@@ -781,7 +781,7 @@ export default function TextBlock({id, type, content, boardId, location, dims}: 
                     )}
                     <div 
                         className="text-body flex-1 overflow-hidden p-5"
-                        style={{ fontSize: `${15 * fontSizeMultiplier}px` }}
+                        style={{  }}
                     >
                         {renderFormattedContent()}
                     </div>

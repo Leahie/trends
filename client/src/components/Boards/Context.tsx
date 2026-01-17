@@ -148,7 +148,8 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
                     url: firebaseUrl,
                     source: 'external',
                     imgWidth: dimensions.width,   // <-- store original dimensions
-                    imgHeight: dimensions.height
+                    imgHeight: dimensions.height,
+                    subtitle: false,
                 },
                 location: {
                     ...createDefaultLocation(canvasX, canvasY, maxZ + 1),
@@ -196,6 +197,21 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
             };
         }, [setContextMenu]);
 
+    const handleToggleSubtitle = async() => {
+
+        if(selectedBlockIds.length==1 && dataMap[selectedBlockIds[0]].type == "image"){
+            console.log("DO YOU GET HERE ")
+            const block: ImageBlockType = dataMap[selectedBlockIds[0]]  
+            const curr = block.content.subtitle || null;
+            let updates = {}
+            if (!curr) updates = {content: {...block.content, subtitle: true}};
+            else{
+                updates = {content: {...block.content, subtitle: !block.content.subtitle}};
+            }
+            await updateBlock(block.id, updates);
+        }
+    }
+
     return(
         <>
         <input
@@ -228,11 +244,12 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
                     onClick={() => createNew("board_block")}>
                         Board Block
                     </li>
+                    
                 </ul>
                 {/* Clipboard operations */}
                 {selectedBlockIds.length > 0 && (
                     <>
-                        <hr className="mt-2.5 ml-1 mr-4 text-light-accent/50" />
+                        <hr className="my-2.5 ml-1 mr-4 text-light-accent/50" />
                         <li className="context-li" onClick={handleCopy}>Copy</li>
                         <li className="context-li" onClick={handleCut}>Cut</li>
                     </>
@@ -240,7 +257,6 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
 
                 {clipboard.length > 0 && (
                     <>
-                        <hr className="mt-2.5 ml-1 mr-4 text-light-accent/50" />
                         <li className="context-li" onClick={handlePaste}>
                             Paste ({clipboard.length} block{clipboard.length !== 1 ? 's' : ''})
                         </li>
@@ -250,7 +266,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
                 {
                     selectedBlockIds.length!=0 && 
                     <>
-                    <hr className=" mt-2.5 ml-1 mr-4 text-light-accent/50" />
+                    <hr className=" my-2.5 ml-1 mr-4 text-light-accent/50" />
                     <li className="context-li" onClick={()=> handleOperationClick(bringToFront)}>Bring To Front</li>
                     <li className="context-li" onClick={()=> handleOperationClick(pushToBack)}>Push To Back</li>
                     <li className="context-li" onClick={()=> handleDelete()}>Delete</li>
@@ -258,6 +274,12 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
                     </>
 
                 }
+                { selectedBlockIds.length==1 && dataMap[selectedBlockIds[0]].type == "image" &&
+                    <li className="context-li"
+                    onClick={() => handleToggleSubtitle()}>
+                        Toggle Subtitle
+                    </li>}
+
             </ul>
         </div>
         </>
