@@ -9,7 +9,8 @@ interface HeaderProps {
     setScale: React.Dispatch<React.SetStateAction<number>>;
     setThemeModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
     setShareModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    handleExportPDF: () => Promise<void>setHelpModalOpen:  React.Dispatch<React.SetStateAction<boolean>>;
+    handleExportPDF: () => Promise<void>;
+    setHelpModalOpen:  React.Dispatch<React.SetStateAction<boolean>>;
 
 }
 export default function Header({parent, title, setTitle, setScale, scale, setPan, setThemeModalOpen, setShareModalOpen, handleExportPDF, setHelpModalOpen}: HeaderProps){

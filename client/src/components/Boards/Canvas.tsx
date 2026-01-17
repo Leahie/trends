@@ -7,6 +7,8 @@ import {generateScheme} from "@/utils/theme.tsx"
 import { Download, Share } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import HelpModal from "./HelpModal.tsx";
+
 
 // Components 
 import Context from "./Context.tsx";
@@ -52,6 +54,8 @@ export default function Canvas(){
 
     const [isSelecting, setIsSelecting] = useState(false);
     const [isSelected, setIsSelected] = useState(false);
+    const [helpModalOpen, setHelpModalOpen] = useState(false);
+
 
     const [groupMoveState, setGroupMoveState] = useState<GroupMoveState>({
         isActive: false,
@@ -645,7 +649,9 @@ export default function Canvas(){
     <>
     <div className="fixed inset-0 flex flex-col" >        
         <div className={`${open ? "" : "hidden"}`}>
-            <Header parent={getParent(currentBoard.id)} title={title} scale={scale} setPan={setPan} setTitle={setTitle} setScale={setScale} setThemeModalOpen={setThemeModalOpen} setShareModalOpen={setShareModalOpen} handleExportPDF={handleExportPDF}/>
+            <Header parent={getParent(currentBoard.id)} title={title} scale={scale} setPan={setPan} setTitle={setTitle} setScale={setScale} setThemeModalOpen={setThemeModalOpen} setShareModalOpen={setShareModalOpen} handleExportPDF={handleExportPDF}
+                                    setHelpModalOpen={setHelpModalOpen} 
+/>
         </div>    
 
         {/* Canvas - this is the infinite canvas area */}
