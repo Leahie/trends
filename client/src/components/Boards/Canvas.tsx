@@ -645,7 +645,7 @@ export default function Canvas(){
     <>
     <div className="fixed inset-0 flex flex-col" >        
         <div className={`${open ? "" : "hidden"}`}>
-            <Header parent={getParent(currentBoard.id)} title={title} scale={scale} setPan={setPan} setTitle={setTitle} setScale={setScale} setThemeModalOpen={setThemeModalOpen} setShareModalOpen={setShareModalOpen} />
+            <Header parent={getParent(currentBoard.id)} title={title} scale={scale} setPan={setPan} setTitle={setTitle} setScale={setScale} setThemeModalOpen={setThemeModalOpen} setShareModalOpen={setShareModalOpen} handleExportPDF={handleExportPDF}/>
         </div>    
 
         {/* Canvas - this is the infinite canvas area */}

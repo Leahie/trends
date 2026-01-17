@@ -1,5 +1,5 @@
 import type { Board } from "@/types/types";
-
+import { Download, Share } from "lucide-react";
 interface HeaderProps {
     parent:Board | null;
     title: string;
@@ -10,11 +10,11 @@ interface HeaderProps {
     setThemeModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
     setShareModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    
+    handleExportPDF: () => Promise<void>
 
 
 }
-export default function Header({parent, title, setTitle, setScale, scale, setPan, setThemeModalOpen, setShareModalOpen}: HeaderProps){
+export default function Header({parent, title, setTitle, setScale, scale, setPan, setThemeModalOpen, setShareModalOpen, handleExportPDF}: HeaderProps){
 
                 return (<div className="absolute top-0 w-full gap-2 border-highlight/40 border-b-1 bg-dark/90 z-50 flex justify-end  pt-2 pb-2 px-4 text-primary">
                     {parent && 
@@ -66,7 +66,13 @@ export default function Header({parent, title, setTitle, setScale, scale, setPan
                         onClick={() => setShareModalOpen(true)}
                         className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
-                        Share
+                        <Share size={18}/>
+                    </button>
+                     <button
+                        onClick={handleExportPDF}
+                        className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
+                    >
+                        <Download size={18}/>
                     </button>
                 </div>)
 }
