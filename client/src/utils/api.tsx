@@ -3,9 +3,9 @@ import type { Block, Board } from '../types/types';
 import { getAuth } from 'firebase/auth';
 
 
-const API_URL = 'http://localhost:5000/api/data'
+const API_URL = `${import.meta.env.VITE_API_URL}/data`
 const client = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
