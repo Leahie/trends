@@ -17,13 +17,12 @@ interface SelectionBoxProps {
         endY: number;
     } | null;
     scale: number;
-    pan: {x:number; y:number};
     groupMoveState: GroupMoveState;
 }
 
 type HandleType = "right" | "left" | "bottom" | "top" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
-export default function SelectionBox({selectionBox, scale, pan, groupMoveState} :SelectionBoxProps){
+export default function SelectionBox({selectionBox, scale, groupMoveState} :SelectionBoxProps){
     const {blocks, batchUpdateBlocks} = useData();
     const {setSelection, selectedBlockIds, pushToHistory} = useEditor();
 
@@ -235,10 +234,6 @@ export default function SelectionBox({selectionBox, scale, pan, groupMoveState} 
             // Prevent bounds from becoming too small
             const minSize = 100;
             if (newWidth < minSize || newHeight < minSize) return;
-
-            // Calculate scale factors
-            const scaleX = newWidth / oldWidth;
-            const scaleY = newHeight / oldHeight;
 
             // Update all blocks proportionally
             const updates: Record<string, Partial<Block>> = {};

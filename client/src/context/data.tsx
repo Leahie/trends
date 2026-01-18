@@ -1,10 +1,10 @@
-import React, {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
+import {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
 import type { ReactNode } from 'react';
 import type { Block, Board  } from '../types/types';
 import {api} from "../utils/api"
 import { useAuth } from './auth';
 import { v4 as uuidv4 } from 'uuid';
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 interface DataContextType {
     // Current board
@@ -65,7 +65,6 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({children} : {children : ReactNode}){
     const { id } = useParams();
-    const navigate = useNavigate();
     const {user} = useAuth();
     const [boards, setBoards] = useState<Board[]>([]);
     const [archivedBoards, setArchivedBoards] = useState<Board[]>([]);
@@ -155,7 +154,7 @@ export function DataProvider({children} : {children : ReactNode}){
             
             const blocksResult = await api.fetchBlocksFromBoard(currentBoardId);
             if (blocksResult.success && blocksResult.data) {
-                const loadedBlocks = blocksResult.data.blocks;
+                const loadedBlocks = blocksResult.data?.blocks ?? [];
                 setBlocks(loadedBlocks);
                 
                 // Update blocksByBoard cache
@@ -181,9 +180,10 @@ export function DataProvider({children} : {children : ReactNode}){
 
         const blocksResult = await api.fetchBlocksFromBoard(boardId);
         if (blocksResult.success && blocksResult.data) {
+            const loadedBlocks = blocksResult.data?.blocks ?? [];
             setBlocksByBoard(prev => ({
                 ...prev,
-                [boardId]: blocksResult.data.blocks
+                [boardId]: loadedBlocks
             }));
         }
     }, [blocksByBoard]);
@@ -400,7 +400,7 @@ export function DataProvider({children} : {children : ReactNode}){
         
         pendingBlockChanges.current[id] = {
             ...(pendingBlockChanges.current[id] || {}),
-            ...updates 
+            ...(updates as Partial<Block>)
         }
         
         scheduledSync();
@@ -411,13 +411,35 @@ export function DataProvider({children} : {children : ReactNode}){
         
         const blockId = block.id ?? uuidv4();
         const targetBoardId = block.boardId || currentBoardId;
+
+        const resolvedType: Block['type'] = (block.type as Block['type']) || 'text';
+
+        // Build content defaults by type to satisfy discriminated union
+        let content: Block['content'] = {};
+        if (resolvedType === 'text') {
+            const defaultText = { title: 'Untitled', body: '' };
+            content = { ...defaultText, ...(block as any).content };
+        } else if (resolvedType === 'image') {
+            const defaultImage = {
+                title: 'Untitled',
+                url: '',
+                source: 'external' as const,
+                imgWidth: 0,
+                imgHeight: 0,
+            };
+            content = { ...defaultImage, ...(block as any).content };
+        } else {
+            // board_block
+            const defaultBoardBlock = { title: 'Untitled' };
+            content = { ...defaultBoardBlock, ...(block as any).content };
+        }
         
         const newBlock: Block = {
-            ...block,
+            ...(block as Partial<Block>),
             id : blockId, 
             boardId: targetBoardId, 
             userId: user?.uid || '', 
-            type: block.type || 'text',
+            type: resolvedType,
             location: {
                 x: block.location?.x || 0, 
                 y: block.location?.y || 0, 
@@ -428,7 +450,7 @@ export function DataProvider({children} : {children : ReactNode}){
                 scaleX: block.location?.scaleX || 1, 
                 scaleY: block.location?.scaleY || 1, 
             },
-            content: block.content || {}, 
+            content,
             linkedBoardId: block.linkedBoardId || null, 
             deletedAt: null, 
             deletionId: null, 
@@ -735,11 +757,8 @@ export function DataProvider({children} : {children : ReactNode}){
         const childBoardBlocks = boardBlocks.filter(
             b => b.type === 'board_block' && b.linkedBoardId
         );
-            console.log("board blocks for ",boardId, boardBlocks)
-
-        console.log("child board blocks", childBoardBlocks)
         return childBoardBlocks
-            .map(block => {console.log(block) ;return boardsMap[block.linkedBoardId!]})
+            .map(block => {return boardsMap[block.linkedBoardId!]})
             .filter(Boolean) as Board[];
     }, [boardsMap, blocksByBoard]);
 

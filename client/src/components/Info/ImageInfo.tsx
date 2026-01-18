@@ -137,7 +137,7 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
 
     const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
         const pastedText = e.clipboardData.getData("text");
-        console.log(pastedText)
+        
 
         if (pastedText) {
             if (pastedText.startsWith("http")) {

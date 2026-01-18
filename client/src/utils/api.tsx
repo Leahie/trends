@@ -59,10 +59,10 @@ export const api = {
   async fetchBoards(): Promise<ApiResponse<{ boards: Board[] }>> {
     try {
       const { data } = await client.get('/data/boards');
-      console.log("This is the boards", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to fetch boards:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -74,10 +74,10 @@ export const api = {
   async fetchArchivedBoards(): Promise<ApiResponse<{ boards: Board[] }>> {
     try{
       const { data } = await client.get('/data/boards/archived');
-      console.log("This is the archived boards", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to fetch archived boards:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -88,10 +88,10 @@ export const api = {
   async fetchBoard(boardId: string): Promise<ApiResponse<{ board: Board }>> {
     try {
       const { data } = await client.get(`/data/boards/${boardId}`);
-      console.log(`This is the data for board ${boardId}`, data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to fetch board:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -103,10 +103,10 @@ export const api = {
   async fetchBlocksFromBoard(boardId: string): Promise<ApiResponse<{ blocks: Block[] }>> {
     try {
       const { data } = await client.get(`/data/boards/${boardId}/blocks`);
-      console.log(`This is the blocks for board ${boardId}`, data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to fetch blocks:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -125,10 +125,10 @@ export const api = {
 }>> {
   try {
     const { data } = await client.delete(`/data/boards/${boardId}`);
-    console.log(`Board deletion data:`, data);
+    ;
     return { success: true, data };
   } catch (error) {
-    console.log('Failed to delete board:', error);
+    ;
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Error'
@@ -139,12 +139,12 @@ export const api = {
   // creating a board 
   async createBoard(title?: string, parentBoardBlockId?: string): Promise<ApiResponse<{ board: Board }>> {
     try {
-      console.log("This is the title", title)
+      
       const { data } = await client.post("/data/boards", { title, parentBoardBlockId });
-      console.log("This is the newly created board", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to create board:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -156,10 +156,10 @@ export const api = {
   async updateBoard(boardId: string, updates: Partial<Board>): Promise<ApiResponse<{ board: Board }>> {
     try {
       const { data } = await client.patch(`/data/boards/${boardId}`, updates);
-      console.log("This is the newly updated board data", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to update board:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -170,10 +170,10 @@ export const api = {
   async fetchBlocks(): Promise<ApiResponse<{blocks: Block[]}>>{
     try {
       const { data } = await client.get(`/data/blocks`);
-      console.log("This is the newly updated block data", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to get blocks:', error);
+      ;
       return {
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -184,12 +184,12 @@ export const api = {
   // batch updating blocks 
   async batchUpdateBlocks(updatesArray: Record<string, Partial<Block>>): Promise<ApiResponse<{ updatedBlockIds: string[]; affectedBoards: string[] }>> {
     try {
-      console.log("This is the batch array", updatesArray);
+      ;
       const { data } = await client.patch(`/data/blocks/batch`, updatesArray);
-      console.log("This is the batch update response", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to batch update blocks:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -205,10 +205,10 @@ export const api = {
         offsetX,
         offsetY
       });
-      console.log("Duplicated block", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to duplicate block:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -239,7 +239,7 @@ export const api = {
   async fetchBlock(blockId: string): Promise<ApiResponse<{ block: Block }>> {
     try {
       const { data } = await client.get(`/data/blocks/${blockId}`);
-      console.log("This is the block", data);
+      ;
       return { success: true, data };
     } catch (error) {
       console.error('Failed to fetch block:', error);
@@ -265,9 +265,9 @@ export const api = {
 
   async addBlock(boardId: string, block: Partial<Block>): Promise<ApiResponse<{ block: Block, board?: Board}>> {
     try {
-      console.log('Attempting to add block to board:', boardId);
+      ;
       const { data } = await client.post(`/data/boards/${boardId}/blocks`, block);
-      console.log('Block added successfully:', data);
+      ;
       return { success: true, data };
     } catch (error) {
       console.error('Failed to add block:', error);
@@ -310,10 +310,10 @@ export const api = {
   }>> {
     try {
       const { data } = await client.post(`/data/blocks/batch-delete`, { blockIds });
-      console.log("Batch deleted blocks", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to batch delete blocks:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -322,9 +322,9 @@ export const api = {
   },
     async batchAddBlocks(boardId: string, blocks: Partial<Block>[]): Promise<ApiResponse<{ blocks: Block[] }>> {
       try {
-          console.log('Attempting to batch add blocks to board:', boardId);
+          ;
           const { data } = await client.post(`/data/boards/${boardId}/blocks/batch`, { blocks });
-          console.log('Blocks added successfully:', data);
+          ;
           return { success: true, data };
       } catch (error) {
           console.error('Failed to batch add blocks:', error);
@@ -343,10 +343,10 @@ export const api = {
   async restoreBlock(blockId: string): Promise<ApiResponse<{ block: Block }>> {
     try {
       const { data } = await client.post(`/data/blocks/${blockId}/restore`);
-      console.log("Restored block", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to restore block:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -358,10 +358,10 @@ export const api = {
   async permanentlyDeleteBlock(blockId: string): Promise<ApiResponse<{ success: true; id: string }>> {
     try {
       const { data } = await client.delete(`/data/blocks/${blockId}/permanent`);
-      console.log("Permanently deleted block", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to permanently delete block:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -373,10 +373,10 @@ export const api = {
   async restoreBoard(boardId: string): Promise<ApiResponse<{ success: true; boardId: string; restoredBlocksCount: number }>> {
     try {
       const { data } = await client.post(`/data/boards/${boardId}/restore`);
-      console.log("Restored board", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to restore board:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -388,10 +388,10 @@ export const api = {
   async permanentlyDeleteBoard(boardId: string): Promise<ApiResponse<{ success: true; boardId: string; deletedBlockCount: number }>> {
     try {
       const { data } = await client.delete(`/data/boards/${boardId}/permanent`);
-      console.log("Permanently deleted board", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to permanently delete board:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -403,10 +403,10 @@ export const api = {
   async cleanup(): Promise<ApiResponse<{ success: true; deletedBoardCount: number; deletedBlockCount: number }>> {
     try {
       const { data } = await client.delete(`/data/cleanup`);
-      console.log("Cleanup completed", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to cleanup:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -423,7 +423,7 @@ export const api = {
         data
       }
     } catch(error){
-    console.log('Failed to fetch user info:', error);
+    ;
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Error'
@@ -440,7 +440,7 @@ export const api = {
       const {data} = await client.post('/user/pins', {boardId})
       return {success: true, data}
     } catch (error) {
-      console.log('Failed to pin board:', error);
+      ;
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Error'
@@ -456,7 +456,7 @@ export const api = {
     const {data} = await client.delete(`/user/pins/${boardId}`);
     return { success: true, data };
   } catch(error) {
-    console.log('Failed to unpin board:', error);
+    ;
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Error'
@@ -472,7 +472,7 @@ async reorderPins(pinnedBoards: string[]): Promise<ApiResponse<{
     const {data} = await client.patch('/user/pins/reorder', { pinnedBoards });
     return { success: true, data };
   } catch(error) {
-    console.log('Failed to reorder pins:', error);
+    ;
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Error'
@@ -487,7 +487,7 @@ async reorderPins(pinnedBoards: string[]): Promise<ApiResponse<{
       const { data } = await client.post(`/data/boards/${boardId}/share`);
       return { success: true, data };
     } catch(error){
-      console.log('Failed to generate share link:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -502,10 +502,10 @@ async reorderPins(pinnedBoards: string[]): Promise<ApiResponse<{
         throw new Error('Failed to fetch shared board');
       }
       const data = await response.json();
-      console.log(`This is the data for shared board ${token}`, data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to fetch board:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -522,10 +522,10 @@ async reorderPins(pinnedBoards: string[]): Promise<ApiResponse<{
       throw new Error('Failed to fetch shared blocks');
     }
     const data = await response.json();
-      console.log("This is the blocks for shared board", data);
+      ;
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to fetch shared blocks:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'
@@ -537,7 +537,7 @@ async reorderPins(pinnedBoards: string[]): Promise<ApiResponse<{
       const { data } = await client.delete(`/data/boards/${boardId}/share`);
       return { success: true, data };
     } catch (error) {
-      console.log('Failed to revoke share link:', error);
+      ;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Error'

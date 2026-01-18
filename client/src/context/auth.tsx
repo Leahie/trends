@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
+import {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
 import type { ReactNode } from 'react';
 import { 
   getAuth, 
@@ -13,7 +13,15 @@ import {
 import type {User} from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 
-import firebaseConfig from '../firebaseConfig.json';
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+};
 
 
 const app = initializeApp(firebaseConfig);
@@ -42,17 +50,16 @@ export function AuthProvider({children}: {children : ReactNode}){
         
         setLoading(false);
         if(user){
-          const token = await user.getIdToken();
           setFirstName(user.displayName?.split(' ')[0] || 'User')
         }
         });
-        console.log("user is totally updating",user);
+        ;
         return unsubscribe;
     }, []);
 
     const signIn = async (email: string, password: string) => {
           try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            await signInWithEmailAndPassword(auth, email, password);
             return new Promise<void>((resolve, reject) => {
                 const unsubscribe = onAuthStateChanged(auth, (user) => {
                 if (user) {
@@ -85,9 +92,9 @@ export function AuthProvider({children}: {children : ReactNode}){
 
     const signUp = async (email: string, password: string) => {
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
-            await sendEmailVerification(userCredential.user)
+        await sendEmailVerification(user)
 
             // Wait for auth state to update
             return new Promise<void>((resolve, reject) => {
@@ -119,7 +126,7 @@ export function AuthProvider({children}: {children : ReactNode}){
     const signInWithGoogle = async () => {
         try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, provider);
       // Wait for auth state to update
       return new Promise<void>((resolve, reject) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {

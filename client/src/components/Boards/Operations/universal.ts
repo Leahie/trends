@@ -1,4 +1,4 @@
-import { AlignLeft, AlignCenter, AlignRight, BringToFront } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import type { Operation } from "@/types/editorTypes";
 
 export const UNIVERSAL_OPERATIONS : Operation[] = [

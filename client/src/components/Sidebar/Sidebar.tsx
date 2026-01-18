@@ -83,7 +83,7 @@ export default function Sidebar(props: SidebarProps){
 });
 
   useEffect(() => {
-    console.log("This is when it updates in the useEffect")
+    
     if (currentBoard?.id) {
       openBoard(currentBoard.id);
       // Open all parent boards in the hierarchy
@@ -140,7 +140,7 @@ export default function Sidebar(props: SidebarProps){
   const renderBoardTree = useCallback((board: Board, depth: number = 0) => {
     const children = getChildren(board.id);
 
-    console.log("the children", children)
+    
     const hasChildren = children.length > 0;
     const isExpanded = expandedBoards.has(board.id);
     const isActive = currentBoard?.id === board.id;
@@ -212,7 +212,7 @@ export default function Sidebar(props: SidebarProps){
   };
 
   const handleDrop = async (e: React.DragEvent, targetBoardId: string) => {
-    console.log("Thisis the target", targetBoardId)
+    
     e.preventDefault();
     e.stopPropagation();
 
@@ -267,8 +267,8 @@ export default function Sidebar(props: SidebarProps){
     setDropZone('canvas');
   };
 
-  console.log("visible roots", visibleRootBoards)
-  console.log("open boards", openBoards)
+  
+  
 
   const handleCanvasDrop = async (e: React.DragEvent) => {
     e.preventDefault();

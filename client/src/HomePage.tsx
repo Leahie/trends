@@ -15,10 +15,7 @@ export default function HomePage() {
   const {
     boards, 
     archivedBoards, 
-    archiveBoard,
     loadArchivedBoards, 
-    deleteBoard, 
-    restoreBoard, 
     createBoard, 
     canCreateBoard, 
     userRole, 
@@ -33,7 +30,6 @@ export default function HomePage() {
   const navigate = useNavigate();
   const isRecents = location.pathname === '/';
   const isArchived = location.pathname === '/archive';
-    console.log("boards", boards)
 
   const pinnedBoardObjects = pinnedBoards
     .map(id => boards.find(b => b.id === id))
@@ -133,7 +129,7 @@ export default function HomePage() {
             </>
           ) : (
             <>
-              {archivedBoards.map((board: Board) => (
+              {archivedBoards.filter(Boolean).map((board: Board) => (
                 <ArchiveBoardDiv key={board.id} {...board}/>
               ))}
             </>

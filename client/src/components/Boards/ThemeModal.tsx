@@ -1,4 +1,3 @@
-import React from "react";
 import { ChromePicker } from "react-color";
 
 interface props{

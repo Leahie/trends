@@ -2,22 +2,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "@/context/data";
 import { useEffect, useState } from "react";
 import { EditorProvider } from "@/context/editor";
-import { KeyboardShortcuts } from '@/hooks/keyboardHooks';
 
 import Canvas from "./Canvas";
 import { useSidebar } from "@/context/sidebar";
 
 
 export default function Board(){
-    const {currentBoard, setCurrentBoardId, isSyncing, boardLoadError,updateBlock } = useData()
-    const { open, toggleOpen} = useSidebar();
+    const {currentBoard, setCurrentBoardId, boardLoadError, updateBlock } = useData()
+    const { toggleOpen } = useSidebar();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     
-    const toggleSidebar = () => {
-         toggleOpen();
-    };
-    
+
     useEffect(() => {
         if (id && id !== currentBoard?.id) {
             setCurrentBoardId(id);

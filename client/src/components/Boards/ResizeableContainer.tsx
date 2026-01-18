@@ -43,7 +43,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
 ){
     if (!node) return null;
     const {updateBlock, batchUpdateBlocks, blocks} = useData();
-    const { selectedBlockIds, setIsEditingText, setEditingBlockId, isEditingText, editingBlockId, pushToHistory } = useEditor();
+    const { selectedBlockIds, setIsEditingText, setEditingBlockId, editingBlockId, pushToHistory } = useEditor();
     const selected = selectedBlockIds.includes(node.id);
     const isMultiSelected = selectedBlockIds.length > 1 && selected;
     const isThisTextBlockEditing = editingBlockId === node.id;
@@ -242,7 +242,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     };
     
     const resizeFrame = (e: MouseEvent) => {
-        const {active, handle, x, y} = drag;
+        const {active, handle} = drag;
         if (!active) return; 
         const dx = (e.clientX - drag.x) / scale;
         const dy = (e.clientY - drag.y) / scale;

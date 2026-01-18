@@ -17,7 +17,6 @@ import SelectionBox from "./SelectionBox.tsx";
 import ShareModal from "./ShareModal.tsx";
 
 // HOOKS 
-import { useImagePaste } from "@/hooks/useImagePaste.ts";
 import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
 import { useEditor } from "@/context/editor.tsx";
 import {zoomToBlock} from "@/hooks/blocks/imageHooks.ts"
@@ -33,7 +32,7 @@ interface GroupMoveState {
 }
 
 export default function Canvas(){
-    const {hasPendingChanges, syncNow, blocks, addBlock, updateBoard, isSyncing, currentBoard, batchUpdateBlocks, getParent} = useData();
+    const {hasPendingChanges, syncNow, blocks, addBlock, updateBoard, currentBoard, batchUpdateBlocks, getParent} = useData();
     const {open, toggleOpen, }  = useSidebar()
     const toggleSidebar = () => {
          toggleOpen();
@@ -65,7 +64,7 @@ export default function Canvas(){
     });
 
     const canvasRef = useRef<HTMLDivElement>(null);
-    console.log(blocks)    
+        
     if (!currentBoard) return <p>Loading...</p>;
 
 
@@ -354,7 +353,7 @@ export default function Canvas(){
 
         if (e.button === 0 && !spacePressed && !isPanning) {
             const canvasCoords = screenToCanvas(e.clientX, e.clientY);
-            console.log("These the acc cords", canvasCoords.x, canvasCoords.y)
+            
             setIsSelecting(true);
             setSelectionBox({
                 startX: canvasCoords.x, 
@@ -610,7 +609,7 @@ export default function Canvas(){
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}
-                        onClick={(e) => {
+                        onClick={() => {
                             if (!isSelected) {
                                 handleBlockSelect(null);
                                 setContextMenu(null);
@@ -670,7 +669,7 @@ export default function Canvas(){
                         pushToBack={pushToBack}
                     />
                 }
-                {canvasRef.current != undefined && <KeyboardShortcuts onToggleSidebar={toggleSidebar} pan={pan} scale={scale} canvasRef={canvasRef} />}
+                {canvasRef.current && <KeyboardShortcuts onToggleSidebar={() => toggleOpen()} pan={pan} scale={scale} canvasRef={canvasRef as React.RefObject<HTMLDivElement>} />}
                 <Toolbar />
             </div>
 

@@ -1,6 +1,6 @@
 // A REAL WORK IN PROGRESS, Text formating is not like this
 import {
-  Bold, Italic, Underline, List, Type, Palette, Highlighter, AlignLeft, AlignCenter, AlignRight
+  Bold, Italic, Palette
 } from "lucide-react";
 import type { Operation } from "@/types/editorTypes";
 import type { TextBlockType } from "@/types/types";

@@ -47,7 +47,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
           !parsed.savedAt || Date.now() - parsed.savedAt > MAX_AGE_MS;
 
         if (isExpired) {
-          console.log("Sidebar state expired, clearing");
+          ;
           localStorage.removeItem(STORAGE_KEY);
         } else {
           setOpenBoards(new Set(parsed.value || []));

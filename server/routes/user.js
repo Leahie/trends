@@ -14,7 +14,7 @@ router.get("/info", async(req, res) => {
 
         // Check if document exists AND has data
         if(!userDoc.exists || !userDoc.data()){
-            console.log("Creating default user document for:", userId);
+            ;
             
             const defaultUserData = {
                 email: req.user.email,
@@ -48,7 +48,7 @@ router.get("/info", async(req, res) => {
             pinnedBoards: userData.pinnedBoards || []
         });
     }catch (error) {
-        console.log("Error getting user info:", error);
+        ;
         res.status(500).send("Internal Server Error");
     }
 });
@@ -110,7 +110,7 @@ router.post("/pins", async(req, res) => {
         });
 
     } catch (error) {
-        console.log("Error pinning board:", error);
+        ;
         res.status(500).send("Internal Server Error");
     }
 })
@@ -146,7 +146,7 @@ router.delete("/pins/:boardId", async(req, res) => {
             pinnedBoards: updatedPins
         });
     } catch (error) {
-        console.log("Error unpinning board:", error);
+        ;
         res.status(500).send("Internal Server Error");
     }
 })
@@ -177,7 +177,7 @@ router.patch("/pins/reorder", async(req, res) => {
             pinnedBoards
         });
     } catch (error) {
-        console.log("Error reordering pins:", error);
+        ;
         res.status(500).send("Internal Server Error");
     }
 });

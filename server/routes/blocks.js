@@ -25,7 +25,7 @@ router.get("/boards/shared/:token", async(req, res)=> {
 
     res.send({ board: { id: boardDoc.id, ...board } });
   } catch(error){
-    console.log("Error getting shared board:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -56,7 +56,7 @@ router.get("/boards/shared/:token/blocks",  async (req, res) => {
     }));
     res.send({blocks});
   }catch (error){
-    console.log("Error fetching blocks:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -95,7 +95,7 @@ router.get("/boards/archived", async(req, res) => {
 
     res.send({boards});
   } catch (error) {
-    console.log("Error getting archived boards:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -117,7 +117,7 @@ router.get("/boards", async(req, res) => {
 
     res.send({boards});
   } catch (error) {
-    console.log("Error getting boards:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -144,7 +144,7 @@ router.get("/boards/:boardId", async(req, res) => {
 
     res.send({board: { id: boardDoc.id, ...board }});
   } catch (error) {
-    console.log("Error getting board:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -194,7 +194,7 @@ router.post("/boards", async (req, res) => {
 
     res.status(201).send({board: boardData});
   } catch (error) {
-    console.log("Error creating board:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -252,7 +252,7 @@ router.patch("/boards/:id", async (req, res) => {
     const updatedBoardDoc = await boardRef.get();
     res.send({board: { id: updatedBoardDoc.id, ...updatedBoardDoc.data() }});
   } catch (error) {
-    console.log("Error updating board:", error);
+    ;
     return res.status(500).send("Internal Server Error");
   }
 });
@@ -355,7 +355,7 @@ router.delete("/boards/:id", async(req, res) => {
       blocks: result.blocks
     });
   } catch (error) {
-    console.log("Error deleting board:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -460,7 +460,7 @@ router.post("/boards/:boardId/restore", async(req, res) => {
       res.send({success: true, boardId, restoredBlocksCount: 0});
     }   
   } catch (error) {
-    console.log("Error restoring board:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -499,7 +499,7 @@ router.delete("/boards/:boardId/permanent", async(req, res) => {
       deletedBlockCount: blocksSnapshot.docs.length
     });
   } catch (error) {
-    console.log("Error permanently deleting board:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -583,7 +583,7 @@ router.post("/boards/:boardId/blocks/:blockId/spread", async(req, res) => {
       deletedBoardId: linkedBoardId
     });
   } catch (error) {
-    console.log("Error spreading board block:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -669,7 +669,7 @@ router.post("/boards/:boardId/blocks/push", async(req, res) => {
       targetBoardId
     });
   } catch (error) {
-    console.log("Error pushing blocks:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -735,7 +735,7 @@ router.delete("/boards/:id/share", async(req, res) => {
 
         res.send({ success: true });
     } catch (error) {
-        console.log("Error revoking share link:", error);
+        ;
         res.status(500).send("Internal Server Error");
     }
 });
@@ -802,7 +802,7 @@ router.get("/boards/:boardId/blocks", async (req, res) => {
     
     res.send({blocks});
   } catch (error) {
-    console.log("Error fetching blocks:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -828,7 +828,7 @@ router.get("/blocks/:id", async (req, res) => {
     
     res.send({block: { id: blockDoc.id, ...block }});
   } catch(error) {
-    console.log("Error fetching block:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1009,7 +1009,7 @@ router.patch("/blocks/batch", async (req, res) => {
       affectedBoards: Array.from(boardIds) 
     });
   } catch (error) {
-    console.log("Error in batch updating blocks:", error);
+    ;
     return res.status(500).send("Internal Server Error");
   }
 });
@@ -1068,7 +1068,7 @@ router.patch("/blocks/:id", async (req, res) => {
     const updatedBlockDoc = await blockRef.get();
     res.send({block: { id: updatedBlockDoc.id, ...updatedBlockDoc.data() }});
   } catch (error) {
-    console.log("Error updating block:", error);
+    ;
     return res.status(500).send("Internal Server Error");
   }
 });
@@ -1130,7 +1130,7 @@ router.post("/blocks/:id/duplicate", async (req, res) => {
     
     res.status(201).send({ block: duplicate });
   } catch (error) {
-    console.log("Error duplicating block:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1239,7 +1239,7 @@ router.post("/blocks/move", async(req, res) => {
       sourceBoardIds: Array.from(sourceBoardIds)
     });
   } catch (error) {
-    console.log("Error moving blocks:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1276,7 +1276,7 @@ router.post("/blocks/copy", async(req, res) => {
       blocks
     });
   } catch (error) {
-    console.log("Error copying blocks:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1346,7 +1346,7 @@ router.post("/blocks/paste", async(req, res) => {
       targetBoardId
     });
   } catch (error) {
-    console.log("Error pasting blocks:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1398,7 +1398,7 @@ router.delete("/blocks/:id", async(req, res) => {
       blocks: result.blocks
     });
   } catch (error) {
-    console.log("Error deleting block:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1465,7 +1465,7 @@ router.post("/blocks/batch-delete", async (req, res) => {
       blocks: result.blocks
     });
   } catch (error) {
-    console.log("Error in batch deleting blocks:", error);
+    ;
     return res.status(500).send("Internal Server Error");
   }
 });
@@ -1544,7 +1544,7 @@ router.post("/boards/:id/blocks/batch", async (req, res) => {
 
     return res.status(201).send({ blocks: newBlocks });
   } catch (error) {
-    console.log("Error batch adding blocks:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1581,7 +1581,7 @@ router.post("/blocks/:id/restore", async(req, res) => {
     const restored = await blockRef.get();
     res.send({block: { id: restored.id, ...restored.data() }});
   } catch (error) {
-    console.log("Error restoring block:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1609,7 +1609,7 @@ router.delete("/blocks/:id/permanent", async(req, res) => {
 
     res.send({success: true, id});
   } catch (error) {
-    console.log("Error deleting block:", error);
+    ;
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1648,7 +1648,7 @@ router.delete("/cleanup", async (req, res) => {
       deletedBlockCount: oldBlocks.docs.length 
     });
   } catch (error) {
-    console.log("Error during cleanup:", error);
+    ;
     res.status(500).send("Internal Server Error");
   } 
 });

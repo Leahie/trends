@@ -105,7 +105,7 @@ export default function Toolbar(){
 
         if (selectedBlockIds.length==0) return;
          if (operation.requiresOverlay) {
-            console.log("entering crop")
+            
             if (operation.id === 'crop') {
             setShowCropOverlay(true);
             setPendingOperation(operation);
@@ -147,7 +147,7 @@ export default function Toolbar(){
                     ...block.content,
                     ...(updates.content || {})
                 }
-            };
+            } as Block;
 
             batchUpdates[id] = updates;
         }
@@ -179,7 +179,7 @@ export default function Toolbar(){
 
         await updateBlock(selectedBlock.id, updates);
         pushToHistory(before, after);
-                console.log(before, after)
+                
 
         setShowCropOverlay(false);
         setPendingOperation(null);

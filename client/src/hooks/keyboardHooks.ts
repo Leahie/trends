@@ -57,7 +57,7 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
             if (block) before[id] = structuredClone(block);
           });
           
-          console.log("deleting", selectedBlockIds);
+          ;
           await batchDeleteBlocks(selectedBlockIds);
           pushToHistory(before, {});
           clearSelection();

@@ -8,7 +8,7 @@ import {
 import type { Block, ImageBlockType } from "@/types/types";
 
 import { useEffect, useRef } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 // HOOKS 
 import { uploadToFirebase } from "@/hooks/uploadToFirebase";
@@ -21,10 +21,9 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         setContextMenu : (value: {x: number, y:number, canvasX:number, canvasY: number} | null) => void 
         bringToFront: (id: string[]) => Promise<void> 
         pushToBack: (id:string[]) => Promise<void>}){
-    const navigate = useNavigate();
     const {getIdToken} = useAuth()
-    const {dataMap, blocks, createBoard, updateBlock, removeBlock, addBlock,
-        batchUpdateBlocks, syncNow
+    const {dataMap, blocks, updateBlock, removeBlock, addBlock,
+        syncNow
     } = useData();
     const {openBoard} = useSidebar();
     const {selectedBlockIds, pushToHistory, copyBlocks, 
@@ -36,7 +35,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
     
     const menuRef = useRef<HTMLDivElement | null>(null);
     
-    console.log("yo this the context cords", x, y, canvasX, canvasY);
+    ;
     const createNew = async (type: "text" | "image" | "board_block") => {
         // Get max z-index to place new block on top
         const maxZ = Math.max(...Object.values(blocks).map(b => b.location.zIndex), 0);
@@ -103,7 +102,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         for (const selected of selectedBlockIds) {
             const success = await removeBlock(selected);
             if (success) {
-            console.log('Block deleted successfully');
+            ;
             }
         }
 
@@ -118,7 +117,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
 
         // Convert to base64
         const reader = new FileReader();
-        reader.onload = async (event) => {
+        reader.onload = async () => {
             const token = await getIdToken();
 
             if (token == null) return;
@@ -198,8 +197,8 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
     const handleToggleSubtitle = async() => {
 
         if(selectedBlockIds.length==1 && dataMap[selectedBlockIds[0]].type == "image"){
-            console.log("DO YOU GET HERE ")
-            const block: ImageBlockType = dataMap[selectedBlockIds[0]]  
+            
+            const block = dataMap[selectedBlockIds[0]] as ImageBlockType;  
             const curr = block.content.subtitle || null;
             let updates = {}
             if (!curr) updates = {content: {...block.content, subtitle: true}};

@@ -170,8 +170,8 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
 
     // ctrl z + ctrl y ops
     const pushToHistory = useCallback((before: Record<string, Block>, after: Record<string, Block>) => {
-        console.log("on the stack", before)
-        console.log("on the stack after", after)
+        
+        
         setUndoStack(prev => [...prev, {
             before,
             after,
@@ -181,7 +181,7 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
     },[])
 
     const undo = useCallback(async()=>{
-        console.log("undo stack", undoStack)
+        
         if (undoStack.length === 0) return;
 
         const curr = undoStack[undoStack.length-1];
@@ -199,7 +199,7 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
                     ])
                 )
             );
-                                console.log("I am updating")
+                                
 
         }
 
@@ -209,7 +209,7 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
             for (const id of beforeIds) {
                 await restoreBlock(id);
             }
-                    console.log("I am restoring")
+                    
 
         }
 
@@ -217,7 +217,7 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
         else if (beforeIds.length === 0 && afterIds.length > 0) {
             // Delete the added blocks
             await batchDeleteBlocks(afterIds);
-                                console.log("I am deleting")
+                                
 
         }
 

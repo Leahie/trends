@@ -21,7 +21,7 @@ export const uploadToFirebase = async({file, token}:UploadToFirebaseProps): Prom
         }
 
         const data = await response.json();
-        console.log("THIS IS MY DATA", data)
+        
         return data.url;
     } catch (error) {
         console.error('Error uploading file:', error);
