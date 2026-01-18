@@ -62,11 +62,8 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
 
         const success = await addBlock({...block, "location": {...location}, "boardId":parentId});
         if (success != null) {
-            if (type == "board_block"){
-                const result = await createBoard(undefined, success.id);
-                if (result != null) openBoard(result?.id);
-                navigate(`/boards/${success.id}`)
-            }
+            if (success.linkedBoardId)
+                await openBoard(success.linkedBoardId);
             setContextMenu(null);
             pushToHistory({}, {success});
         }

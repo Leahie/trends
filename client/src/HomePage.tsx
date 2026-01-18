@@ -33,6 +33,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   const isRecents = location.pathname === '/';
   const isArchived = location.pathname === '/archive';
+    console.log("boards", boards)
 
   const pinnedBoardObjects = pinnedBoards
     .map(id => boards.find(b => b.id === id))

@@ -1,11 +1,24 @@
 import { useNavigate } from "react-router-dom";
-import type {BoardBlockType} from "@/types/types"
+import type {BoardBlockType, Location} from "@/types/types"
 import { useData } from "@/context/data";
 import { useSidebar } from "@/context/sidebar";
-export default function BoardBlock({id, type, content, linkedBoardId}: BoardBlockType){
+import { useMemo } from "react";
+
+type BoardBlockProps = BoardBlockType & {
+  dims: Location;
+};
+
+export default function BoardBlock({id, type, content, linkedBoardId, dims}: BoardBlockType){
     const navigate = useNavigate();
     const {setCurrentBoardId} = useData()
     const {openBoard,} = useSidebar();
+    
+    const fontSizeMultiplier = useMemo(() => {
+            const avgDimension = (dims.width + dims.height) / 2;
+            // Base: 200px = 1x, scales linearly
+            return Math.max(0.5, Math.min(3, avgDimension / 200));
+        }, [dims.width, dims.height]);
+    
 
     const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.ctrlKey && linkedBoardId) {
@@ -20,7 +33,10 @@ export default function BoardBlock({id, type, content, linkedBoardId}: BoardBloc
              <div className="absolute inset-y-0 left-1 w-[6px] -translate-x-1/2 bg-black/30 pointer-events-none"></div>
 
             <div className="flex-shrink-0 bg-accent">
-                <h5 className="mb-3 text-2xl font-semibold tracking-tight text-heading leading-8 ">{content.title}</h5>
+                <h5 
+                style={{ fontSize: `${15 * fontSizeMultiplier}px`, padding: `${10 * fontSizeMultiplier}px`}}
+                
+                className="mb-3  font-semibold tracking-tight text-heading leading-8 ">{content.title}</h5>
             </div>
             <hr />
             {/* elements inside of it*/}

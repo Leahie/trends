@@ -206,7 +206,7 @@ router.patch("/boards/:id", async (req, res) => {
     const userId = req.user.uid;
     const updates = req.body;
 
-    if (!updates) {
+    if (!updates || Object.keys(updates).length === 0) {
       return res.status(400).send("No updates provided.");
     }
 
@@ -225,9 +225,10 @@ router.patch("/boards/:id", async (req, res) => {
       return res.status(404).send("Board is deleted");
     }
 
-    await boardRef.update({...updates, updatedAt: admin.firestore.FieldValue.serverTimestamp()});
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    await boardRef.update({...updates, updatedAt: now});
 
-    // update the parent board block
+    // update the parent board block's title when board title changes
     if (updates.title && board.parentBoardBlockId) {
       const parentBlockRef = db.collection("blocks").doc(board.parentBoardBlockId);
       const parentBlockDoc = await parentBlockRef.get();
@@ -853,7 +854,28 @@ router.post("/boards/:id/blocks", async (req, res) => {
       return res.status(404).send("Board not found");
     }
 
+    // If creating a board_block without linkedBoardId, create a new board for it 
+    let linkedBoardId = blockData.linkedBoardId || null;
+    
     const blockId = blockData.id || uuidv4();
+
+    let boardData = null;
+    if (blockData.type === "board_block" && !linkedBoardId) {
+      const boardId = uuidv4();
+      boardData = {
+        id: boardId, 
+        userId, 
+        title: "Untitled Board",
+        colorscheme: DEFAULT_THEME,
+        parentBoardBlockId: blockId || null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        deletedAt: null
+      };
+      await db.collection("boards").doc(boardId).set(boardData);
+      linkedBoardId = boardId;
+    }
+
 
     const newBlock = {
       id: blockId,
@@ -871,11 +893,12 @@ router.post("/boards/:id/blocks", async (req, res) => {
         scaleY: blockData.location?.scaleY ?? blockData.scaleY ?? 1,
       },
       content: blockData.content || {},
-      linkedBoardId: blockData.linkedBoardId || null,
+      linkedBoardId: linkedBoardId,
       deletedAt: null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
+
 
     // If creating a board_block with a linkedBoardId, update that board's parentBoardBlockId
     if (newBlock.type === "board_block" && newBlock.linkedBoardId) {
@@ -885,14 +908,14 @@ router.post("/boards/:id/blocks", async (req, res) => {
       });
     }
   
+
     await db.collection("blocks").doc(blockId).set(newBlock);
     await db.collection("boards").doc(boardId).update({
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     
-    return res.status(201).send({ block: newBlock });
+    return res.status(201).send({ block: newBlock, board: boardData});
   } catch (error) {
-    console.log("Error adding block:", error);
     res.status(500).send("Internal Server Error");
   }
 });
@@ -1112,6 +1135,26 @@ router.post("/blocks/:id/duplicate", async (req, res) => {
   }
 });
 
+async function wouldCreateCycle(db, userId, movingBoardId, targetBoardId) {
+  let currentId = targetBoardId;
+
+  while (currentId) {
+    if (currentId === movingBoardId) return true;
+
+    const doc = await db.collection("boards").doc(currentId).get();
+    if (!doc.exists) break;
+
+    const board = doc.data();
+    if (board.userId !== userId) break;
+
+    currentId = board.parentBoardBlockId
+      ? (await db.collection("blocks").doc(board.parentBoardBlockId).get()).data()?.linkedBoardId
+      : null;
+  }
+
+  return false;
+}
+
 // Move block(s) to another board
 router.post("/blocks/move", async(req, res) => {
   try {
@@ -1137,6 +1180,13 @@ router.post("/blocks/move", async(req, res) => {
     }
     if (targetBoard.deletedAt !== null) {
       return res.status(404).send("Target board is deleted");
+    }
+
+    if (targetBoardId) {
+      const isCycle = await wouldCreateCycle(db, userId, boardId, targetBoardId);
+      if (isCycle) {
+        return res.status(400).send("Cannot move a board inside one of its children");
+      }
     }
 
     // Verify all blocks belong to user

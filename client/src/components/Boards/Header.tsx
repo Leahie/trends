@@ -1,3 +1,4 @@
+import { useEditor } from "@/context/editor";
 import type { Board } from "@/types/types";
 import { Download, Share } from "lucide-react";
 interface HeaderProps {
@@ -14,6 +15,18 @@ interface HeaderProps {
 
 }
 export default function Header({parent, title, setTitle, setScale, scale, setPan, setThemeModalOpen, setShareModalOpen, handleExportPDF, setHelpModalOpen}: HeaderProps){
+                    const {setIsEditingText} = useEditor();
+                    const handleTitleBlur = async () => {
+                        setIsEditingText(false);
+                };
+                const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter') {
+                        (e.target as HTMLInputElement).blur();
+                    } else if (e.key === 'Escape') {
+                        setTitle(title);
+                        
+                    }
+                };
 
                 return (<div className="absolute top-0 w-full gap-2 border-highlight/40 border-b-1 bg-dark/90 z-50 flex justify-end  pt-2 pb-2 px-4 text-primary">
                     {parent && 
@@ -27,6 +40,10 @@ export default function Header({parent, title, setTitle, setScale, scale, setPan
                     <input 
                         type="text"
                         value={title} 
+                        onFocus={() => setIsEditingText(true)}
+                        onBlur={handleTitleBlur}
+                        onKeyDown={handleTitleKeyDown}
+
                         onChange={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
@@ -64,15 +81,59 @@ export default function Header({parent, title, setTitle, setScale, scale, setPan
                     </button>
                     <button
                         onClick={() => setShareModalOpen(true)}
-                        className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
+                        className="px-3 relative group py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
                         <Share size={18}/>
+                                                <span
+                className="
+                pointer-events-none
+                absolute
+                top-full left-1/2 -translate-x-1/2 translate-y-2
+                whitespace-nowrap
+                rounded-md
+                bg-white/90
+                px-2 py-1
+                text-xs text-black
+                opacity-0
+                scale-95
+                transition-all
+                group-hover:opacity-100
+                group-hover:scale-100
+                "
+            >
+  <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-0 h-0 border-4 border-transparent border-b-white/90" />
+
+                Share 
+                        
+                        </span>
                     </button>
                      <button
                         onClick={handleExportPDF}
-                        className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
+                        className="relative group px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
                         <Download size={18}/>
+                        <span
+                className="
+                pointer-events-none
+                absolute
+                top-full left-1/2 -translate-x-1/2 translate-y-2
+                whitespace-nowrap
+                rounded-md
+                bg-white/90
+                px-2 py-1
+                text-xs text-black
+                opacity-0
+                scale-95
+                transition-all
+                group-hover:opacity-100
+                group-hover:scale-100
+                "
+            >
+  <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-0 h-0 border-4 border-transparent border-b-white/90" />
+
+                Export 
+                        
+                        </span>
                     </button>
                     
                 </div>)

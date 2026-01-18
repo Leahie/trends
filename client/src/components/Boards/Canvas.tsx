@@ -68,6 +68,7 @@ export default function Canvas(){
     console.log(blocks)    
     if (!currentBoard) return <p>Loading...</p>;
 
+
     const [title, setTitle] = useState<string>(currentBoard.title);
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [themeModalOpen, setThemeModalOpen] = useState(false);

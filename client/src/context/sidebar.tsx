@@ -102,7 +102,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const openBoard = useCallback((boardId: string) => {
     setOpenBoards(prev => new Set(prev).add(boardId));
   }, []);
-
   const closeBoard = useCallback((boardId: string) => {
     setOpenBoards(prev => {
       const next = new Set(prev);

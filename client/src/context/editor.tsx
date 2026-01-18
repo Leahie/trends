@@ -140,12 +140,14 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
                 ...structuredClone(block),
                 id: undefined, // Let server generate new IDs
                 boardId: parentId,
+                linkedBoardId: null,
                 location: {
                     ...block.location,
                     x: canvasX + offsetX,
                     y: canvasY + offsetY,
                     zIndex: 0 
                 }
+
             };
 
             blocksToAdd.push(newBlock);

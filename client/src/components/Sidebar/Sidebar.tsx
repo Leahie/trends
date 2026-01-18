@@ -7,7 +7,7 @@ import { useData } from '@/context/data';
 import { Bookmark, ChevronDown, ChevronUp } from 'lucide-react';
 import PinItem from './PinItem';
 import { X, XCircle } from 'lucide-react';
-
+import { useNavOperations } from '@/hooks/sidebarHooks';
 
 interface SidebarProps {
   boards: Board[];
@@ -62,9 +62,26 @@ export default function Sidebar(props: SidebarProps){
     navigate
   } = props;
 
-  const {setCurrentBoardId, getParent, getChildren, isRootBoard} = useData();
+  const {setCurrentBoardId, getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap} = useData();
   const { openBoard, open, toggleOpen, clearOpenBoards } = useSidebar();
   
+  const {
+  handleDelete,
+  handleTogglePin,
+  handleRename,
+  handleAddChild,
+  handleMoveTo} = useNavOperations({
+  archiveBoard,
+  updateBoard,
+  createBoard,
+  addBlock,
+  blocks,
+  isPinned,
+  pinBoard,
+  unpinBoard,
+  boardsMap
+});
+
   useEffect(() => {
     console.log("This is when it updates in the useEffect")
     if (currentBoard?.id) {
@@ -78,6 +95,17 @@ export default function Sidebar(props: SidebarProps){
     }
   }, [currentBoard?.id, openBoard, getParent]);
 
+  // Pre-load blocks when boards are opened in sidebar
+  useEffect(() => {
+    const loadOpenBoardBlocks = async () => {
+      for (const boardId of Array.from(openBoards)) {
+        await loadBoardBlocks(boardId);
+      }
+    };
+    
+    loadOpenBoardBlocks();
+  }, [openBoards, loadBoardBlocks]);
+
   const [draggedBoardId, setDraggedBoardId] = useState<string | null>(null);
   const [dropZone, setDropZone] = useState<'pinned' | 'boards' | 'canvas' | null>(null);
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(new Set());
@@ -85,56 +113,6 @@ export default function Sidebar(props: SidebarProps){
 
   const isCanvasLayout = useIsCanvasLayout(location.pathname);
 
-  const navOps = {
-    handleDelete: async (boardId: string) => {
-      const confirmed = window.confirm('Are you sure you want to delete this board?');
-      if (!confirmed) return false;
-      return await archiveBoard(boardId);
-    },
-    handleTogglePin: async (boardId: string) => {
-      if (isPinned(boardId)) {
-        return await unpinBoard(boardId);
-      } else {
-        return await pinBoard(boardId);
-      }
-    },
-    handleRename: async (boardId: string, currentTitle: string) => {
-      const newTitle = window.prompt('Enter new board name:', currentTitle);
-      if (!newTitle || newTitle === currentTitle) return false;
-      return await updateBoard(boardId, { title: newTitle });
-    },
-    handleAddChild: async (parentBoardId: string) => {
-      const title = window.prompt('Enter name for new child board:');
-      if (!title) return null;
-
-      const parentBlocks = blocks.filter(b => b.boardId === parentBoardId);
-      const newBoard = await createBoard(title, undefined);
-      if (!newBoard) return null;
-
-      const maxZ = Math.max(...parentBlocks.map(b => b.location.zIndex), 0);
-      
-      const boardBlock = await addBlock({
-        type: 'board_block',
-        boardId: parentBoardId,
-        linkedBoardId: newBoard.id,
-        content: { title: title },
-        location: {
-          x: 100, y: 100, width: 300, height: 200,
-          zIndex: maxZ + 1, rotation: 0, scaleX: 1, scaleY: 1
-        }
-      });
-
-      if (!boardBlock) return null;
-      await updateBoard(newBoard.id, { parentBoardBlockId: boardBlock.id });
-      return newBoard;
-    },
-    handleMoveTo: async (boardId: string, targetBoardId: string | null) => {
-      if (targetBoardId === null) {
-        return await updateBoard(boardId, { parentBoardBlockId: null });
-      }
-      return true;
-    }
-  };
 
   const handleSignOut = async () => {
     try {
@@ -145,32 +123,34 @@ export default function Sidebar(props: SidebarProps){
     }
   };
 
-  const toggleExpanded = useCallback((boardId: string) => {
+  const toggleExpanded = useCallback(async (boardId: string) => {
     setExpandedBoards(prev => {
       const next = new Set(prev);
       if (next.has(boardId)) {
         next.delete(boardId);
       } else {
         next.add(boardId);
+        // Pre-load blocks when expanding
+        loadBoardBlocks(boardId);
       }
       return next;
     });
-  }, []);
+  }, [loadBoardBlocks]);
 
   const renderBoardTree = useCallback((board: Board, depth: number = 0) => {
     const children = getChildren(board.id);
 
+    console.log("the children", children)
     const hasChildren = children.length > 0;
     const isExpanded = expandedBoards.has(board.id);
     const isActive = currentBoard?.id === board.id;
     const pinned = isPinned(board.id);
     const boardIsOpen = isOpen(board.id);
 
-
-
     // Filter children: only show child if it's in openBoards OR parent is expanded
     const visibleChildren = children.filter(child => {
-      return isOpen(child.id) || isExpanded});
+      return isOpen(child.id) || isExpanded
+    });
 
     return (
       <SideItem
@@ -180,16 +160,16 @@ export default function Sidebar(props: SidebarProps){
         isPinned={pinned}
         depth={depth}
         onNavigate={() => navigate(`/boards/${board.id}`)}
-        onDelete={() => navOps.handleDelete(board.id)}
-        onTogglePin={() => navOps.handleTogglePin(board.id)}
-        onRename={() => navOps.handleRename(board.id, board.title)}
-        onAddChild={() => navOps.handleAddChild(board.id)}
+        onDelete={() => handleDelete(board.id)}
+        onTogglePin={() => handleTogglePin(board.id)}
+        onRename={() => handleRename(board.id, board.title)}
+        onAddChild={() => handleAddChild(board.id)}
         onDragStart={(e) => handleDragStart(e, board.id)}
         onDragOver={(e) => handleDragOver(e, board.id)}
         onDrop={(e) => handleDrop(e, board.id)}
         onDragEnd={handleDragEnd}
         isOpen={isExpanded}
-        isBoardOpen = {boardIsOpen}
+        isBoardOpen={boardIsOpen}
         onToggleOpen={() => toggleExpanded(board.id)}
       >
         {hasChildren && visibleChildren.length > 0 && 
@@ -205,7 +185,6 @@ export default function Sidebar(props: SidebarProps){
     isOpen,
     toggleExpanded,
     navigate,
-    navOps
   ]);
 
   const pinnedBoardObjects = useMemo(() => {
@@ -233,6 +212,7 @@ export default function Sidebar(props: SidebarProps){
   };
 
   const handleDrop = async (e: React.DragEvent, targetBoardId: string) => {
+    console.log("Thisis the target", targetBoardId)
     e.preventDefault();
     e.stopPropagation();
 
@@ -241,7 +221,7 @@ export default function Sidebar(props: SidebarProps){
       return;
     }
 
-    await navOps.handleMoveTo(draggedBoardId, targetBoardId);
+    await handleMoveTo(draggedBoardId, targetBoardId);
     setDraggedBoardId(null);
   };
 
@@ -277,7 +257,7 @@ export default function Sidebar(props: SidebarProps){
 
     if (!draggedBoardId) return;
 
-    await navOps.handleMoveTo(draggedBoardId, null);
+    await handleMoveTo(draggedBoardId, null);
     setDraggedBoardId(null);
     setDropZone(null);
   };
@@ -286,6 +266,9 @@ export default function Sidebar(props: SidebarProps){
     e.preventDefault();
     setDropZone('canvas');
   };
+
+  console.log("visible roots", visibleRootBoards)
+  console.log("open boards", openBoards)
 
   const handleCanvasDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -325,6 +308,7 @@ export default function Sidebar(props: SidebarProps){
   if (!boards) {
     return <></>;
   }
+  
   return(
     <>
      <Header open={open} setOpen={toggleOpen}/>
@@ -424,10 +408,10 @@ export default function Sidebar(props: SidebarProps){
                     key={board.id}
                     board={board}
                     onNavigate={() => navigate(`/boards/${board.id}`)}
-                    onDelete={() => navOps.handleDelete(board.id)}
-                    onTogglePin={() => navOps.handleTogglePin(board.id)}
-                    onRename={() => navOps.handleRename(board.id, board.title)}
-                    onAddChild={() => navOps.handleAddChild(board.id)}
+                    onDelete={() => handleDelete(board.id)}
+                    onTogglePin={() => handleTogglePin(board.id)}
+                    onRename={() => handleRename(board.id, board.title)}
+                    onAddChild={() => handleAddChild(board.id)}
                     onDragStart={(e) => handleDragStart(e, board.id)}
                     onDragOver={(e) => handleDragOver(e, board.id)}
                     onDrop={(e) => handleDrop(e, board.id)}
@@ -451,23 +435,30 @@ export default function Sidebar(props: SidebarProps){
               onDrop={handleBoardsDrop}
             >
                <div className="flex items-center justify-between px-2 mb-2">
-        <div className="text-xs text-gray-400 uppercase tracking-wide">
-          Boards
-        </div>
-        {openBoards.size > 0 && (
-          <button
-            onClick={() => {
-              if (window.confirm('Close all open boards in sidebar?')) {
-                clearOpenBoards();
-              }
-            }}
-            className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
-            title="Clear all open boards"
-          >
-            Clear
-          </button>
-        )}
-      </div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">
+                  Boards
+                </div>
+                <div className='flex gap-2'>
+                  <button className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
+                    onClick={async () =>{ const result = await createBoard(); openBoard(result.id)}}
+                  >
+                    Add 
+                  </button>
+                {openBoards.size > 0 && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Close all open boards in sidebar?')) {
+                        clearOpenBoards();
+                      }
+                    }}
+                    className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
+                    title="Clear all open boards"
+                  >
+                    Clear
+                  </button>
+                )}
+                </div>
+              </div>
               <ul>
                 {visibleRootBoards.map(board => renderBoardTree(board, 0))}
               </ul>

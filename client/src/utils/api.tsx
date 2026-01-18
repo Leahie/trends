@@ -20,7 +20,6 @@ client.interceptors.request.use(
     if (user) {
       try {
         const token = await user.getIdToken();
-        console.log("token", token);
         config.headers.Authorization = `Bearer ${token}`;
       } catch (error) {
         console.error('Failed to get auth token:', error);
@@ -264,7 +263,7 @@ export const api = {
     }
   },
 
-  async addBlock(boardId: string, block: Partial<Block>): Promise<ApiResponse<{ block: Block }>> {
+  async addBlock(boardId: string, block: Partial<Block>): Promise<ApiResponse<{ block: Block, board?: Board}>> {
     try {
       console.log('Attempting to add block to board:', boardId);
       const { data } = await client.post(`/data/boards/${boardId}/blocks`, block);

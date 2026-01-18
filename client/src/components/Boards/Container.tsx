@@ -16,7 +16,7 @@ export default function Container({node, dims, scale} : {node: BaseBlock, dims:a
         />
       )}
 
-        {node["type"] === "board_block" && <BoardBlock {...(node as BoardBlockType)}/>}
+        {node["type"] === "board_block" && <BoardBlock {...(node as BoardBlockType)} dims={dims}/>}
     </div>
         
 

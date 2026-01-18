@@ -5,6 +5,7 @@ import { useAuth } from '@/context/auth';
 
 import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
 import type { Block } from '@/types/types';
+import { useSidebar } from '@/context/sidebar';
 
 
 interface KeyboardShortcutsProps {
@@ -18,27 +19,91 @@ interface KeyboardShortcutsProps {
 export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition, pan, scale, canvasRef }: KeyboardShortcutsProps ) {
   const { selectedBlockIds, copyBlocks, clearSelection, undo, redo, isEditingText, pasteBlocks, cutBlocks, 
     pushToHistory, clipboard
-
   } = useEditor();
-  const { dataMap, addBlock, batchDeleteBlocks,  currentBoard} = useData();
+
+  const { dataMap, addBlock, batchDeleteBlocks, currentBoard} = useData();
+  const {closeBoard} = useSidebar();
   const lastCursorPos = useRef({ x: 0, y: 0 });
-  const {getIdToken} = useAuth()
+  const {getIdToken} = useAuth();
   const lastBlockCopyTime = useRef<number>(0);
 
   const screenToCanvas = (clientX: number, clientY: number) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return { x: 0, y: 0 };
-        
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = clientX - rect.left;
-        const mouseY = clientY - rect.top;
-        
-        return {
-            x: (mouseX - pan.x) / scale,
-            y: (mouseY - pan.y) / scale
-        };
+    const canvas = canvasRef?.current;
+    if (!canvas) return { x: 0, y: 0 };
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = clientX - rect.left;
+    const mouseY = clientY - rect.top;
+    
+    return {
+      x: (mouseX - pan.x) / scale,
+      y: (mouseY - pan.y) / scale
     };
-  
+  };
+
+  // Keyboard shortcuts effect
+  useEffect(() => {
+    if (!canvasRef?.current) return;
+
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      // Delete selected blocks (Backspace or Delete)
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        if (selectedBlockIds.length > 0 && !isEditingText) {
+          e.preventDefault();
+          const before: Record<string, any> = {};
+          selectedBlockIds.forEach(id => {
+            closeBoard(id)
+            const block = dataMap[id];
+            if (block) before[id] = structuredClone(block);
+          });
+          
+          console.log("deleting", selectedBlockIds);
+          await batchDeleteBlocks(selectedBlockIds);
+          pushToHistory(before, {});
+          clearSelection();
+        }
+        return;
+      }
+
+      // Clear selection (Escape)
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        clearSelection();
+        return;
+      }
+
+      // Undo (Ctrl+Z or Cmd+Z)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        await undo();
+        return;
+      }
+
+      // Redo (Ctrl+Y or Cmd+Y or Ctrl+Shift+Z or Cmd+Shift+Z)
+      if (
+        ((e.ctrlKey || e.metaKey) && e.key === 'y') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')
+      ) {
+        e.preventDefault();
+        await redo();
+        return;
+      }
+
+      // Toggle sidebar (Tab)
+      if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !isEditingText) {
+        e.preventDefault();
+        if (onToggleSidebar) {
+          onToggleSidebar();
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canvasRef, selectedBlockIds, isEditingText, batchDeleteBlocks, clearSelection, undo, redo, onToggleSidebar, pushToHistory, dataMap]);
+
+  // Copy/paste/cut effect
   useEffect(() => {
     if (isEditingText) return;
 
@@ -60,7 +125,6 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
           console.warn('Could not set clipboard data:', err);
         }
       }
-
     };
 
     const handleCut = async (e: ClipboardEvent) => {
@@ -79,7 +143,6 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
         } catch (err) {
           console.warn('Could not set clipboard data:', err);
         }
-
       }
     };
 
@@ -148,7 +211,7 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
 
           const maxZ = Math.max(...Object.values(dataMap).map(b => b.location.zIndex), 0);
 
-          const partial:Partial<Block> = {
+          const partial: Partial<Block> = {
             type: 'image',
             boardId: currentBoard.id,
             content: {
@@ -168,10 +231,9 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
               scaleX: 1,
               scaleY: 1
             }
-          }
+          };
 
           const result = await addBlock(partial);
-
           if (result) pushToHistory({}, {[result.id]: result});
 
           return;
@@ -266,100 +328,46 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
 
         await pasteBlocks(canvasX, canvasY, currentBoard.id);
       }
-    
-    };
-
-
-
-    const handleKeyDown = async (e: KeyboardEvent) => {
-
-      // Delete selected blocks (Backspace or Delete)
-      if (e.key === 'Backspace' || e.key === 'Delete') {
-        if (selectedBlockIds.length > 0) {
-          e.preventDefault();
-          const before: Record<string, any> = {};
-          selectedBlockIds.forEach(id => {
-            const block = dataMap[id];
-            if (block) before[id] = structuredClone(block);
-          });
-            console.log("deleting", selectedBlockIds);
-
-
-          await batchDeleteBlocks(selectedBlockIds);
-
-          pushToHistory(before, {});
-          clearSelection();
-        }
-        return;
-      }
-
-      // Clear selection (Escape)
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        clearSelection();
-        return;
-      }
-
-      // Undo (Ctrl+Z or Cmd+Z)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        await undo();
-        return;
-      }
-
-      // Redo (Ctrl+Y or Cmd+Y or Ctrl+Shift+Z or Cmd+Shift+Z)
-      if (
-        ((e.ctrlKey || e.metaKey) && e.key === 'y') ||
-        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')
-      ) {
-        e.preventDefault();
-        await redo();
-        return;
-      }
-
-      // Toggle sidebar (Tab)
-      if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-        e.preventDefault();
-        if (onToggleSidebar) {
-          onToggleSidebar();
-        }
-        return;
-      }
     };
 
     // Track mouse position for paste location
     const handleMouseMove = (e: MouseEvent) => {
-      lastCursorPos.current = screenToCanvas( e.clientX, e.clientY) ;
+      lastCursorPos.current = screenToCanvas(e.clientX, e.clientY);
     };
     
     document.addEventListener('copy', handleCopy);
     document.addEventListener('cut', handleCut);
     document.addEventListener('paste', handlePaste);
-    window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       document.removeEventListener('copy', handleCopy);
       document.removeEventListener('cut', handleCut);
       document.removeEventListener('paste', handlePaste);
-      window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('mousemove', handleMouseMove);
     };
-
-    
   }, [
     selectedBlockIds,
     isEditingText,
     clearSelection,
     batchDeleteBlocks,
-    undo,
-    redo,
-    onToggleSidebar
+    copyBlocks,
+    cutBlocks,
+    pasteBlocks,
+    clipboard,
+    currentBoard,
+    dataMap,
+    addBlock,
+    pushToHistory,
+    getIdToken,
+    getCurrentCanvasPosition,
+    pan,
+    scale
   ]);
 }
 
 // Separate component that can be mounted in your canvas
-export function KeyboardShortcuts({ onToggleSidebar }: KeyboardShortcutsProps) {
-  useKeyboardShortcuts({ onToggleSidebar });
+export function KeyboardShortcuts(props: KeyboardShortcutsProps) {
+  useKeyboardShortcuts(props);
   return null;
 }
