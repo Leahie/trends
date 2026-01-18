@@ -294,14 +294,23 @@ export default function Canvas(){
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [hasPendingChanges, syncNow]);
 
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const handler = (e: WheelEvent) => {
+            e.preventDefault(); // block native zoom/pinch
+        };
+
+        canvas.addEventListener("wheel", handler, { passive: false });
+
+        return () => canvas.removeEventListener("wheel", handler);
+    }, []);
+
     // FIXED: Zoom with wheel - prevent touchpad pinch
     const handleWheel = (e: React.WheelEvent) => {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            return;
-        }
-        
-        e.preventDefault();
+        e.preventDefault(); // ALWAYS block browser behavior
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -309,18 +318,30 @@ export default function Canvas(){
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        const pointX = (mouseX - pan.x) / scale;
-        const pointY = (mouseY - pan.y) / scale;
+        const isZoomGesture = e.ctrlKey; // pinch on Mac, ctrl+wheel on Windows
+        const zoomIntensity = 0.01;
 
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        const newScale = Math.min(Math.max(0.1, scale * delta), 5);
+        if (isZoomGesture) {
+            // ----- ZOOM -----
+            const pointX = (mouseX - pan.x) / scale;
+            const pointY = (mouseY - pan.y) / scale;
 
-        const newPanX = mouseX - pointX * newScale;
-        const newPanY = mouseY - pointY * newScale;
+            const zoom = 1 - e.deltaY * zoomIntensity;
+            const newScale = Math.min(Math.max(0.1, scale * zoom), 5);
 
-        setScale(newScale);
-        setPan({ x: newPanX, y: newPanY });
-    };
+            const newPanX = mouseX - pointX * newScale;
+            const newPanY = mouseY - pointY * newScale;
+
+            setScale(newScale);
+            setPan({ x: newPanX, y: newPanY });
+        } else {
+            // ----- PAN -----
+            setPan(prev => ({
+            x: prev.x - e.deltaX,
+            y: prev.y - e.deltaY
+            }));
+        }
+        };
 
     // FIXED: Mouse down with correct coordinates
     const handleMouseDown = (e: React.MouseEvent) => {

@@ -320,8 +320,8 @@ export default function Sidebar(props: SidebarProps){
         ${isCanvasLayout ? 'fixed top-0 start-0 bottom-0 z-60 w-64'
           : 'relative w-64 flex-shrink-0'
         }
-        hs-overlay [--auto-close:lg] lg:block lg:translate-x-0 lg:end-auto lg:bottom-0
-        hs-overlay-open:translate-x-0 -translate-x-full
+        
+        
         transition-all duration-300 transform 
         ${open ? "bg-dark" : "hidden"}
       `}
