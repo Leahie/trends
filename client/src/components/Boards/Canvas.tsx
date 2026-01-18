@@ -65,7 +65,7 @@ export default function Canvas(){
     });
 
     const canvasRef = useRef<HTMLDivElement>(null);
-    
+    console.log(blocks)    
     if (!currentBoard) return <p>Loading...</p>;
 
     const [title, setTitle] = useState<string>(currentBoard.title);
