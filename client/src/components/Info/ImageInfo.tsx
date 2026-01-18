@@ -4,8 +4,8 @@ import { useData } from "../../context/data";
 
 export default function ImageInfo({ node }: { node: ImageBlockType }) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [title, setTitle] = useState(node.properties.title);
-    const [url, setUrl] = useState(node.properties.url);
+    const [title, setTitle] = useState(node.content.title);
+    const [url, setUrl] = useState(node.content.url);
     const [pastedUrl, setPastedUrl] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -14,8 +14,8 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
     useEffect(() => {
         const timer = setTimeout(() => {
         updateBlock(node.id, {
-            properties: {
-            ...node.properties,
+            content: {
+            ...node.content,
             title,
             url,
             },
@@ -122,18 +122,24 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
 
     }
 
-     const handleUrlPaste = () => {
+     // Unused: URL paste handler
+     /*
+     const _handleUrlPaste = () => {
         if (pastedUrl.trim()) {
             setUrl(pastedUrl.trim());
             setPastedUrl("");
         }
     };
+    */
 
+    // URL input handler - not currently used
+    /*
     const handleUrlKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             handleUrlPaste();
         }
     };
+    */
 
     const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
         const pastedText = e.clipboardData.getData("text");
@@ -219,7 +225,7 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
             <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                className={`p-4 min-h-[200px] flex flex-col gap-3 justify-center items-center  ${
+                className={`p-4 min-h-50 flex flex-col gap-3 justify-center items-center  ${
                     isUploading 
                         ? "border-blue-500 bg-blue-500/10" 
                         : "border-slate-600 hover:border-slate-500"
@@ -229,7 +235,7 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
                     <img
                         src={url}
                         alt={title || "Image"}
-                        className="max-w-full max-h-[300px] object-contain rounded"
+                        className="max-w-full max-h-75 object-contain rounded"
                     />
                 ) : (
                     <div className="text-slate-400 text-center">

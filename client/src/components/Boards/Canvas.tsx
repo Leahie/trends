@@ -34,9 +34,6 @@ interface GroupMoveState {
 export default function Canvas(){
     const {hasPendingChanges, syncNow, blocks, addBlock, updateBoard, currentBoard, batchUpdateBlocks, getParent} = useData();
     const {open, toggleOpen, }  = useSidebar()
-    const toggleSidebar = () => {
-         toggleOpen();
-    };
     
     const hasCenteredRef = useRef<string | null>(null);
     
@@ -649,7 +646,6 @@ export default function Canvas(){
                             <SelectionBox 
                                 selectionBox={selectionBox}
                                 scale={scale}
-                                pan={pan}
                                 groupMoveState={groupMoveState}
                             />
                         </div>

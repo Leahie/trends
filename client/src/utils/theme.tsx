@@ -1,4 +1,3 @@
-import tinycolor from "tinycolor2";
 import type { Theme } from "../types/types";
 
 // Maybe define types better later 

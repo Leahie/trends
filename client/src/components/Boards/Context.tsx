@@ -8,7 +8,6 @@ import {
 import type { Block, ImageBlockType } from "@/types/types";
 
 import { useEffect, useRef } from "react";
-import { Navigate } from "react-router-dom";
 
 // HOOKS 
 import { uploadToFirebase } from "@/hooks/uploadToFirebase";

@@ -14,7 +14,7 @@ interface HeaderProps {
     setHelpModalOpen:  React.Dispatch<React.SetStateAction<boolean>>;
 
 }
-export default function Header({parent, title, setTitle, setScale, scale, setPan, setThemeModalOpen, setShareModalOpen, handleExportPDF, setHelpModalOpen}: HeaderProps){
+export default function Header({parent, title, setTitle, setScale, scale, setThemeModalOpen, setShareModalOpen, handleExportPDF, setHelpModalOpen}: HeaderProps){
                     const {setIsEditingText} = useEditor();
                     const handleTitleBlur = async () => {
                         setIsEditingText(false);
@@ -28,10 +28,10 @@ export default function Header({parent, title, setTitle, setScale, scale, setPan
                     }
                 };
 
-                return (<div className="absolute top-0 w-full gap-2 border-highlight/40 border-b-1 bg-dark/90 z-50 flex justify-end  pt-2 pb-2 px-4 text-primary">
+                return (<div className="absolute top-0 w-full gap-2 border-highlight/40 border-b bg-dark/90 z-50 flex justify-end  pt-2 pb-2 px-4 text-primary">
                     {parent && 
                     (<>
-                        <div className="px-3 py-1 border-highlight border-l-1"><a href={`/boards/${parent.id}`}>{`${parent.title}`}</a></div>
+                        <div className="px-3 py-1 border-highlight border-l"><a href={`/boards/${parent.id}`}>{`${parent.title}`}</a></div>
                         <div className="px-3 py-1">/</div>
 
                     </>
@@ -49,7 +49,7 @@ export default function Header({parent, title, setTitle, setScale, scale, setPan
                             e.preventDefault();
                             return setTitle(e.target.value)}}
                         placeholder="Title"
-                        className = {`px-3 py-1 border-highlight ${parent ? "border-r-1" : "border-x-1"} focus:bg-highlight/30 outline-none`}
+                        className = {`px-3 py-1 border-highlight ${parent ? "border-r" : "border-x"} focus:bg-highlight/30 outline-none`}
                     />      
                     <button 
                         onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 

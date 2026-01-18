@@ -1,7 +1,7 @@
 import { useSidebar } from "@/context/sidebar";
 import type { Board } from "@/types/types";
 import { useState } from "react";
-import { BookOpen, CircleDot, CircleDotDashed, Dot, Folder, FolderOpen, X } from "lucide-react";
+import { CircleDot, CircleDotDashed, Folder, FolderOpen, X } from "lucide-react";
 
 interface SideItemProps { 
     board: Board; 

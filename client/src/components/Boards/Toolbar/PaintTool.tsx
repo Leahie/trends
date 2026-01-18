@@ -1,6 +1,4 @@
-import { useData } from "@/context/data";
 import type { Operation } from "@/types/editorTypes";
-import type { Block, TextBlockType } from "@/types/types";
 import { useState } from "react";
 import { HexColorPicker } from "react-colorful";
 

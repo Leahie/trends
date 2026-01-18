@@ -443,7 +443,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     return(     
         <div 
             data-block-id={node.id} 
-            className={`absolute flex flex-col ${node.type == "text" && "text-block"} ${selected && isEditMode ? "outline outline-2 outline-blue-500 " : ""}`} 
+            className={`absolute flex flex-col ${node.type == "text" && "text-block"} ${selected && isEditMode ? "outline-2 outline-blue-500 " : ""}`} 
             style={{...boxStyle, ...blockTheme}} 
             onMouseMove={() => handleMouseMove} 
             onClick={(e)=>{
@@ -470,7 +470,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                     startMove(e);
                 }}
             >
-                <Container node={node} dims={dims} scale={scale} />
+                <Container node={node} dims={dims} />
             </div>
 
             {showResizeHandles && (

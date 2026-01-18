@@ -1,6 +1,6 @@
-import React, {useState, useContext, useCallback, createContext, type ReactNode, useEffect, useMemo} from 'react';
-import type { Block, BlockType } from "@/types/types";
-import type { HistoryEntry, Operation } from "@/types/editorTypes";
+import { createContext, useContext, useState, type ReactNode, useEffect, useCallback } from 'react';
+import type { Block } from "@/types/types";
+import type { HistoryEntry } from "@/types/editorTypes";
 import { useData } from './data';
 
 interface EditorContextType{

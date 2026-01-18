@@ -12,9 +12,9 @@ export const parseBodyContent = (body: string): Descendant[] => {
     
     return [
         {
-            type: 'paragraph',
+            type: 'paragraph' as const,
             children: [{ text: body || '' }],
-        },
+        } as Descendant,
     ];
 };
 

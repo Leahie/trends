@@ -72,9 +72,10 @@ export default function HomePage() {
               Pinned Boards
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pinnedBoardObjects.map((board: Board) => (
-                <BoardDiv key={board.id} {...board} />
-              ))}
+              {pinnedBoardObjects.map((board: Board | undefined) => {
+                if (!board) return null;
+                return <BoardDiv key={board.id} {...board} />;
+              })}
             </div>
           </div>
         )}
@@ -115,7 +116,7 @@ export default function HomePage() {
               <button
                 onClick={handleCreateBoard}
                 disabled={isCreating}
-                className={`flex flex-[0_0_calc(25%-1rem)] h-[150px] items-center justify-center bg-dark border-accent border-t-3 border-b-3 border-r-2 border-l-2 rounded-lg transition-all duration-300 ${
+                className={`flex flex-[0_0_calc(25%-1rem)] h-37.5 items-center justify-center bg-dark border-accent border-t-3 border-b-3 border-r-2 border-l-2 rounded-lg transition-all duration-300 ${
                   canCreateBoard 
                     ? 'hover:cursor-pointer hover:bg-highlight/20' 
                     : 'opacity-50 cursor-not-allowed'

@@ -1,14 +1,12 @@
 // components/ReadOnlyBlock.tsx
-import type { Block, Location } from "@/types/types";
+import type { Block } from "@/types/types";
 import Container from "../Boards/Container";
 import { generateScheme, schemeToCSSVars } from "@/utils/theme";
 
 export default function ReadOnlyBlock({ 
-    node, 
-    scale = 1 
+    node
 }: { 
-    node: Block; 
-    scale?: number;
+    node: Block;
 }) {
     if (!node) return null;
 
@@ -35,7 +33,7 @@ export default function ReadOnlyBlock({
             style={{ ...boxStyle, ...blockTheme }}
         >
             <div className="absolute inset-0">
-                <Container node={node} dims={node.location} scale={scale} />
+                <Container node={node} dims={node.location} />
             </div>
         </div>
     );

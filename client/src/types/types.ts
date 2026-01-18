@@ -78,9 +78,9 @@ export interface Location {
     width:  number;
     height: number;
     zIndex: number;
-    rotation: number;
-    scaleX: number; 
-    scaleY: number;
+    rotation?: number;
+    scaleX?: number;
+    scaleY?: number;
 }
 
 export type Block =  TextBlockType | ImageBlockType | BoardBlockType;

@@ -1,5 +1,5 @@
 import type { Operation } from "@/types/editorTypes";
-import type { Block, ImageBlockType, TextBlockType } from "@/types/types";
+import type { Block, ImageBlockType } from "@/types/types";
 import PaintTool from "./PaintTool";
 import OpacityTool from "./OpacityTool";
 

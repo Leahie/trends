@@ -1,7 +1,7 @@
 import { useSidebar } from "@/context/sidebar";
 import type { Board } from "@/types/types";
 import { useState } from "react";
-import { BookOpen, Dot, Folder, FolderOpen, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface SideItemProps { 
     board: Board; 
@@ -10,7 +10,7 @@ interface SideItemProps {
     onDelete: () => void; 
     onTogglePin: () => void;
     onRename: () => void; 
-    onAddChild: () => void;
+    _onAddChild?: () => void;
     onDragStart: (e: React.DragEvent) => void; 
     onDragOver: (e: React.DragEvent) => void; 
     onDrop: (e: React.DragEvent) => void;
@@ -25,14 +25,13 @@ export default function PinItem({
   onDelete,
   onTogglePin,
   onRename,
-  onAddChild,
   onDragStart,
   onDragOver,
   onDrop,
   onDragEnd,
   children,
   onToggleOpen, 
-}: SideItemProps) {
+}: Omit<SideItemProps, '_onAddChild'>) {
     const [showMenu, setShowMenu] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);

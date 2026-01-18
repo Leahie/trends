@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
-import type { Block, TextBlockType } from "../../types/types"; 
+import type { TextBlockType } from "../../types/types"; 
 import { useData } from "../../context/data";
 
 export default function TextInfo({node}:{node: TextBlockType}){
-    const [title, setTitle] = useState<string>(node.properties.title);
-    const [body, setBody] = useState<string>(node.properties.body);
+    const [title, setTitle] = useState<string>(node.content.title);
+    const [body, setBody] = useState<string>(node.content.body);
     const { updateBlock } = useData();
 
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (title !== node.properties.title || body !== node.properties.body) {
+            if (title !== node.content.title || body !== node.content.body) {
                 updateBlock(node.id, {
-                    properties: {
-                        ...node.properties,
+                    content: {
+                        ...node.content,
                         title,
                         body
                     }
@@ -38,7 +38,7 @@ export default function TextInfo({node}:{node: TextBlockType}){
                     value={body} 
                     onChange={(e) => setBody(e.target.value)}
                     placeholder="Start writing. . ."
-                    className = "block leading-relaxed min-h-[400px] w-full outline-none bg-transparent border-none "
+                    className = "block leading-relaxed min-h-100 w-full outline-none bg-transparent border-none "
                 />
             </div>
             

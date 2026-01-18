@@ -1,6 +1,6 @@
 import {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
 import type { ReactNode } from 'react';
-import type { Block, Board  } from '../types/types';
+import type { Block, Board, TextBlockType, ImageBlockType, BoardBlockType  } from '../types/types';
 import {api} from "../utils/api"
 import { useAuth } from './auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -83,7 +83,7 @@ export function DataProvider({children} : {children : ReactNode}){
     // Store ALL blocks indexed by boardId for faster lookups
     const [blocksByBoard, setBlocksByBoard] = useState<Record<string, Block[]>>({});
 
-    const pendingBlockChanges = useRef<Record<string, Partial<Block>>>({});
+    const pendingBlockChanges = useRef<Record<string, Partial<Block> | Partial<TextBlockType> | Partial<ImageBlockType> | Partial<BoardBlockType>>>({});
     const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const hasPendingChanges = Object.keys(pendingBlockChanges.current).length > 0;
@@ -398,10 +398,11 @@ export function DataProvider({children} : {children : ReactNode}){
             return next;
         });
         
-        pendingBlockChanges.current[id] = {
+        const mergedUpdate = {
             ...(pendingBlockChanges.current[id] || {}),
             ...(updates as Partial<Block>)
-        }
+        } as unknown as Partial<Block>;
+        pendingBlockChanges.current[id] = mergedUpdate;
         
         scheduledSync();
     }, [scheduledSync]);
@@ -415,7 +416,7 @@ export function DataProvider({children} : {children : ReactNode}){
         const resolvedType: Block['type'] = (block.type as Block['type']) || 'text';
 
         // Build content defaults by type to satisfy discriminated union
-        let content: Block['content'] = {};
+        let content: Block['content'];
         if (resolvedType === 'text') {
             const defaultText = { title: 'Untitled', body: '' };
             content = { ...defaultText, ...(block as any).content };
@@ -485,7 +486,12 @@ export function DataProvider({children} : {children : ReactNode}){
                 ...prev,
                 [targetBoardId]: (prev[targetBoardId] || []).map(b => b.id === blockId ? serverBlock : b)
             }));
-            if (result.data.board) setBoards((prev:Board[]) => [result.data.board, ...prev]);
+            if (result.data?.board) {
+                const newBoard = result.data.board;
+                if (newBoard) {
+                    setBoards((prev:Board[]) => [newBoard, ...prev]);
+                }
+            }
 
         }
     

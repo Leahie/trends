@@ -140,8 +140,9 @@ export default function GroupResizeWrapper({ scale }: GroupResizeWrapperProps) {
       if (newBounds.width < minSize || newBounds.height < minSize) return;
 
       // Calculate scale factors
-      const scaleX = newBounds.width / oldBounds.width;
-      const scaleY = newBounds.height / oldBounds.height;
+      // Scale calculations (not currently used)
+      // const __scaleX = newBounds.width / oldBounds.width;
+      // const __scaleY = newBounds.height / oldBounds.height;
 
       // Update all blocks proportionally
       const updates: Record<string, Partial<Block>> = {};

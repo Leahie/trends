@@ -1,11 +1,9 @@
 import type {Board} from "@/types/types"
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useData } from "@/context/data.tsx";
 
-export default function BoardDiv({id, title, updatedAt, userId}: Board){
-    const updatedAtDate = new Date(updatedAt?._seconds * 1000);
-    const navigate = useNavigate();
+export default function BoardDiv({id, title, updatedAt, userId: _userId}: Board){
+    const updatedAtDate = updatedAt instanceof Date ? updatedAt : new Date((updatedAt as any)?._seconds * 1000);
     const { updateBoard, restoreBoard, deleteBoard } = useData();
     
     const [isEditing, setIsEditing] = useState(false);
@@ -61,7 +59,7 @@ export default function BoardDiv({id, title, updatedAt, userId}: Board){
     }
 
     return( 
-        <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-[150px] bg-dark  border-accent border-t-3 border-b-5 border-r-5 border-l-2 rounded-lg
+        <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-37.5 bg-dark  border-accent border-t-3 border-b-5 border-r-5 border-l-2 rounded-lg
         transition-border duration-300
        hover:border-light-accent hover:shadow-md shadow-accent
         "

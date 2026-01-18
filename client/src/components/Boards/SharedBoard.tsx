@@ -197,7 +197,6 @@ export default function SharedBoard() {
                             <ReadOnlyBlock 
                                 key={block.id}
                                 node={block}
-                                scale={1}
                             />
                         ))}
                     </div>

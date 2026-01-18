@@ -3,7 +3,7 @@ import BoardBlock from "@/components/Blocks/BoardBlock";
 import ImageBlock from "@/components/Blocks/ImageBlock";
 import TextBlock from "@/components/Blocks/TextBlock";
 
-export default function Container({node, dims, scale} : {node: BaseBlock, dims:any, scale:number}){
+export default function Container({node, dims} : {node: BaseBlock, dims:any}){
     return(
     <div className="h-full w-full">
         {node["type"] === "text" && <TextBlock {...(node as TextBlockType)} dims={dims} />}
@@ -12,7 +12,6 @@ export default function Container({node, dims, scale} : {node: BaseBlock, dims:a
         <ImageBlock
           {...(node as ImageBlockType)}
           dims={dims}
-          scale={scale}
         />
       )}
 

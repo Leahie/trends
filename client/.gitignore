@@ -1,5 +1,6 @@
 firebaseConfig.json
 src/firebaseConfig.json
+.env
 
 # Local dev
 node_modules/

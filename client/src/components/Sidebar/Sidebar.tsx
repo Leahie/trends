@@ -4,9 +4,8 @@ import type { Board, Block } from '@/types/types';
 import Header from './Header';
 import { useSidebar } from '@/context/sidebar';
 import { useData } from '@/context/data';
-import { Bookmark, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import PinItem from './PinItem';
-import { X, XCircle } from 'lucide-react';
 import { useNavOperations } from '@/hooks/sidebarHooks';
 
 interface SidebarProps {
@@ -19,7 +18,6 @@ interface SidebarProps {
   updateBoard: (id: string, updates: any) => Promise<boolean>;
   createBoard: (title?: string, parentId?: string) => Promise<any>;
   addBlock: (block: any) => Promise<any>;
-  setCurrentBoardId: (id: string) => void;
   logOut: () => Promise<void>;
   openBoards: Set<string>;
   toggleBoard: (id: string) => void;
@@ -52,7 +50,6 @@ export default function Sidebar(props: SidebarProps){
     addBlock,
     logOut,
     openBoards,
-    toggleBoard,
     isOpen,
     pinnedBoards,
     pinBoard,
@@ -62,7 +59,7 @@ export default function Sidebar(props: SidebarProps){
     navigate
   } = props;
 
-  const {setCurrentBoardId, getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap} = useData();
+  const { getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap} = useData();
   const { openBoard, open, toggleOpen, clearOpenBoards } = useSidebar();
   
   const {
@@ -206,7 +203,7 @@ export default function Sidebar(props: SidebarProps){
     e.dataTransfer.setData('text/plain', boardId);
   };
 
-  const handleDragOver = (e: React.DragEvent, targetBoardId: string) => {
+  const handleDragOver = (e: React.DragEvent, _targetBoardId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
@@ -262,48 +259,7 @@ export default function Sidebar(props: SidebarProps){
     setDropZone(null);
   };
 
-  const handleCanvasDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDropZone('canvas');
-  };
 
-  
-  
-
-  const handleCanvasDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedBoardId || !currentBoard) return;
-
-    const draggedBoard = boards.find(b => b.id === draggedBoardId);
-    if (!draggedBoard) return;
-
-    const currentBlocks = blocks.filter(b => b.boardId === currentBoard.id);
-    const maxZ = Math.max(...currentBlocks.map(b => b.location.zIndex), 0);
-
-    await addBlock({
-      type: 'board_block',
-      boardId: currentBoard.id,
-      linkedBoardId: draggedBoardId,
-      content: { title: draggedBoard.title },
-      location: {
-        x: 100, y: 100, width: 300, height: 200,
-        zIndex: maxZ + 1, rotation: 0, scaleX: 1, scaleY: 1
-      }
-    });
-
-    const newBlockId = blocks.find(
-      b => b.boardId === currentBoard.id && b.linkedBoardId === draggedBoardId
-    )?.id;
-
-    if (newBlockId) {
-      await updateBoard(draggedBoardId, { parentBoardBlockId: newBlockId });
-    }
-
-    setDraggedBoardId(null);
-    setDropZone(null);
-  };
 
   if (!boards) {
     return <></>;
@@ -315,10 +271,10 @@ export default function Sidebar(props: SidebarProps){
      <div
       id="hs-sidebar-basic-usage"
       className={`
-          border-highlight/40 border-r-1
+          border-highlight/40 border-r
         h-full
         ${isCanvasLayout ? 'fixed top-0 start-0 bottom-0 z-60 w-64'
-          : 'relative w-64 flex-shrink-0'
+          : 'relative w-64 shrink-0'
         }
         
         
@@ -331,7 +287,7 @@ export default function Sidebar(props: SidebarProps){
     > 
         
       <div className={`relative flex flex-col h-full max-h-full ${!open && ""}`}>
-        <div className="block flex w-full float-right">
+        <div className="flex w-full float-right">
           <button
             type="button"
             className="float-right flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
@@ -411,7 +367,8 @@ export default function Sidebar(props: SidebarProps){
                     onDelete={() => handleDelete(board.id)}
                     onTogglePin={() => handleTogglePin(board.id)}
                     onRename={() => handleRename(board.id, board.title)}
-                    onAddChild={() => handleAddChild(board.id)}
+                    // onAddChild not supported
+                    // _onAddChild={() => handleAddChild(board.id)}
                     onDragStart={(e) => handleDragStart(e, board.id)}
                     onDragOver={(e) => handleDragOver(e, board.id)}
                     onDrop={(e) => handleDrop(e, board.id)}

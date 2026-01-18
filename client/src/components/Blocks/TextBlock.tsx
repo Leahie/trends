@@ -16,12 +16,14 @@ import {
   Heading1, Heading2, Quote, 
   List, ListOrdered,
   AlignLeft, AlignCenter, AlignRight, 
-  Type, Highlighter, Palette, Link as LinkIcon
+  Highlighter, Palette, Link as LinkIcon
 } from "lucide-react";
 import { generateScheme, schemeToCSSVars } from "@/utils/theme";
 
 // Helper to check if URL is valid
-const isUrl = (text: string) => {
+// Unused: URL validation helper
+/*
+const _isUrl = (text: string) => {
   try {
     new URL(text);
     return true;
@@ -29,15 +31,18 @@ const isUrl = (text: string) => {
     return false;
   }
 };
+*/
 
+// NOTE: withLinks is not currently used but kept for future link handling
+/*
 const withLinks = (editor: Editor) => {
-  const { insertData, insertText, isInline } = editor;
+  const { insertData, insertText, isInline } = editor as any;
 
-  editor.isInline = (element: any) => {
+  (editor as any).isInline = (element: any) => {
     return element.type === 'link' ? true : isInline(element);
   };
 
-  editor.insertText = (text: string) => {
+  (editor as any).insertText = (text: string) => {
     if (text && isUrl(text)) {
       wrapLink(editor, text);
     } else {
@@ -45,7 +50,7 @@ const withLinks = (editor: Editor) => {
     }
   };
 
-  editor.insertData = (data: DataTransfer) => {
+  (editor as any).insertData = (data: DataTransfer) => {
     const text = data.getData('text/plain');
     if (text && isUrl(text)) {
       wrapLink(editor, text);
@@ -56,6 +61,7 @@ const withLinks = (editor: Editor) => {
 
   return editor;
 };
+*/
 
 const insertLink = (editor: Editor, url: string) => {
   if (editor.selection) {
@@ -242,7 +248,7 @@ function LinkButton() {
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-                    <div className="absolute top-full mt-2 left-0 bg-dark border border-gray-600 rounded shadow-lg z-20 p-3 min-w-[300px]">
+                    <div className="absolute top-full mt-2 left-0 bg-dark border border-gray-600 rounded shadow-lg z-20 p-3 min-w-75">
                         <input
                             type="text"
                             value={url}
@@ -294,7 +300,7 @@ function FontSizeDropdown({ toolbarPosition }: { toolbarPosition: 'top' | 'botto
                         className="fixed inset-0 z-10" 
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className={`absolute ${toolbarPosition === 'top' ? 'bottom-full mb-4' : 'top-full mt-4'} left-0 bg-dark border border-gray-600 rounded shadow-lg z-20 max-h-[200px] overflow-y-auto`}
+                    <div className={`absolute ${toolbarPosition === 'top' ? 'bottom-full mb-4' : 'top-full mt-4'} left-0 bg-dark border border-gray-600 rounded shadow-lg z-20 max-h-50 overflow-y-auto`}
                     onWheel={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -400,10 +406,10 @@ function ColorPicker({ type = 'color', toolbarPosition }: { type?: 'color' | 'hi
 }
 
 type TextBlockProps = TextBlockType & {
-  dims: Location;
+    dims: Location;
 };
 
-export default function TextBlock({id, type, content, boardId, location, dims}: TextBlockProps){
+export default function TextBlock({id, content, dims}: TextBlockProps){
     const {isEditingText, setIsEditingText, editingBlockId, setEditingBlockId} = useEditor();
     
     const {updateBlock, isSyncing} = useData();
@@ -576,10 +582,10 @@ export default function TextBlock({id, type, content, boardId, location, dims}: 
     }, []);
 
     const renderElement = useCallback((props: any) => {
-        const { attributes, children, element } = props;
+        const { attributes, children, element } = props as { attributes: any; children: any; element: SlateElement & { align?: React.CSSProperties['textAlign']; url?: string; type?: string } };
         const style: React.CSSProperties = {};
         
-        if ('align' in element) {
+        if (element.align) {
             style.textAlign = element.align;
         }
         
@@ -623,24 +629,25 @@ export default function TextBlock({id, type, content, boardId, location, dims}: 
             return value.map((n, i) => renderNode(n, i));
     }, [value]);
 
-    const renderNode = (node: any, key: number | string) => {
+    const renderNode = (node: Descendant, key: number | string) => {
         if (SlateElement.isElement(node)) {
-            const children = node.children.map((n, i) => renderNode(n, i));
+            const element = node as SlateElement & { align?: React.CSSProperties['textAlign']; url?: string; type?: string };
+            const children = element.children.map((n, i) => renderNode(n, i));
 
             const style: React.CSSProperties = {};
-            if ('align' in node) style.textAlign = node.align;
+            if (element.align) style.textAlign = element.align;
 
-            switch (node.type) {
+            switch (element.type) {
             case 'link':
                 return (
                     <a
                         key={key}
-                        href={node.url}
+                        href={element.url}
                         className="text-blue-400 underline cursor-pointer hover:text-blue-300"
                         onClick={(e) => {
                             if (e.ctrlKey || e.metaKey) {
                                 e.preventDefault();
-                                window.open(node.url, '_blank');
+                                window.open(element.url, '_blank');
                             }
                         }}
                     >
@@ -665,24 +672,24 @@ export default function TextBlock({id, type, content, boardId, location, dims}: 
         // TEXT
         let content = node.text;
         const style: React.CSSProperties = {};
+        const nodeWithMarks = node as any;
         
-        if (node.fontSize) {
-            const baseSize = parseInt(node.fontSize);
-            style.fontSize = node.fontSize; 
+        if (nodeWithMarks.fontSize) {
+            style.fontSize = nodeWithMarks.fontSize; 
         }
-        if (node.color) {
-            style.color = node.color;
+        if (nodeWithMarks.color) {
+            style.color = nodeWithMarks.color;
         }
-        if (node.backgroundColor) {
-            style.backgroundColor = node.backgroundColor;
+        if (nodeWithMarks.backgroundColor) {
+            style.backgroundColor = nodeWithMarks.backgroundColor;
         }
 
         let el = <span key={key} style={style}>{content}</span>;
 
-        if (node.bold) el = <strong key={key}>{el}</strong>;
-        if (node.italic) el = <em key={key}>{el}</em>;
-        if (node.underline) el = <u key={key}>{el}</u>;
-        if (node.code) el = <code key={key}>{el}</code>;
+        if (nodeWithMarks.bold) el = <strong key={key}>{el}</strong>;
+        if (nodeWithMarks.italic) el = <em key={key}>{el}</em>;
+        if (nodeWithMarks.underline) el = <u key={key}>{el}</u>;
+        if (nodeWithMarks.code) el = <code key={key}>{el}</code>;
 
         return el;
     };
@@ -711,7 +718,7 @@ export default function TextBlock({id, type, content, boardId, location, dims}: 
                                 toolbarPosition === 'top' 
                                     ? '-top-3 -translate-y-full' 
                                     : '-bottom-3 translate-y-full'
-                            } left-1/2 -translate-x-1/2 w-full max-w-[600px] bg-accent border border-dark px-3 py-2 flex gap-1 items-center flex-wrap rounded-xl shadow-xl z-50`}
+                            } left-1/2 -translate-x-1/2 w-full max-w-150 bg-accent border border-dark px-3 py-2 flex gap-1 items-center flex-wrap rounded-xl shadow-xl z-50`}
                         >
                             <ToolbarButton format="bold" icon={Bold} />
                             <ToolbarButton format="italic" icon={Italic} />
@@ -786,7 +793,7 @@ export default function TextBlock({id, type, content, boardId, location, dims}: 
                         {renderFormattedContent()}
                     </div>
                     <h5 
-                        className="font-bold px-5 pb-3 text-light-accent leading-8 flex-shrink-0"
+                        className="font-bold px-5 pb-3 text-light-accent leading-8 shrink-0"
                         style={{ fontSize: `${10 * fontSizeMultiplier}px` }}
                     >
                         {content.title}

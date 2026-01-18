@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Block } from "./types";
 import type { ComponentType  } from "react";
 

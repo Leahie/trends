@@ -23,7 +23,7 @@ export default function Toolbar(){
         canUndo, 
         canRedo,
         pushToHistory,
-        activeOverlay,
+        // activeOverlay,
         setActiveOverlay
     } = useEditor();
     
@@ -133,22 +133,24 @@ export default function Toolbar(){
             const block = dataMap[id];
             if (!block) continue;
 
-            before[id] = structuredClone(block);
+            const currentBlock = structuredClone(block) as Block;
+            before[id] = currentBlock;
 
-            const updates = operation.apply(block, params);
-            after[id] = {
-                ...block,
+            const updates = operation.apply(currentBlock, params);
+            const nextBlock: Block = {
+                ...currentBlock,
                 ...updates,
                 location: {
-                    ...block.location,
+                    ...currentBlock.location,
                     ...(updates.location || {})
                 },
                 content: {
-                    ...block.content,
+                    ...currentBlock.content,
                     ...(updates.content || {})
                 }
             } as Block;
 
+            after[id] = nextBlock;
             batchUpdates[id] = updates;
         }
 
@@ -164,8 +166,8 @@ export default function Toolbar(){
         if (!selectedBlock || !pendingOperation) return;
 
         const imageBlock = selectedBlock as ImageBlockType
-        const beforeBlock = JSON.parse(JSON.stringify(imageBlock)); // deep clone
-        const before = { [imageBlock.id]: beforeBlock };
+        const beforeBlock = JSON.parse(JSON.stringify(imageBlock)) as Block; // deep clone
+        const before: Record<string, Block> = { [imageBlock.id]: beforeBlock };
 
         const blockForUpdate = JSON.parse(JSON.stringify(imageBlock));
         if (!blockForUpdate.content.transforms?.crop) {
@@ -175,7 +177,7 @@ export default function Toolbar(){
             };
         }
         const updates = pendingOperation.apply(selectedBlock, { crop });
-        const after = { [imageBlock.id]: {...imageBlock, ...updates} };
+        const after: Record<string, Block> = { [imageBlock.id]: {...imageBlock, ...updates} as Block };
 
         await updateBlock(selectedBlock.id, updates);
         pushToHistory(before, after);
@@ -302,7 +304,7 @@ export default function Toolbar(){
                             
                             {/* Overflow dropdown - opens UPWARD */}
                             {showOverflow && (
-                            <div className='absolute bottom-full right-0 mb-5 bg-dark rounded-lg shadow-xl border border-gray-700 p-2 min-w-[200px]'>
+                            <div className='absolute bottom-full right-0 mb-5 bg-dark rounded-lg shadow-xl border border-gray-700 p-2 min-w-50'>
                                 {overflowOps.map((group, index) => (
                                 <div key={group.name} className='mb-2 last:mb-0'>
                                     <div className='text-left text-xs text-subtext px-2 py-1 uppercase tracking-wide'>

@@ -9,7 +9,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn, signUp, signInWithGoogle, logOut } = useAuth();
+  const { signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,14 +45,7 @@ export default function Login() {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await logOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Failed to log out:', error);
-    }
-  };
+  // Sign out functionality would go here if needed
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-black">

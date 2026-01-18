@@ -28,7 +28,6 @@ export default function SidebarConnected() {
       updateBoard={dataContext.updateBoard}
       createBoard={dataContext.createBoard}
       addBlock={dataContext.addBlock}
-      setCurrentBoardId={dataContext.setCurrentBoardId}
       logOut={authContext.logOut}
       openBoards={sidebarContext.openBoards}
       toggleBoard={sidebarContext.toggleBoard}

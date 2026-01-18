@@ -1,5 +1,5 @@
 import {
-  Crop, Palette, FlipHorizontal, FlipVertical,
+  Crop, FlipHorizontal, FlipVertical,
   Eclipse,
   SquareDashed,
   Eraser

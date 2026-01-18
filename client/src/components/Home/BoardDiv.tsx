@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useData } from "@/context/data.tsx";
 import { useSidebar } from "@/context/sidebar";
 
-export default function BoardDiv({id, title, updatedAt, userId, parentBoardBlockId}: Board){
+export default function BoardDiv({id, title, updatedAt, userId: _userId, parentBoardBlockId}: Board){
 
-    const updatedAtDate = new Date(updatedAt?._seconds * 1000);
+    const updatedAtDate = updatedAt instanceof Date ? updatedAt : new Date((updatedAt as any)?._seconds * 1000);
     const navigate = useNavigate();
     const { getParent, getChildren, updateBoard, archiveBoard, deleteBoard } = useData();
     const { openBoard } = useSidebar()
@@ -66,7 +66,7 @@ export default function BoardDiv({id, title, updatedAt, userId, parentBoardBlock
     }
 
     return( 
-        <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-[150px] bg-dark  border-accent border-t-3 border-b-5 border-r-5 border-l-2 rounded-lg
+        <div className=" flex flex-col flex-[0_0_calc(25%-1rem)]  h-37.5 bg-dark  border-accent border-t-3 border-b-5 border-r-5 border-l-2 rounded-lg
         transition-border duration-300
         hover:cursor-pointer hover:border-light-accent hover:shadow-md shadow-accent
         "

@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { X, Copy, Check, Link as LinkIcon, Space, MousePointer2, ArrowRightToLine, MousePointerClick } from 'lucide-react';
+import { X, Space, MousePointer2, ArrowRightToLine, MousePointerClick } from 'lucide-react';
 
 
 interface HelpModalProps {
@@ -8,9 +7,6 @@ interface HelpModalProps {
 }
 
 export default function HelpModal({ open, onClose }: HelpModalProps){
-    const [shareToken, setShareToken] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [copied, setCopied] = useState(false);
 
     if (!open) return null;
 
@@ -20,7 +16,7 @@ export default function HelpModal({ open, onClose }: HelpModalProps){
             onClick={onClose}
         >
             <div 
-                className="bg-dark text-white p-6 rounded-xl shadow-xl w-[500px] border border-accent" 
+                className="bg-dark text-white p-6 rounded-xl shadow-xl w-125 border border-accent" 
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-4">

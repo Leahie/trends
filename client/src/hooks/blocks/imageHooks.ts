@@ -1,11 +1,11 @@
-import type { Block, ImageTransforms, Location } from "@/types/types";
+import type { Block, ImageTransforms } from "@/types/types";
 import type { RefObject } from "react";
 
 //Compile the style object for an image using background-image approach
 export function compileStyle(
     transforms: ImageTransforms | undefined,
     content: any,
-    containerSize: { width: number; height: number }
+    _containerSize: { width: number; height: number }
 ): { containerStyle: React.CSSProperties } {
     const containerStyle: React.CSSProperties = {
         backgroundImage: `url("${encodeURI(content.url)}")`,
@@ -78,8 +78,8 @@ export function zoomToBlock(
   const canvasWidth = rect.width;
   const canvasHeight = rect.height;
 
-  const blockWidth = block.location.width * block.location.scaleX;
-  const blockHeight = block.location.height * block.location.scaleY;
+  const blockWidth = block.location.width * (block.location.scaleX ?? 1);
+  const blockHeight = block.location.height * (block.location.scaleY ?? 1);
 
   const scaleX = canvasWidth / blockWidth;
   const scaleY = canvasHeight / blockHeight;

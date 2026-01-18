@@ -22,7 +22,8 @@ export default function CropOverlay({ block, onApply, onCancel }: CropOverlayPro
     const updateSize = () => {
       if (!imageRef.current || !containerRef.current) return;
       
-      const img = imageRef.current;
+      // Image reference available if needed
+      // const img = imageRef.current;
       const containerRect = containerRef.current.getBoundingClientRect();
       
       const naturalWidth = block.content.imgWidth;

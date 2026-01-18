@@ -1,15 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "@/context/data";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { EditorProvider } from "@/context/editor";
 
 import Canvas from "./Canvas";
-import { useSidebar } from "@/context/sidebar";
 
 
 export default function Board(){
     const {currentBoard, setCurrentBoardId, boardLoadError, updateBlock } = useData()
-    const { toggleOpen } = useSidebar();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     

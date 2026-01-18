@@ -1,17 +1,11 @@
-import { useNavigate } from "react-router-dom";
 import type {BoardBlockType, Location} from "@/types/types"
-import { useData } from "@/context/data";
-import { useSidebar } from "@/context/sidebar";
 import { useMemo } from "react";
 
 type BoardBlockProps = BoardBlockType & {
   dims: Location;
 };
 
-export default function BoardBlock({id, type, content, linkedBoardId, dims}: BoardBlockType){
-    const navigate = useNavigate();
-    const {setCurrentBoardId} = useData()
-    const {openBoard,} = useSidebar();
+export default function BoardBlock({content, dims}: BoardBlockProps){
     
     const fontSizeMultiplier = useMemo(() => {
             const avgDimension = (dims.width + dims.height) / 2;
@@ -20,19 +14,20 @@ export default function BoardBlock({id, type, content, linkedBoardId, dims}: Boa
         }, [dims.width, dims.height]);
     
 
-    const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.ctrlKey && linkedBoardId) {
-            e.preventDefault();
-            openBoard(id) // prevent default context menu
-            navigate(`/boards/${linkedBoardId}`); // switch tab
-        }
-    };
+    // Context menu functionality for board blocks
+    // const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    //     if (e.ctrlKey && linkedBoardId) {
+    //         e.preventDefault();
+    //         openBoard(id) // prevent default context menu
+    //         navigate(`/boards/${linkedBoardId}`); // switch tab
+    //     }
+    // };
 
     return( 
         <div className=" flex flex-col h-full w-full border-light-accent border-t-5 border-b-10 border-r-10">
-             <div className="absolute inset-y-0 left-1 w-[6px] -translate-x-1/2 bg-black/30 pointer-events-none"></div>
+             <div className="absolute inset-y-0 left-1 w-1.5 -translate-x-1/2 bg-black/30 pointer-events-none"></div>
 
-            <div className="flex-shrink-0 bg-accent">
+            <div className="shrink-0 bg-accent">
                 <h5 
                 style={{ fontSize: `${15 * fontSizeMultiplier}px`, padding: `${10 * fontSizeMultiplier}px`}}
                 

@@ -8,7 +8,8 @@ type ImageBlockProps = ImageBlockType & {
   dims: Location;
 };
 
-export default function ImageBlock({id, type, content, location, boardId, dims}: ImageBlockProps){
+export default function ImageBlock(props: ImageBlockProps){
+    const {id, content, dims} = props;
     const {updateBlock} = useData();
     const {setIsEditingText} = useEditor();
     const [title, setTitle] = useState(content.title);
