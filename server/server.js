@@ -7,8 +7,22 @@ import imageRouter from './routes/image.js';
 import userRouter from "./routes/user.js"
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://www.boardbash.co",
+    "http://localhost:5173" 
+  ],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
 app.use(express.json());
+
+app.use(express.json());
+
+app.get("/health", (req, res) => res.send("ok"));
+
 
 // Data Routes, # /api/data/boards, 
 app.use('/api/data', blocksRouter);
