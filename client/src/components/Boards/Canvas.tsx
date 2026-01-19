@@ -64,7 +64,6 @@ export default function Canvas(){
         
     if (!currentBoard) return <p>Loading...</p>;
 
-    console.log("checkedHelp", checkedHelp)
     const [title, setTitle] = useState<string>(currentBoard.title);
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
@@ -433,7 +432,6 @@ export default function Canvas(){
         };
     };
 
-    console.log(blocks)
     const handleExportPDF = async () => {
         const bounds = getContentBounds();
         if (!bounds) return;
