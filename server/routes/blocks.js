@@ -1311,6 +1311,33 @@ router.post("/blocks/paste", async(req, res) => {
     const batch = db.batch();
     const now = admin.firestore.FieldValue.serverTimestamp();
     const newBlockIds = [];
+    const linkedBoardsToDuplicate = [];
+
+    // First pass: identify board_blocks that need new linked boards
+    for (const block of blocks) {
+      if (block.type === "board_block" && block.linkedBoardId) {
+        linkedBoardsToDuplicate.push(block.linkedBoardId);
+      }
+    }
+
+    // Duplicate linked boards for board_blocks
+    const linkedBoardMap = {}; // Map old linkedBoardId -> new linkedBoardId
+    for (const oldLinkedBoardId of linkedBoardsToDuplicate) {
+      const linkedBoardDoc = await db.collection("boards").doc(oldLinkedBoardId).get();
+      if (linkedBoardDoc.exists) {
+        const linkedBoard = linkedBoardDoc.data();
+        const newLinkedBoardId = uuidv4();
+        const newLinkedBoard = {
+          ...linkedBoard,
+          id: newLinkedBoardId,
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null
+        };
+        batch.set(db.collection("boards").doc(newLinkedBoardId), newLinkedBoard);
+        linkedBoardMap[oldLinkedBoardId] = newLinkedBoardId;
+      }
+    }
 
     // Create new blocks
     blocks.forEach(block => {
@@ -1331,6 +1358,11 @@ router.post("/blocks/paste", async(req, res) => {
         updatedAt: now,
         deletedAt: null
       };
+
+      // Update linkedBoardId if this is a board_block with a linked board
+      if (block.type === "board_block" && block.linkedBoardId && linkedBoardMap[block.linkedBoardId]) {
+        newBlock.linkedBoardId = linkedBoardMap[block.linkedBoardId];
+      }
 
       batch.set(db.collection("blocks").doc(newId), newBlock);
     });
@@ -1497,7 +1529,63 @@ router.post("/boards/:id/blocks/batch", async (req, res) => {
     const batch = db.batch();
     const now = admin.firestore.FieldValue.serverTimestamp();
     const newBlocks = [];
+    const newBoards = [];
 
+    // Maps for handling board_block linked boards
+    const linkedBoardsToDuplicate = [];
+    const linkedBoardMap = {}; // old linkedBoardId -> new linkedBoardId
+    const newBoardForBlockMap = {}; // blockId -> newly created linkedBoardId (when none provided)
+
+    // First pass: collect boards to duplicate when a linkedBoardId is provided
+    for (const blockData of blocksData) {
+      if (blockData.type === "board_block" && blockData.linkedBoardId) {
+        linkedBoardsToDuplicate.push(blockData.linkedBoardId);
+      }
+    }
+
+    // Duplicate linked boards for board_blocks (so pasted blocks don't share the same linked board)
+    for (const oldLinkedBoardId of linkedBoardsToDuplicate) {
+      const linkedBoardDoc = await db.collection("boards").doc(oldLinkedBoardId).get();
+      if (linkedBoardDoc.exists) {
+        const linkedBoard = linkedBoardDoc.data();
+        const newLinkedBoardId = uuidv4();
+        const newLinkedBoard = {
+          ...linkedBoard,
+          id: newLinkedBoardId,
+          parentBoardBlockId: null, // set later when block is created
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null
+        };
+        batch.set(db.collection("boards").doc(newLinkedBoardId), newLinkedBoard);
+        newBoards.push(newLinkedBoard);
+        linkedBoardMap[oldLinkedBoardId] = newLinkedBoardId;
+      }
+    }
+
+    // Second pass: create brand-new linked boards for board_blocks that don't specify one
+    for (const blockData of blocksData) {
+      if (blockData.type === "board_block" && !blockData.linkedBoardId) {
+        const blockId = blockData.id || uuidv4();
+        const newLinkedBoardId = uuidv4();
+        newBoardForBlockMap[blockId] = newLinkedBoardId;
+
+        const newBoard = {
+          id: newLinkedBoardId,
+          userId,
+          title: "Untitled Board",
+          colorscheme: DEFAULT_THEME,
+          parentBoardBlockId: blockId,
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null
+        };
+        batch.set(db.collection("boards").doc(newLinkedBoardId), newBoard);
+        newBoards.push(newBoard);
+      }
+    }
+
+    // Final pass: create blocks and wire up linked boards appropriately
     for (const blockData of blocksData) {
       const blockId = blockData.id || uuidv4();
 
@@ -1517,18 +1605,41 @@ router.post("/boards/:id/blocks/batch", async (req, res) => {
           scaleY: blockData.location?.scaleY ?? blockData.scaleY ?? 1,
         },
         content: blockData.content || {},
-        linkedBoardId: blockData.linkedBoardId || null,
+        linkedBoardId: null,
         deletedAt: null,
         createdAt: now,
         updatedAt: now,
       };
 
-      // If creating a board_block with a linkedBoardId, update that board's parentBoardBlockId
-      if (newBlock.type === "board_block" && newBlock.linkedBoardId) {
-        batch.update(db.collection("boards").doc(newBlock.linkedBoardId), {
-          parentBoardBlockId: blockId,
-          updatedAt: now
-        });
+      // Resolve linkedBoardId for board_blocks
+      if (newBlock.type === "board_block") {
+        if (blockData.linkedBoardId && linkedBoardMap[blockData.linkedBoardId]) {
+          // Use duplicated board
+          newBlock.linkedBoardId = linkedBoardMap[blockData.linkedBoardId];
+        } else if (newBoardForBlockMap[blockId]) {
+          // Use newly created board for this block
+          newBlock.linkedBoardId = newBoardForBlockMap[blockId];
+        } else if (blockData.linkedBoardId) {
+          // Fall back to provided linkedBoardId
+          newBlock.linkedBoardId = blockData.linkedBoardId;
+        }
+
+        // Set parentBoardBlockId on the linked board if we have one
+        if (newBlock.linkedBoardId) {
+          batch.update(db.collection("boards").doc(newBlock.linkedBoardId), {
+            parentBoardBlockId: blockId,
+            updatedAt: now
+          });
+
+          // Keep the in-memory newBoards list in sync so the frontend receives the linkage
+          const idx = newBoards.findIndex(b => b.id === newBlock.linkedBoardId);
+          if (idx !== -1) {
+            newBoards[idx] = {
+              ...newBoards[idx],
+              parentBoardBlockId: blockId,
+            };
+          }
+        }
       }
 
       batch.set(db.collection("blocks").doc(blockId), newBlock);
@@ -1542,7 +1653,7 @@ router.post("/boards/:id/blocks/batch", async (req, res) => {
 
     await batch.commit();
 
-    return res.status(201).send({ blocks: newBlocks });
+    return res.status(201).send({ blocks: newBlocks, boards: newBoards });
   } catch (error) {
     ;
     res.status(500).send("Internal Server Error");

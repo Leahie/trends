@@ -44,7 +44,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user && lastUserId) {
       // User logged out (transition from having userId to no user)
-      console.log("DETECTED USER LOG OUT");
       setOpenBoards(new Set());
       localStorage.removeItem(STORAGE_KEY);
       setLastUserId(null);
@@ -59,7 +58,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     }
   }, [user, lastUserId]);
 
-  console.log(openBoards)
   // Load open boards from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);

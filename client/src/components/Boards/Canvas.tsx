@@ -433,6 +433,7 @@ export default function Canvas(){
         };
     };
 
+    console.log(blocks)
     const handleExportPDF = async () => {
         const bounds = getContentBounds();
         if (!bounds) return;

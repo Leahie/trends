@@ -719,11 +719,14 @@ export function DataProvider({children} : {children : ReactNode}){
                 });
                 return next;
             });
-            
-            return serverBlocks;
+        }
+
+        // If backend created/duplicated linked boards for board_blocks, add them to state
+        if (result.data?.boards && result.data.boards.length > 0) {
+            setBoards(prev => [...result.data!.boards!, ...prev]);
         }
         
-        return newBlocks;
+        return result.data?.blocks || newBlocks;
     };
 
     const restoreBlock = async (id: string): Promise<boolean> => {

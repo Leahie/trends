@@ -320,7 +320,7 @@ export const api = {
       };
     }
   },
-    async batchAddBlocks(boardId: string, blocks: Partial<Block>[]): Promise<ApiResponse<{ blocks: Block[] }>> {
+    async batchAddBlocks(boardId: string, blocks: Partial<Block>[]): Promise<ApiResponse<{ blocks: Block[]; boards?: Board[] }>> {
       try {
           ;
           const { data } = await client.post(`/data/boards/${boardId}/blocks/batch`, { blocks });

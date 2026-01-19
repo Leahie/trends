@@ -105,8 +105,8 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
 
                         before[id] = { ...block };
 
-                        const newX = Math.max(0, block.location.x + groupMoveState.offsetX);
-                        const newY = Math.max(0, block.location.y + groupMoveState.offsetY);
+                        const newX = block.location.x + groupMoveState.offsetX;
+                        const newY = block.location.y + groupMoveState.offsetY;
 
                         updates[id] = {
                             location: {
@@ -215,13 +215,13 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
             
             setDims(prev => ({
             ...prev,
-            x: Math.max(0, start.x + totalDx),
-            y: Math.max(0, start.y + totalDy),
+            x: start.x + totalDx,
+            y: start.y + totalDy,
             }));
         } else {
             setDims(prev => {
-            const newX = Math.max(0, start.x + totalDx);
-            const newY = Math.max(0, start.y + totalDy);
+            const newX = start.x + totalDx;
+            const newY = start.y + totalDy;
             return { ...prev, x: newX, y: newY };
             });
         }
@@ -365,8 +365,8 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                 }
             }
         
-            x = Math.max(0, x);
-            y = Math.max(0, y);
+            // Allow negative coordinates
+            // x and y can be negative
 
             return { ...prev, x:x, y:y, width: w, height: h };
         })
@@ -404,11 +404,11 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     };
 
     const visualX = isMultiSelected && groupMoveState.isActive 
-        ? Math.max(0, blockLocation.x + groupMoveState.offsetX)
+        ? blockLocation.x + groupMoveState.offsetX
         : dims.x;
     
     const visualY = isMultiSelected && groupMoveState.isActive
-        ? Math.max(0, blockLocation.y + groupMoveState.offsetY)
+        ? blockLocation.y + groupMoveState.offsetY
         : dims.y;
 
     const boxStyle = {
