@@ -68,7 +68,7 @@ export default function Canvas(){
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
     const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
-    const [helpModalOpen, setHelpModalOpen] = useState(!checkedHelp && !(checkedHelp == undefined));
+    const [helpModalOpen, setHelpModalOpen] = useState(false);
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
 
     const {updateTheme} = useTheme();
@@ -76,6 +76,10 @@ export default function Canvas(){
     const sortedBlocks = useMemo(() => {
         return [...blocks].sort((a, b) => a.location.zIndex - b.location.zIndex);
     }, [blocks]);
+
+    useEffect(()=>{
+        setHelpModalOpen(!checkedHelp)
+    }, [checkedHelp])
 
     // Keep title in sync when switching boards
     useEffect(() => {
