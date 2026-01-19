@@ -64,12 +64,12 @@ export default function Canvas(){
         
     if (!currentBoard) return <p>Loading...</p>;
 
-
+    console.log("checkedHelp", checkedHelp)
     const [title, setTitle] = useState<string>(currentBoard.title);
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
     const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
-    const [helpModalOpen, setHelpModalOpen] = useState(!checkedHelp);
+    const [helpModalOpen, setHelpModalOpen] = useState(!checkedHelp && !(checkedHelp == undefined));
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
 
     const {updateTheme} = useTheme();

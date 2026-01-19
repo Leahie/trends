@@ -15,6 +15,7 @@ interface SidebarContextType {
   closeBoard: (boardId: string) => void;
   isOpen: (boardId: string) => boolean;
   clearOpenBoards: () => void;
+  pruneOpenBoards: (validBoardIds: string[]) => void;
 
   // Pinned boards (backend + state)
   pinnedBoards: string[];
@@ -143,6 +144,25 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const pruneOpenBoards = useCallback((validBoardIds: string[]) => {
+    const validSet = new Set(validBoardIds);
+
+    setOpenBoards(prev => {
+      let changed = false;
+      const next = new Set<string>();
+
+      prev.forEach(id => {
+        if (validSet.has(id)) {
+          next.add(id);
+        } else {
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, []);
+
   const addNewRootBoard = useCallback((boardId: string) => {
     setOpenBoards(prev => new Set(prev).add(boardId));
   }, []);
@@ -195,6 +215,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       closeBoard,
       isOpen,
       clearOpenBoards,
+      pruneOpenBoards,
       pinnedBoards,
       pinBoard,
       unpinBoard,

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Block, Board, TextBlockType, ImageBlockType, BoardBlockType  } from '../types/types';
 import {api} from "../utils/api"
 import { useAuth } from './auth';
+import { useSidebar } from './sidebar';
 import { v4 as uuidv4 } from 'uuid';
 import { useParams } from "react-router-dom";
 
@@ -68,10 +69,12 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export function DataProvider({children} : {children : ReactNode}){
     const { id } = useParams();
     const {user} = useAuth();
+    const { pruneOpenBoards } = useSidebar();
     const [boards, setBoards] = useState<Board[]>([]);
     const [archivedBoards, setArchivedBoards] = useState<Board[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
     const [currentBoard, setCurrentBoard] = useState<Board | null>(null);
+    const [boardsHydrated, setBoardsHydrated] = useState(false);
     
     const [blocks, setBlocks] = useState<Block[]>([]);
     
@@ -124,10 +127,17 @@ export function DataProvider({children} : {children : ReactNode}){
                 console.error('Failed to load boards:', result.error);
             }
             setIsSyncing(false);
+            setBoardsHydrated(true);
         };
         
         loadInitialData();
     }, [user]);
+
+    useEffect(() => {
+        if (!boardsHydrated) return;
+
+        pruneOpenBoards(boards.map(b => b.id));
+    }, [boards, boardsHydrated, pruneOpenBoards]);
 
     // Load blocks for current board
     useEffect(() => {
@@ -261,6 +271,7 @@ export function DataProvider({children} : {children : ReactNode}){
             setBoards(result.data.boards);
         }
         setIsSyncing(false);
+        setBoardsHydrated(true);
     };
 
     const loadArchivedBoards = async () => {
