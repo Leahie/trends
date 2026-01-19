@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { api } from '@/utils/api';
+import { useAuth } from './auth';
 
 interface SidebarContextType {
   // toggle logic 
@@ -32,10 +33,33 @@ const STORAGE_KEY = 'sidebar_open_boards';
 const MAX_AGE_MS = 1000 * 60 * 60 * 24; // 24 hours
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [open, setOpen] = useState<boolean>(true);
   const [hydrated, setHydrated] = useState(false);
   const [openBoards, setOpenBoards] = useState<Set<string>>(new Set());
   const [pinnedBoards, setPinnedBoards] = useState<string[]>([]);
+  const [lastUserId, setLastUserId] = useState<string | null>(null);
+
+  // Clear localStorage when user logs out or changes (only on actual transitions)
+  useEffect(() => {
+    if (!user && lastUserId) {
+      // User logged out (transition from having userId to no user)
+      console.log("DETECTED USER LOG OUT");
+      setOpenBoards(new Set());
+      localStorage.removeItem(STORAGE_KEY);
+      setLastUserId(null);
+    } else if (user && lastUserId && lastUserId !== user.uid) {
+      // User switched accounts (userId changed)
+      setOpenBoards(new Set());
+      localStorage.removeItem(STORAGE_KEY);
+      setLastUserId(user.uid);
+    } else if (user && !lastUserId) {
+      // First login
+      setLastUserId(user.uid);
+    }
+  }, [user, lastUserId]);
+
+  console.log(openBoards)
   // Load open boards from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -60,8 +84,10 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     setHydrated(true);
   }, []);
 
-  // Load pinned boards from backend
+  // Load pinned boards from backend (only when user is authenticated)
   useEffect(() => {
+    if (!user) return; // Skip if not authenticated
+    
     const loadPinnedBoards = async () => {
       const result = await api.fetchUserInfo();
       if (result.success && result.data) {
@@ -69,7 +95,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       }
     };
     loadPinnedBoards();
-  }, []);
+  }, [user]);
 
   // Persist open boards to localStorage whenever they change
   useEffect(() => {

@@ -17,19 +17,19 @@ const App = () => {
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
-          
-        <EmailVerificationBanner/>
-          
+          <SidebarProvider>
+            <EmailVerificationBanner/>
+            
             <div className='flex h-screen w-screen  '>
               <div className="flex-1 relative overflow-hidden">
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/shared/:token" element={<SharedBoard />} />
-                  
+                                            
+
                   <Route element={<ProtectedRoute />}>
                     <Route path="/" element={
                       <DataProvider>
-                        <SidebarProvider>
                       <div className='flex h-screen w-screen'>
                         
                           <SidebarConnected/>
@@ -38,12 +38,10 @@ const App = () => {
                           <HomePage />
                         </div>
                       </div>
-                       </SidebarProvider>
                       </DataProvider>
                     } />
                     <Route path="/archive" element={
                       <DataProvider>
-                        <SidebarProvider>
                       <div className='flex h-screen w-screen'>
                         
                           <SidebarConnected/>
@@ -52,12 +50,10 @@ const App = () => {
                           <HomePage />
                         </div>
                       </div>
-                      </SidebarProvider>
                       </DataProvider>
                     } />
                     <Route path="/boards/:id" element={
                       <DataProvider>
-                        <SidebarProvider>
                       <div className='flex h-screen w-screen'>
                         
                           <SidebarConnected/>
@@ -66,14 +62,13 @@ const App = () => {
                           <Board />
                         </div>
                       </div>
-                      </SidebarProvider>
                       </DataProvider>
                     } />
                   </Route>
                 </Routes>
               </div>
             </div>
-      
+          </SidebarProvider>
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -42,7 +42,7 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
             formData.append('file', file);
             formData.append('blockId', node.id);
 
-            const response = await fetch('http://localhost:5000/api/images/upload', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/images/upload`, {
                 method: 'POST',
                 body: formData,
             })
@@ -67,7 +67,7 @@ export default function ImageInfo({ node }: { node: ImageBlockType }) {
         const urlParts = imageUrl.split('/');
         const filename = urlParts[urlParts.length - 1];
         
-        const response = await fetch(`http://localhost:5000/api/images/delete/${encodeURIComponent(filename)}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}}/images/delete/${encodeURIComponent(filename)}`, {
             method: 'DELETE',
         });
 

@@ -8,7 +8,7 @@ export const uploadToFirebase = async({file, token}:UploadToFirebaseProps): Prom
         formData.append('file', file);
         formData.append('blockId', 'temp-' + Date.now());
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}}/images/upload`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/images/upload`, {
             method: 'POST',
             body: formData, 
             headers: {
