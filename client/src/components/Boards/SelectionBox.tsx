@@ -111,8 +111,8 @@ export default function SelectionBox({selectionBox, scale, groupMoveState} :Sele
         });
         
         return {
-            left: Math.max(0, minX),
-            top: Math.max(0, minY),
+            left: minX,
+            top: minY,
             width: maxX - minX,
             height: maxY - minY,
         };
@@ -257,8 +257,8 @@ export default function SelectionBox({selectionBox, scale, groupMoveState} :Sele
                 updates[block.id] = {
                     location: {
                         ...block.location,
-                        x: Math.max(0, newX),
-                        y: Math.max(0, newY),
+                        x: newX,
+                        y: newY,
                         width: Math.max(50, newBlockWidth),
                         height: Math.max(50, newBlockHeight),
                     }
