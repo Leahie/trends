@@ -304,7 +304,7 @@ export default function Sidebar(props: SidebarProps){
             type="button"
             className="flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
             data-hs-overlay="#hs-sidebar-basic-usage" 
-            href="mailto:lz623@cornell.edu"
+            href="https://www.patreon.com/posts/bug-reporting-148623744"
             tabIndex={-1}
           >
             <svg fill="var(--color-accent)" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -323,7 +323,7 @@ export default function Sidebar(props: SidebarProps){
             type="button"
             className="flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
             data-hs-overlay="#hs-sidebar-basic-usage" 
-            onClick={() => navigate("https://github.com/Leahie/trends/tree/main")}
+            onClick={() => navigate("https://github.com/Leahie")}
             tabIndex={-1}
           >
             <svg width="800px" height="800px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none">
