@@ -53,6 +53,8 @@ interface DataContextType {
     boardLimit: number;
     canCreateBoard: boolean;
     userVerified: boolean;
+    checkedHelp: boolean;
+    updateCheckedHelp: (checked: boolean) => Promise<boolean>;
 
     // Helpers 
     getParent: (boardId: string) => Board | null;
@@ -79,6 +81,7 @@ export function DataProvider({children} : {children : ReactNode}){
 
     const [userRole, setUserRole] = useState<string>('user');
     const [boardLimit, setBoardLimit] = useState(5);
+    const [checkedHelp, setCheckedHelp] = useState<boolean>(false);
     
     // Store ALL blocks indexed by boardId for faster lookups
     const [blocksByBoard, setBlocksByBoard] = useState<Record<string, Block[]>>({});
@@ -108,6 +111,7 @@ export function DataProvider({children} : {children : ReactNode}){
             if (userData.success && userData.data) {
                 setUserRole(userData.data.role);
                 setBoardLimit(userData.data.boardLimit);
+                setCheckedHelp(userData.data.checkedHelp || false);
             }
 
             setIsSyncing(true);
@@ -776,6 +780,15 @@ export function DataProvider({children} : {children : ReactNode}){
         return board ? !board.parentBoardBlockId : false;
     }, [boardsMap]);
 
+    const updateCheckedHelp = async (checked: boolean): Promise<boolean> => {
+        const result = await api.updateCheckedHelp(checked);
+        if (result.success) {
+            setCheckedHelp(checked);
+            return true;
+        }
+        return false;
+    };
+
     return (
         <DataContext.Provider value = {{
             currentBoard, setCurrentBoardId, boards, archivedBoards,
@@ -783,7 +796,7 @@ export function DataProvider({children} : {children : ReactNode}){
             blocks, dataMap, getBlocks,
             updateBlock, addBlock, removeBlock, duplicateBlock, batchUpdateBlocks, batchDeleteBlocks, restoreBlock,
             syncNow, isSyncing, lastSyncTime, hasPendingChanges,
-            boardLoadError, userRole, boardLimit, canCreateBoard, userVerified,
+            boardLoadError, userRole, boardLimit, canCreateBoard, userVerified, checkedHelp, updateCheckedHelp,
             getParent,
             getChildren,
             boardsMap,

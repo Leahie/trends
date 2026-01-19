@@ -165,7 +165,7 @@ export default function BoardDiv({id, title, updatedAt, userId: _userId, parentB
                 <div className="text-sm text-gray-600 space-y-1 text-left p-2">
                     {parent && (
                         <div className="flex items-center gap-1">
-                            <span className="text-gray-400">Parent:</span>
+                            <span className="text-gray-400">Folder:</span>
                             <span className="font-medium truncate">
                                 {parent.title || "Untitled"}
                             </span>
@@ -174,7 +174,7 @@ export default function BoardDiv({id, title, updatedAt, userId: _userId, parentB
 
                     {children.length > 0 && (
                         <div className="flex items-baseline gap-1 ">
-                            <span className="text-subtext">Children:</span>
+                            <span className="text-subtext">Files:</span>
                             <div className="flex flex-wrap gap-1 align-end">
                                 {children.map((child, idx) => (
                                     <span
@@ -190,7 +190,7 @@ export default function BoardDiv({id, title, updatedAt, userId: _userId, parentB
                     )}
 
                     {!parent && children.length === 0 && (
-                        <div className="text-subtext italic">No relationships</div>
+                        <div className="text-subtext italic"></div>
                     )}
                 </div>
             <p className="text-sm mt-auto text-right pr-2 pb-2 text-subtext">{updatedAtDate.toLocaleString()}</p>

@@ -141,6 +141,11 @@ export function EditorProvider({children, updateBlock} : {children : ReactNode; 
                 id: undefined, // Let server generate new IDs
                 boardId: parentId,
                 linkedBoardId: null,
+                // If this is a board_block with a linked board, pass the original linkedBoardId to backend
+                // so it can copy the entire board structure
+                ...(block.type === 'board_block' && block.linkedBoardId ? {
+                    copiedFromLinkedBoardId: block.linkedBoardId
+                } : {}),
                 location: {
                     ...block.location,
                     x: canvasX + offsetX,

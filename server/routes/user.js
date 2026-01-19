@@ -21,6 +21,7 @@ router.get("/info", async(req, res) => {
                 role: 'user',
                 boardLimit: 5,
                 pinnedBoards: [],
+                checkedHelp: false,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             };
@@ -30,7 +31,8 @@ router.get("/info", async(req, res) => {
             return res.send({
                 role: 'user',
                 boardLimit: 5,
-                pinnedBoards: []
+                pinnedBoards: [],
+                checkedHelp: false
             });
         }
         
@@ -45,7 +47,8 @@ router.get("/info", async(req, res) => {
         res.send({
             role: userData.role || 'user',
             boardLimit: userData.boardLimit || 5,
-            pinnedBoards: userData.pinnedBoards || []
+            pinnedBoards: userData.pinnedBoards || [],
+            checkedHelp: userData.checkedHelp || false
         });
     }catch (error) {
         ;
@@ -175,6 +178,37 @@ router.patch("/pins/reorder", async(req, res) => {
         res.send({
             success: true,
             pinnedBoards
+        });
+    } catch (error) {
+        ;
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+router.patch("/checked-help", async(req, res) => {
+    try {
+        const userId = req.user.uid;
+        const { checkedHelp } = req.body;
+
+        if (typeof checkedHelp !== 'boolean') {
+            return res.status(400).send("checkedHelp must be a boolean");
+        }
+
+        const userRef = db.collection("users").doc(userId);
+        const userDoc = await userRef.get();
+
+        if (!userDoc.exists) {
+            return res.status(404).send("User document not found");
+        }
+
+        await userRef.update({
+            checkedHelp,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        res.send({
+            success: true,
+            checkedHelp
         });
     } catch (error) {
         ;

@@ -25,6 +25,7 @@ export interface BaseBlock{
     location: Location;
     content: Record<string, any>;
     linkedBoardId: string | null;
+    copiedFromLinkedBoardId?: string | null; // For copying board_blocks with their linked boards
     readonly deletedAt: Date | null;
     readonly deletionId?: string | null;
     readonly createdAt: Date | null;

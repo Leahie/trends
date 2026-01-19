@@ -1155,6 +1155,98 @@ async function wouldCreateCycle(db, userId, movingBoardId, targetBoardId) {
   return false;
 }
 
+// Helper function to recursively copy a board and all its blocks
+async function recursiveCopyBoard(db, userId, originalBoardId, now, batch, idMappings = {}) {
+  const originalBoardDoc = await db.collection("boards").doc(originalBoardId).get();
+  if (!originalBoardDoc.exists) {
+    return null;
+  }
+
+  const originalBoard = originalBoardDoc.data();
+  
+  // Verify ownership
+  if (originalBoard.userId !== userId) {
+    throw new Error("Forbidden: Cannot copy board from another user");
+  }
+
+  // Create new board with new ID
+  const newBoardId = uuidv4();
+  const newBoard = {
+    ...originalBoard,
+    id: newBoardId,
+    parentBoardBlockId: null, // will be set later by the caller
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null
+  };
+  
+  batch.set(db.collection("boards").doc(newBoardId), newBoard);
+  idMappings[originalBoardId] = newBoardId;
+
+  // Get all blocks in the original board
+  const blocksSnapshot = await db.collection("blocks")
+    .where("boardId", "==", originalBoardId)
+    .where("deletedAt", "==", null)
+    .get();
+
+  const blockIdMap = {}; // Map old block ID -> new block ID
+  const boardBlocksWithLinkedBoards = []; // Track board_blocks for recursive copying
+
+  // First pass: create all blocks with new IDs
+  blocksSnapshot.docs.forEach((doc) => {
+    const originalBlock = doc.data();
+    const newBlockId = uuidv4();
+    blockIdMap[doc.id] = newBlockId;
+
+    const newBlock = {
+      ...originalBlock,
+      id: newBlockId,
+      boardId: newBoardId,
+      linkedBoardId: null, // will be resolved in second pass
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null
+    };
+
+    if (originalBlock.type === "board_block" && originalBlock.linkedBoardId) {
+      boardBlocksWithLinkedBoards.push({
+        originalBlockId: doc.id,
+        newBlockId: newBlockId,
+        originalLinkedBoardId: originalBlock.linkedBoardId,
+        newBlockData: newBlock
+      });
+    }
+
+    batch.set(db.collection("blocks").doc(newBlockId), newBlock);
+  });
+
+  // Second pass: recursively copy linked boards for board_blocks
+  for (const boardBlockInfo of boardBlocksWithLinkedBoards) {
+    const copiedLinkedBoardId = await recursiveCopyBoard(
+      db,
+      userId,
+      boardBlockInfo.originalLinkedBoardId,
+      now,
+      batch,
+      idMappings
+    );
+
+    if (copiedLinkedBoardId) {
+      // Update the board_block to reference the new linked board
+      batch.update(db.collection("blocks").doc(boardBlockInfo.newBlockId), {
+        linkedBoardId: copiedLinkedBoardId
+      });
+
+      // Update the linked board's parentBoardBlockId
+      batch.update(db.collection("boards").doc(copiedLinkedBoardId), {
+        parentBoardBlockId: boardBlockInfo.newBlockId
+      });
+    }
+  }
+
+  return newBoardId;
+}
+
 // Move block(s) to another board
 router.post("/blocks/move", async(req, res) => {
   try {
@@ -1535,37 +1627,70 @@ router.post("/boards/:id/blocks/batch", async (req, res) => {
     const linkedBoardsToDuplicate = [];
     const linkedBoardMap = {}; // old linkedBoardId -> new linkedBoardId
     const newBoardForBlockMap = {}; // blockId -> newly created linkedBoardId (when none provided)
+    const idMappings = {};
 
-    // First pass: collect boards to duplicate when a linkedBoardId is provided
+    // First pass: collect boards to duplicate
+    // Handle both regular linkedBoardId and copiedFromLinkedBoardId
     for (const blockData of blocksData) {
-      if (blockData.type === "board_block" && blockData.linkedBoardId) {
-        linkedBoardsToDuplicate.push(blockData.linkedBoardId);
+      if (blockData.type === "board_block") {
+        // If copiedFromLinkedBoardId is set, recursively copy that board
+        if (blockData.copiedFromLinkedBoardId) {
+          linkedBoardsToDuplicate.push({
+            originalBoardId: blockData.copiedFromLinkedBoardId,
+            recursive: true
+          });
+        }
+        // Otherwise if linkedBoardId is set, duplicate it
+        else if (blockData.linkedBoardId) {
+          linkedBoardsToDuplicate.push({
+            originalBoardId: blockData.linkedBoardId,
+            recursive: false
+          });
+        }
       }
     }
 
-    // Duplicate linked boards for board_blocks (so pasted blocks don't share the same linked board)
-    for (const oldLinkedBoardId of linkedBoardsToDuplicate) {
-      const linkedBoardDoc = await db.collection("boards").doc(oldLinkedBoardId).get();
-      if (linkedBoardDoc.exists) {
-        const linkedBoard = linkedBoardDoc.data();
-        const newLinkedBoardId = uuidv4();
-        const newLinkedBoard = {
-          ...linkedBoard,
-          id: newLinkedBoardId,
-          parentBoardBlockId: null, // set later when block is created
-          createdAt: now,
-          updatedAt: now,
-          deletedAt: null
-        };
-        batch.set(db.collection("boards").doc(newLinkedBoardId), newLinkedBoard);
-        newBoards.push(newLinkedBoard);
-        linkedBoardMap[oldLinkedBoardId] = newLinkedBoardId;
+    // Duplicate/copy linked boards for board_blocks
+    for (const boardInfo of linkedBoardsToDuplicate) {
+      const oldLinkedBoardId = boardInfo.originalBoardId;
+      
+      if (boardInfo.recursive) {
+        // Recursively copy the entire board structure
+        const newLinkedBoardId = await recursiveCopyBoard(
+          db,
+          userId,
+          oldLinkedBoardId,
+          now,
+          batch,
+          idMappings
+        );
+        if (newLinkedBoardId) {
+          linkedBoardMap[oldLinkedBoardId] = newLinkedBoardId;
+        }
+      } else {
+        // Simple duplicate of just the board (old behavior)
+        const linkedBoardDoc = await db.collection("boards").doc(oldLinkedBoardId).get();
+        if (linkedBoardDoc.exists) {
+          const linkedBoard = linkedBoardDoc.data();
+          const newLinkedBoardId = uuidv4();
+          const newLinkedBoard = {
+            ...linkedBoard,
+            id: newLinkedBoardId,
+            parentBoardBlockId: null, // set later when block is created
+            createdAt: now,
+            updatedAt: now,
+            deletedAt: null
+          };
+          batch.set(db.collection("boards").doc(newLinkedBoardId), newLinkedBoard);
+          newBoards.push(newLinkedBoard);
+          linkedBoardMap[oldLinkedBoardId] = newLinkedBoardId;
+        }
       }
     }
 
     // Second pass: create brand-new linked boards for board_blocks that don't specify one
     for (const blockData of blocksData) {
-      if (blockData.type === "board_block" && !blockData.linkedBoardId) {
+      if (blockData.type === "board_block" && !blockData.linkedBoardId && !blockData.copiedFromLinkedBoardId) {
         const blockId = blockData.id || uuidv4();
         const newLinkedBoardId = uuidv4();
         newBoardForBlockMap[blockId] = newLinkedBoardId;
@@ -1613,7 +1738,10 @@ router.post("/boards/:id/blocks/batch", async (req, res) => {
 
       // Resolve linkedBoardId for board_blocks
       if (newBlock.type === "board_block") {
-        if (blockData.linkedBoardId && linkedBoardMap[blockData.linkedBoardId]) {
+        if (blockData.copiedFromLinkedBoardId && linkedBoardMap[blockData.copiedFromLinkedBoardId]) {
+          // Use recursively copied board
+          newBlock.linkedBoardId = linkedBoardMap[blockData.copiedFromLinkedBoardId];
+        } else if (blockData.linkedBoardId && linkedBoardMap[blockData.linkedBoardId]) {
           // Use duplicated board
           newBlock.linkedBoardId = linkedBoardMap[blockData.linkedBoardId];
         } else if (newBoardForBlockMap[blockId]) {

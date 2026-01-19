@@ -32,7 +32,7 @@ interface GroupMoveState {
 }
 
 export default function Canvas(){
-    const {hasPendingChanges, syncNow, blocks, addBlock, updateBoard, currentBoard, batchUpdateBlocks, getParent} = useData();
+    const {hasPendingChanges, syncNow, blocks, addBlock, updateBoard, currentBoard, batchUpdateBlocks, getParent, checkedHelp, updateCheckedHelp} = useData();
     const {open, toggleOpen, }  = useSidebar()
     
     const hasCenteredRef = useRef<string | null>(null);
@@ -69,7 +69,7 @@ export default function Canvas(){
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
     const [themeColor, setThemeColor] = useState(currentBoard.colorscheme.highlight);
-    const [helpModalOpen, setHelpModalOpen] = useState(false);
+    const [helpModalOpen, setHelpModalOpen] = useState(!checkedHelp);
     const [contextMenu, setContextMenu] = useState<{x: number, y:number, canvasX:number, canvasY: number} | null>(null);
 
     const {updateTheme} = useTheme();
@@ -684,7 +684,10 @@ export default function Canvas(){
             />
             <HelpModal 
                 open={helpModalOpen} 
-                onClose={() => setHelpModalOpen(false)} 
+                onClose={async () => {
+                    setHelpModalOpen(false);
+                    await updateCheckedHelp(true);
+                }} 
             />
         </>
     );

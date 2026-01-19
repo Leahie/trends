@@ -415,7 +415,7 @@ export const api = {
   },
 
   // USER ROUTES 
-  async fetchUserInfo(): Promise<ApiResponse<{role: string; boardLimit: number; pinnedBoards: string[]}>>{
+  async fetchUserInfo(): Promise<ApiResponse<{role: string; boardLimit: number; pinnedBoards: string[]; checkedHelp: boolean}>>{
     try{
       const {data} = await client.get('/user/info');
       return{
@@ -470,6 +470,22 @@ async reorderPins(pinnedBoards: string[]): Promise<ApiResponse<{
 }>> {
   try {
     const {data} = await client.patch('/user/pins/reorder', { pinnedBoards });
+    return { success: true, data };
+  } catch(error) {
+    ;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown Error'
+    };
+  }
+},
+
+async updateCheckedHelp(checkedHelp: boolean): Promise<ApiResponse<{
+  success: true;
+  checkedHelp: boolean;
+}>> {
+  try {
+    const { data } = await client.patch('/user/checked-help', { checkedHelp });
     return { success: true, data };
   } catch(error) {
     ;
