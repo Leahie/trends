@@ -1,4 +1,4 @@
-import { X, Space,ImageUp, MousePointer2, ArrowRightToLine,ClipboardCopy,  MousePointerClick } from 'lucide-react';
+import { X, Space,ImageUp, MousePointer2, ArrowRightToLine,ClipboardCopy,  MousePointerClick, SquareChevronUp } from 'lucide-react';
 
 
 interface HelpModalProps {
@@ -47,6 +47,8 @@ export default function HelpModal({ open, onClose }: HelpModalProps){
                         <div className="flex gap-2"><ImageUp className="w-5 h-5"/>Drag and Drop</div>
                         <div className="text-left"></div>
                         <div className="flex gap-2"><ClipboardCopy className="w-5 h-5"/>Copy Paste</div>
+                        <div className="text-left">Enter a Board</div>
+                        <div className="flex gap-2"><SquareChevronUp className="w-5 h-5"/>Ctrl Click</div>
                     </div>
                 </ul>
                </div>
