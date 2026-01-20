@@ -412,7 +412,7 @@ type TextBlockProps = TextBlockType & {
 export default function TextBlock({id, content, dims}: TextBlockProps){
     const {isEditingText, setIsEditingText, editingBlockId, setEditingBlockId} = useEditor();
     
-    const {updateBlock, isSyncing} = useData();
+    const {updateBlock, isSyncing, syncNow} = useData();
     const [title, setTitle] = useState<string>(content.title);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -465,14 +465,14 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
         };
     }, [isThisBlockEditing]);
 
-    const handleBlur = useCallback(() => {
+    const handleBlur = useCallback(async () => {
         const latestValue = editor.children as Descendant[];
         const serialized = serializeSlateContent(latestValue);
       
         setIsSaving(true);
         setIsEditingText(false);
         setEditingBlockId(null);
-                
+
         updateBlock(id, {
             content: {
                 ...content,
@@ -480,7 +480,8 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
                 body: serialized
             }
         });
-    }, [value, title, id, content, updateBlock, setIsEditingText, setEditingBlockId]);
+        await syncNow();
+    }, [value, title, id, content, updateBlock, syncNow, setIsEditingText, setEditingBlockId]);
 
     useEffect(() => {
         if (!isThisBlockEditing) {

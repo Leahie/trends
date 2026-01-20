@@ -20,9 +20,9 @@ export default function ImageBlock(props: ImageBlockProps){
     );
 
     const handleTitleBlur = async () => {
-        if (title.trim() && title !== content.title) 
-            await updateBlock(id, {content:{ ...content,title: title} });
-            setIsEditingText(false);
+        // Always push the latest title to backend when leaving the field
+        await updateBlock(id, { content: { ...content, title: title.trim() } });
+        setIsEditingText(false);
     };
 
     const handleTitleKeyDown = (e: React.KeyboardEvent) => {
