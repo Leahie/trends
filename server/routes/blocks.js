@@ -413,6 +413,53 @@ async function deleteBoardRecursively(boardId, userId, deletionId, result = { bo
   return result;
 }
 
+// Permanently delete board and all its blocks recursively
+async function permanentlyDeleteBoardRecursively(boardId, userId, result = { boards: [], blocks: [] }) {
+  const boardRef = db.collection("boards").doc(boardId);
+  const boardDoc = await boardRef.get();
+
+  if (!boardDoc.exists) {
+    return result;
+  }
+
+  const board = boardDoc.data();
+  if (board.userId !== userId) {
+    throw new Error("Forbidden");
+  }
+
+  // Get all blocks in this board
+  const blocksSnapshot = await db.collection("blocks")
+    .where("boardId", "==", boardId)
+    .get();
+
+  const batch = db.batch();
+  const childBoardsToDelete = [];
+
+  blocksSnapshot.docs.forEach((doc) => {
+    result.blocks.push(doc.id);
+    const block = doc.data();
+    
+    batch.delete(doc.ref);
+
+    if (block.type === "board_block" && block.linkedBoardId) {
+      childBoardsToDelete.push(block.linkedBoardId);
+    }
+  });
+
+  // Delete the board itself
+  result.boards.push(boardId);
+  batch.delete(boardRef);
+
+  await batch.commit();
+
+  // Recursively delete child boards
+  for (const childBoardId of childBoardsToDelete) {
+    await permanentlyDeleteBoardRecursively(childBoardId, userId, result);
+  }
+
+  return result;
+}
+
 // Restore board
 router.post("/boards/:boardId/restore", async(req, res) => {
   try {
@@ -633,6 +680,13 @@ router.post("/boards/:boardId/blocks/push", async(req, res) => {
       }
       if (block.boardId !== boardId) {
         return res.status(400).send(`Block ${doc.id} not in specified board`);
+      }
+
+      if (targetBoardId && block.type === "board_block" && block.linkedBoardId) {
+        const isCycle = await wouldCreateCycle(db, userId, block.linkedBoardId, targetBoardId);
+        if (isCycle) {
+          return res.status(400).send("Cannot move a board inside one of its children");
+        }
       }
     }
 
@@ -1830,23 +1884,45 @@ router.delete("/blocks/:id/permanent", async(req, res) => {
   try {
     const {id} = req.params;
     const userId = req.user.uid;
-
-    const blocksRef = db.collection("blocks").doc(id);
-    const blockDoc = await blocksRef.get();
+    const blockRef = db.collection("blocks").doc(id);
+    const blockDoc = await blockRef.get();
     
     if (!blockDoc.exists) {
       return res.status(404).send({ error: "Block not found." });
     }
-
+    
     const block = blockDoc.data();
-
     if (block.userId !== userId) {
       return res.status(403).send("Forbidden");
     }
 
-    await blocksRef.delete();
+    const result = { boards: [], blocks: [] };
+    result.blocks.push(id);
 
-    res.send({success: true, id});
+    // If this is a board_block, cascade delete the linked board
+    if (block.type === "board_block" && block.linkedBoardId) {
+      await permanentlyDeleteBoardRecursively(block.linkedBoardId, userId, result);
+    }
+
+    // Delete the block
+    await blockRef.delete();
+
+    // Update parent board timestamp if it exists
+    if (block.boardId) {
+      const parentBoardDoc = await db.collection("boards").doc(block.boardId).get();
+      if (parentBoardDoc.exists) {
+        await db.collection("boards").doc(block.boardId).update({
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      }
+    }
+    
+    res.send({
+      success: true, 
+      id,
+      boards: result.boards,
+      blocks: result.blocks
+    });
   } catch (error) {
     ;
     res.status(500).send("Internal Server Error");

@@ -5,6 +5,8 @@ import { useData } from "@/context/data.tsx";
 import { useAuth } from "@/context/auth.tsx";
 import { useTheme } from "@/context/theme.tsx";
 import {generateScheme} from "@/utils/theme.tsx"
+import MoveBlocksModal from "@/components/General/Confirmation.tsxx";
+
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -25,14 +27,11 @@ import Header from "./Header.tsx";
 import HelpModal from "./HelpModal.tsx";
 import { KeyboardShortcuts } from "@/hooks/keyboardHooks.ts";
 
-interface GroupMoveState {
-    isActive: boolean;
-    offsetX: number;
-    offsetY: number;
-}
+import type {GroupMoveState} from "@/hooks/canvasHooks.ts";
+import { checkBoardBlockIntersection } from "@/hooks/canvasHooks.ts";
 
 export default function Canvas(){
-    const {hasPendingChanges, syncNow, blocks, addBlock, updateBoard, currentBoard, batchUpdateBlocks, getParent, checkedHelp, updateCheckedHelp} = useData();
+    const {hasPendingChanges, pushBlocksToBoard, syncNow, blocks, addBlock, updateBoard, currentBoard, batchUpdateBlocks, getParent, checkedHelp, updateCheckedHelp} = useData();
     const {open, toggleOpen, }  = useSidebar()
     
     const hasCenteredRef = useRef<string | null>(null);
@@ -64,6 +63,16 @@ export default function Canvas(){
         
     if (!currentBoard) return <p>Loading...</p>;
 
+    // Drag and Drop stuff 
+    const [dropTargetBoardBlockId, setDropTargetBoardBlockId] = useState<string | null>(null);
+    const [moveModalOpen, setMoveModalOpen] = useState(false);
+    const [pendingMove, setPendingMove] = useState<{
+        blockIds: string[];
+        targetBoardBlockId: string;
+        targetBoardTitle: string;
+    } | null>(null);
+
+    // Modal Stuff 
     const [title, setTitle] = useState<string>(currentBoard.title);
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [themeModalOpen, setThemeModalOpen] = useState(false);
@@ -101,6 +110,10 @@ export default function Canvas(){
         return () => clearTimeout(timer);
     }, [blocks.length, currentBoard?.id]);
     
+    useEffect(()=>{
+        checkBoardBlockIntersection({selectedBlockIds, groupMoveState, setDropTargetBoardBlockId, blocks})
+    }, [groupMoveState, selectedBlockIds, blocks])
+
     function centerOnBlocks(blocks: Block[]) {
         const canvas = canvasRef.current;
         if (!canvas || blocks.length === 0) return;

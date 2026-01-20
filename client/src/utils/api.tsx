@@ -355,7 +355,12 @@ export const api = {
   },
 
   // permanently delete a block
-  async permanentlyDeleteBlock(blockId: string): Promise<ApiResponse<{ success: true; id: string }>> {
+  async permanentlyDeleteBlock(blockId: string): Promise<ApiResponse<{ 
+    success: true; 
+    id: string;
+    boards: string[];
+    blocks: string[];
+  }>> {
     try {
       const { data } = await client.delete(`/data/blocks/${blockId}/permanent`);
       ;
@@ -398,6 +403,31 @@ export const api = {
       };
     }
   },
+
+  async pushBlocksToBoard(
+    boardId: string, 
+    blockIds: string[], 
+    targetBoardBlockId: string
+  ): Promise<ApiResponse<{
+    success: true;
+    movedBlockIds: string[];
+    targetBoardId: string;
+  }>> {
+    try {
+      const { data } = await client.post(`/data/boards/${boardId}/blocks/push`, {
+        blockIds,
+        targetBoardBlockId
+      });
+      return { success: true, data };
+    } catch (error) {
+      console.error('Failed to push blocks to board:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
+
 
   // cleanup old deleted items
   async cleanup(): Promise<ApiResponse<{ success: true; deletedBoardCount: number; deletedBlockCount: number }>> {

@@ -24,6 +24,8 @@ interface DataContextType {
     archiveBoard: (boardId: string) => Promise<boolean>;
     deleteBoard: (boardId: string) => Promise<boolean>;
     updateBoard: (boardId: string, updates: Partial<Board>) => Promise<boolean>;
+    pushBlocksToBoard: (blockIds: string[], targetBoardBlockId: string) => Promise<boolean>;
+
     
     // Blocks for current board
     blocks: Block[];
@@ -387,6 +389,53 @@ export function DataProvider({children} : {children : ReactNode}){
         }
         return false;
     }
+
+    const pushBlocksToBoard = async (blockIds: string[], targetBoardBlockId: string): Promise<boolean> => {
+        if (!currentBoardId) return false;
+        
+        const result = await api.pushBlocksToBoard(currentBoardId, blockIds, targetBoardBlockId);
+        
+        if (!result.success || !result.data) return false;
+
+        const { movedBlockIds, targetBoardId } = result.data;
+
+        setBlocks(prev => prev.filter(b => !movedBlockIds.includes(b.id)));
+
+        setBlocksByBoard(prev => {
+            const next = { ...prev };
+            
+            // Remove from current board
+            if (next[currentBoardId]) {
+                const movedBlocks = next[currentBoardId].filter(b => movedBlockIds.includes(b.id));
+                next[currentBoardId] = next[currentBoardId].filter(b => !movedBlockIds.includes(b.id));
+                
+                // Add to target board (if we have it loaded)
+                if (next[targetBoardId]) {
+                    const targetBoardBlock = blocks.find(b => b.id === targetBoardBlockId);
+                    if (targetBoardBlock) {
+                        const offsetX = -targetBoardBlock.location.x;
+                        const offsetY = -targetBoardBlock.location.y;
+                        
+                        const updatedBlocks = movedBlocks.map(b => ({
+                            ...b,
+                            boardId: targetBoardId,
+                            location: {
+                                ...b.location,
+                                x: b.location.x + offsetX,
+                                y: b.location.y + offsetY
+                            }
+                        }));
+                        
+                        next[targetBoardId] = [...next[targetBoardId], ...updatedBlocks];
+                    }
+                }
+            }
+            
+            return next;
+        });
+
+        return true;
+    };
 
     // BLOCK OPS
     const getBlocks = async():Promise<Block[] | null> => {

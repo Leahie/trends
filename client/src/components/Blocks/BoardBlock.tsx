@@ -3,9 +3,11 @@ import { useMemo } from "react";
 
 type BoardBlockProps = BoardBlockType & {
   dims: Location;
+  isDropTarget?: boolean;
+  onDrop?: () => void;
 };
 
-export default function BoardBlock({content, dims}: BoardBlockProps){
+export default function BoardBlock({content, dims, isDropTarget, onDrop}: BoardBlockProps){
     
     const fontSizeMultiplier = useMemo(() => {
             const avgDimension = (dims.width + dims.height) / 2;
@@ -24,8 +26,22 @@ export default function BoardBlock({content, dims}: BoardBlockProps){
     // };
 
     return( 
-        <div className=" flex flex-col h-full w-full border-light-accent border-t-5 border-b-10 border-r-10">
+        <div className=" flex flex-col h-full w-full border-light-accent border-t-5 border-b-10 border-r-10 relative"
+        onMouseUp={isDropTarget ? onDrop : undefined}>
+            
              <div className="absolute inset-y-0 left-1 w-1.5 -translate-x-1/2 bg-black/30 pointer-events-none"></div>
+
+
+            {/* Drop overlay */}
+            {isDropTarget && (
+                <div className="absolute inset-0 bg-highlight/20 backdrop-blur-sm z-50 flex items-center justify-center border-2 border-highlight border-dashed pointer-events-none">
+                    <div className="bg-dark/90 px-6 py-3 rounded-lg border border-highlight">
+                        <p className="text-heading font-semibold text-center">
+                            Drop blocks to add to board
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <div className="shrink-0 bg-accent">
                 <h5 
