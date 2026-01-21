@@ -22,7 +22,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         pushToBack: (id:string[]) => Promise<void>}){
     const {getIdToken} = useAuth()
     const {dataMap, blocks, updateBlock, removeBlock, addBlock,
-        syncNow
+        syncNow, canCreateBoard
     } = useData();
     const {openBoard} = useSidebar();
     const {selectedBlockIds, pushToHistory, copyBlocks, 
@@ -36,6 +36,12 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
     
     ;
     const createNew = async (type: "text" | "image" | "board_block") => {
+
+        if (type == "board_block" && !canCreateBoard){
+            alert("You've reached your board limit. Upgrade to create more boards.");
+            setContextMenu(null);
+            return;
+        }
         // Get max z-index to place new block on top
         const maxZ = Math.max(...Object.values(blocks).map(b => b.location.zIndex), 0);
         
@@ -236,10 +242,12 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
                     >
                         Image Block
                     </li>
-                    <li className="context-li"
+                    {canCreateBoard && (
+                        <li className="context-li"
                     onClick={() => createNew("board_block")}>
                         Board Block
                     </li>
+                    )}
                     
                 </ul>
                 {/* Clipboard operations */}

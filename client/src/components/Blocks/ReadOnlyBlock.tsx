@@ -3,11 +3,15 @@ import type { Block } from "@/types/types";
 import Container from "../Boards/Container";
 import { generateScheme, schemeToCSSVars } from "@/utils/theme";
 
+interface ReadOnlyBlockProps {
+    node: Block,
+    onBoardClick?: (linkedBoardId: string) => void
+}
+
 export default function ReadOnlyBlock({ 
-    node
-}: { 
-    node: Block;
-}) {
+    node,
+    onBoardClick
+}: ReadOnlyBlockProps) {
     if (!node) return null;
 
     const boxStyle = {
@@ -26,14 +30,22 @@ export default function ReadOnlyBlock({
         : null;
     
     const blockTheme = scheme ? schemeToCSSVars(scheme) : undefined;
-
     return (
         <div 
             className={`absolute ${node.type === "text" && "text-block"}`}
-            style={{ ...boxStyle, ...blockTheme }}
+            style={{ 
+                ...boxStyle, 
+                ...blockTheme,
+                cursor: node.type === 'board_block' && node.linkedBoardId ? 'pointer' : 'default'
+            }}
         >
             <div className="absolute inset-0">
-                <Container node={node} dims={node.location} />
+                <Container 
+                node={node} 
+                dims={node.location} 
+                readOnly = {true}
+                onBoardClick={onBoardClick}
+                />
             </div>
         </div>
     );

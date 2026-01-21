@@ -6,6 +6,30 @@ import { authenticateUser } from "../middleware/auth.js";
 const router = express.Router();
 import { v4 as uuidv4 } from 'uuid';
 
+
+//Helper functions
+async function verifyBoardIsDescendant(rootBoardId, targetBoardId){
+  if(rootBoardId === targetBoardId) return true;
+
+  const blockSnap = await db.collection('blocks')
+    .where('boardId', '==', rootBoardId)
+    .where('type', '==', 'board_block')
+    .where('deletedAt', '==', null)
+    .get();
+
+    for(const doc of blockSnap.docs){
+      const block = doc.data();
+
+      if (block.linkedBoardId == targetBoardId){
+        return true;
+      }
+      if (block.linkedBoardId) {
+        const found = await verifyBoardIsDescendant(block.linkedBoardId, targetBoardId);
+        if (found) return true;
+      }
+    }
+    return false;
+}
 // get board by share token
 router.get("/boards/shared/:token", async(req, res)=> {
   try{
@@ -60,8 +84,94 @@ router.get("/boards/shared/:token/blocks",  async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+// Get blocks for a SPECIFIC board (nested navigation) 
+router.get("/boards/shared/:token/blocks/:boardId", async(req, res) => {
+  try {
+    const { token, boardId } = req.params;
 
+    // Verify the share token is valid
+    const sharedSnap = await db.collection("boards")
+      .where("shareToken", "==", token)
+      .where("deletedAt", "==", null)
+      .limit(1)
+      .get();
 
+    if (sharedSnap.empty) {
+      return res.status(404).send({ error: "Invalid share link" });
+    }
+
+    const rootBoardId = sharedSnap.docs[0].id;
+
+    // Verify boardId is the root or a descendant of it
+    if (boardId !== rootBoardId) {
+      const isDescendant = await verifyBoardIsDescendant(rootBoardId, boardId);
+      if (!isDescendant) {
+        return res.status(403).send({ error: "Access denied" });
+      }
+    }
+
+    // Fetch blocks for the requested board
+    const snapshot = await db.collection("blocks")
+      .where("boardId", "==", boardId)
+      .where("deletedAt", "==", null)
+      .orderBy("location.zIndex", "asc")
+      .get();
+
+    const blocks = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.send({ blocks });
+  } catch (error) {
+    console.error("Error fetching shared board blocks:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Get nested board data (for navigation into board_blocks)
+router.get("/boards/shared/:token/nested/:boardId", async (req, res) => {
+  try {
+    const { token, boardId } = req.params;
+
+    // Verify share token
+    const sharedSnap = await db.collection("boards")
+      .where("shareToken", "==", token)
+      .where("deletedAt", "==", null)
+      .limit(1)
+      .get();
+
+    if (sharedSnap.empty) {
+      return res.status(404).send({ error: "Invalid share link" });
+    }
+
+    const rootBoardId = sharedSnap.docs[0].id;
+
+    // Verify it's a descendant of the shared board
+    const isDescendant = await verifyBoardIsDescendant(rootBoardId, boardId);
+    if (!isDescendant) {
+      return res.status(403).send({ error: "Access denied" });
+    }
+
+    // Fetch the nested board
+    const boardSnap = await db.collection("boards").doc(boardId).get();
+    if (!boardSnap.exists) {
+      return res.status(404).send({ error: "Board not found" });
+    }
+
+    const board = boardSnap.data();
+    
+    // Make sure it's not deleted
+    if (board.deletedAt !== null) {
+      return res.status(404).send({ error: "Board not found" });
+    }
+
+    res.send({ board: { id: boardSnap.id, ...board } });
+  } catch (error) {
+    console.error("Error fetching shared nested board:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
 router.use(authenticateUser);
 
 const DEFAULT_THEME = {

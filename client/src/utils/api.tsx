@@ -560,10 +560,14 @@ async updateCheckedHelp(checkedHelp: boolean): Promise<ApiResponse<{
   },
 
   //fetch blocks for shared board
-  async fetchSharedBoardBlocks(token: string): Promise<ApiResponse<{ blocks: Block[] }>> {
+  async fetchSharedBoardBlocks(token: string, boardId?: string): Promise<ApiResponse<{ blocks: Block[] }>> {
+
+    const url = boardId
+              ? `${API_URL}/boards/shared/${token}/blocks/${boardId}`
+              : `${API_URL}/boards/shared/${token}/blocks`
     try {
       // Note: No auth headers for public route
-      const response = await fetch(`${API_URL}/boards/shared/${token}/blocks`);
+      const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch shared blocks');
     }
@@ -578,6 +582,23 @@ async updateCheckedHelp(checkedHelp: boolean): Promise<ApiResponse<{
       };
     }
   },
+
+  async fetchSharedNestedBoard(token: string, boardId: string): Promise<ApiResponse<{ board: Board }>> {
+  try {
+    const response = await fetch(`${API_URL}/boards/shared/${token}/nested/${boardId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch nested board');
+    }
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown Error'
+    };
+  }
+},
+
   async revokeShareLink(boardId: string): Promise<ApiResponse<{ success: true }>> {
     try {
       const { data } = await client.delete(`/data/boards/${boardId}/share`);
