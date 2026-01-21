@@ -1,6 +1,6 @@
 // components/ReadOnlyBlock.tsx
 import type { Block } from "@/types/types";
-import Container from "../Boards/Container";
+import ReadOnlyContainer from "../Boards/ReadOnlyContainer";
 import { generateScheme, schemeToCSSVars } from "@/utils/theme";
 
 interface ReadOnlyBlockProps {
@@ -40,7 +40,7 @@ export default function ReadOnlyBlock({
             }}
         >
             <div className="absolute inset-0">
-                <Container 
+                <ReadOnlyContainer 
                 node={node} 
                 dims={node.location} 
                 readOnly = {true}
