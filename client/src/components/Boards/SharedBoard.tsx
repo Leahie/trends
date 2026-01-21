@@ -5,7 +5,6 @@ import { api } from '@/utils/api';
 import type { Board, Block } from '@/types/types';
 import ReadOnlyBlock from '../Blocks/ReadOnlyBlock';
 import { ZoomIn, ZoomOut, Maximize2, ArrowLeft } from 'lucide-react';
-import Header from './Header';
 
 export default function SharedBoard() {
     const { token } = useParams<{ token: string }>();
@@ -15,8 +14,6 @@ export default function SharedBoard() {
     const [currentBoard, setCurrentBoard] = useState<Board | null>(null);
     const [blocks, setBlocks] = useState<Block[]>([]);
     const [boardHistory, setBoardHistory] = useState<Board[]>([]);
-
-    const [board, setBoard] = useState<Board | null>(null);
 
     //UI state
     const [loading, setLoading] = useState(true);

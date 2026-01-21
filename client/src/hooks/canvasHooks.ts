@@ -46,9 +46,9 @@ export const checkBoardBlockIntersection = ({selectedBlockIds, groupMoveState, s
     );
 
     // Check for intersection with highest priority (largest overlap area)
-    let bestMatch: { id: string; overlapArea: number } | null = null;
-
-    boardBlocks.forEach(bb => {
+    type MatchType = { id: string; overlapArea: number };
+    
+    const bestMatch = boardBlocks.reduce<MatchType | null>((best, bb) => {
         const bbBounds = {
             minX: bb.location.x,
             maxX: bb.location.x + bb.location.width,
@@ -66,11 +66,13 @@ export const checkBoardBlockIntersection = ({selectedBlockIds, groupMoveState, s
             // Calculate overlap area
             const overlapArea = (intersectMaxX - intersectMinX) * (intersectMaxY - intersectMinY);
             
-            if (!bestMatch || overlapArea > bestMatch.overlapArea) {
-                bestMatch = { id: bb.id, overlapArea };
+            if (!best || overlapArea > best.overlapArea) {
+                return { id: bb.id, overlapArea };
             }
         }
-    });
+        return best;
+    }, null);
 
-    setDropTargetBoardBlockId(bestMatch?.id ?? null);
+    const targetId = bestMatch ? bestMatch.id : null;
+    setDropTargetBoardBlockId(targetId);
 };

@@ -74,8 +74,7 @@ export default function Sidebar(props: SidebarProps) {
     handleAddChild,
     handleMoveInto,
     handleMoveBetween,
-    getAllDescendants,
-    isDescendant
+    getAllDescendants
   } = useNavOperations({
     archiveBoard,
     updateBoard,

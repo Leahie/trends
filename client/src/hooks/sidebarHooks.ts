@@ -24,8 +24,7 @@ export function useNavOperations({
   isPinned,
   pinBoard,
   unpinBoard,
-  boardsMap,
-  boards
+  boardsMap
 }: UseNavOperationsProps) {
 
   // Helper to get all descendants of a board
@@ -195,7 +194,7 @@ export function useNavOperations({
   // Move board as a sibling (between two boards or to root)
   const handleMoveBetween = useCallback(async (
     boardId: string, 
-    afterBoardId: string | null,
+    _afterBoardId: string | null,
     newParentBoardId: string | null
   ) => {
     // Check for circular dependency if moving into a board

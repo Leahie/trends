@@ -151,7 +151,6 @@ export default function CropOverlay({ block, onApply, onCancel }: CropOverlayPro
   const handleApply = () => {
     const { width: imgWidth, height: imgHeight, offsetX, offsetY } = imageDisplaySize;
     if (!containerRef.current) return null;
-    const containerRect = containerRef.current.getBoundingClientRect();
 
     // Convert crop rectangle to ratios relative to the actual image
     const crop = {
