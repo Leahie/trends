@@ -26,9 +26,8 @@ export default function BoardBlockEditor({
 
   return (
     <div
-      className="flex flex-col h-full w-full border-light-accent border-t-5 border-b-10 border-r-10 relative"
+      className="flex flex-col group h-full w-full border-light-accent border-t-5 border-b-10 border-r-10 relative"
       onMouseUp={isDropTarget ? onDrop : undefined}
-      onMouseDown={(e) => e.stopPropagation()}
       onDoubleClick={(e) => {
         if (!canOpen) return;
         e.stopPropagation();
@@ -62,12 +61,18 @@ export default function BoardBlockEditor({
 
       <hr />
 
-      <div className="flex-1 diary-block flex items-center justify-center">
+      {/* <div className="flex-1 diary-block flex items-center justify-center">
         {canOpen && (
           <span className="text-xs opacity-40">
             Double-click to open →
           </span>
         )}
+      </div> */}
+      <div className="flex-1 diary-block flex items-center justify-center">
+
+          <span className="text-xs text-primary group-hover:opacity-100 opacity-10">
+            Ctrl + Click to open
+          </span>
       </div>
     </div>
   );
