@@ -862,7 +862,8 @@ export function DataProvider({children} : {children : ReactNode}){
             boardsMap,
             batchAddBlocks,
             isRootBoard,
-            loadBoardBlocks
+            loadBoardBlocks,
+            pushBlocksToBoard
             }}>
             {children}
         </DataContext.Provider>

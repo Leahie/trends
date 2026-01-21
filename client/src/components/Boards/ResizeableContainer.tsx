@@ -29,7 +29,8 @@ interface GroupMoveState {
 }
 
 export default function ResizeableContainer({node, blockLocation, scale, onSelected,
-    bringToFront, shouldResize, zoomToBlock, groupMoveState, onGroupMove
+    bringToFront, shouldResize, zoomToBlock, groupMoveState, onGroupMove, isDropTarget, onBoardBlockDrop,
+    isDraggingOverBoard, onSingleBlockMove
 }: {node: Block,
     blockLocation: Location,
     scale: number,
@@ -38,7 +39,11 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
     shouldResize: boolean,
     zoomToBlock: (x:Block) => void,
     groupMoveState: GroupMoveState,
-    onGroupMove: (offsetX: number, offsetY: number, isMoving: boolean) => void
+    onGroupMove: (offsetX: number, offsetY: number, isMoving: boolean) => void, 
+    isDropTarget: boolean, 
+    onBoardBlockDrop: () => void;
+    isDraggingOverBoard: boolean,
+    onSingleBlockMove: (offsetX: number, offsetY: number, isMoving: boolean) => void
 },
 ){
     if (!node) return null;
@@ -152,6 +157,11 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                         updateBlock(node.id, { location: dims });
                         pushToHistory(before, after);
                     }
+
+                    // Reset single block move tracking
+                    if (!isMultiSelected) {
+                        onSingleBlockMove(0, 0, false);
+                    }
                 }
                 moveStartPosition.current = null;
             }
@@ -219,6 +229,9 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
             y: start.y + totalDy,
             }));
         } else {
+            // For single block moves, track the offset for drop detection
+            onSingleBlockMove(totalDx, totalDy, true);
+            
             setDims(prev => {
             const newX = start.x + totalDx;
             const newY = start.y + totalDy;
@@ -470,7 +483,7 @@ export default function ResizeableContainer({node, blockLocation, scale, onSelec
                     startMove(e);
                 }}
             >
-                <Container node={node} dims={dims} />
+                <Container node={node} dims={dims} isDropTarget={isDropTarget} onBoardBlockDrop={onBoardBlockDrop} isDraggingOverBoard={isDraggingOverBoard}/>
             </div>
 
             {showResizeHandles && (

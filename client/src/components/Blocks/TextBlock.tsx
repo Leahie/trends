@@ -303,7 +303,6 @@ function FontSizeDropdown({ toolbarPosition }: { toolbarPosition: 'top' | 'botto
                     <div className={`absolute ${toolbarPosition === 'top' ? 'bottom-full mb-4' : 'top-full mt-4'} left-0 bg-dark border border-gray-600 rounded shadow-lg z-20 max-h-50 overflow-y-auto`}
                     onWheel={(e) => {
                         e.stopPropagation();
-                        e.preventDefault();
                     }}>
                         {TEXT_SIZES.map((size) => (
                             <button
@@ -465,6 +464,7 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
         };
     }, [isThisBlockEditing]);
 
+
     const handleBlur = useCallback(async () => {
         const latestValue = editor.children as Descendant[];
         const serialized = serializeSlateContent(latestValue);
@@ -570,7 +570,8 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
         }
         const style: React.CSSProperties = {};
         if (leaf.fontSize) {
-            style.fontSize = leaf.fontSize;
+            const baseFontSize = parseFloat(leaf.fontSize);
+            style.fontSize = `${baseFontSize * fontSizeMultiplier}px`;
         }
         if (leaf.color) {
             style.color = leaf.color;
@@ -580,11 +581,13 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
         }
         
         return <span {...attributes} style={style}>{children}</span>;
-    }, []);
+    }, [fontSizeMultiplier]);
 
     const renderElement = useCallback((props: any) => {
         const { attributes, children, element } = props as { attributes: any; children: any; element: SlateElement & { align?: React.CSSProperties['textAlign']; url?: string; type?: string } };
-        const style: React.CSSProperties = {};
+        const style: React.CSSProperties = {
+            lineHeight: 1.6
+        };
         
         if (element.align) {
             style.textAlign = element.align;
@@ -610,32 +613,30 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
             case 'paragraph':
                 return <p {...attributes} style={style}>{children}</p>;
             case 'heading-one':
-                return <h1 {...attributes} style={style} className="text-2xl font-bold">{children}</h1>;
+                return <h1 {...attributes} style={{...style, fontSize: `${24 * fontSizeMultiplier}px`, fontWeight: 'bold'}}>{children}</h1>;
             case 'heading-two':
-                return <h2 {...attributes} style={style} className="text-xl font-bold">{children}</h2>;
+                return <h2 {...attributes} style={{...style, fontSize: `${20 * fontSizeMultiplier}px`, fontWeight: 'bold'}}>{children}</h2>;
             case 'block-quote':
                 return <blockquote {...attributes} style={style} className="border-l-4 border-gray-500 pl-4 italic">{children}</blockquote>;
             case 'bulleted-list':
-                return <ul {...attributes} style={style} className="list-disc ml-6">{children}</ul>;
+                return <ul {...attributes} style={{...style, marginLeft: `${24 * fontSizeMultiplier}px`}} className="list-disc">{children}</ul>;
             case 'numbered-list':
-                return <ol {...attributes} style={style} className="list-decimal ml-6">{children}</ol>;
+                return <ol {...attributes} style={{...style, marginLeft: `${24 * fontSizeMultiplier}px`}} className="list-decimal">{children}</ol>;
             case 'list-item':
-                return <li {...attributes} style={style}>{children}</li>;
+                return <li {...attributes} style={{...style, fontSize: `${15 * fontSizeMultiplier}px`}}>{children}</li>;
             default:
                 return <p {...attributes} style={style}>{children}</p>;
         }
-    }, []);
+    }, [fontSizeMultiplier]);
 
-    const renderFormattedContent = useCallback(() => {
-            return value.map((n, i) => renderNode(n, i));
-    }, [value]);
-
-    const renderNode = (node: Descendant, key: number | string) => {
+    const renderNode = useCallback((node: Descendant, key: number | string) => {
         if (SlateElement.isElement(node)) {
             const element = node as SlateElement & { align?: React.CSSProperties['textAlign']; url?: string; type?: string };
             const children = element.children.map((n, i) => renderNode(n, i));
 
-            const style: React.CSSProperties = {};
+            const style: React.CSSProperties = {
+                lineHeight: 1.6
+            };
             if (element.align) style.textAlign = element.align;
 
             switch (element.type) {
@@ -656,15 +657,15 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
                     </a>
                 );
             case 'numbered-list':
-                return <ol key={key} style={style} className="list-decimal ml-6">{children}</ol>;
+                return <ol key={key} style={{...style, marginLeft: `${24 * fontSizeMultiplier}px`}} className="list-decimal">{children}</ol>;
             case 'bulleted-list':
-                return <ul key={key} style={style} className="list-disc ml-6">{children}</ul>;
+                return <ul key={key} style={{...style, marginLeft: `${24 * fontSizeMultiplier}px`}} className="list-disc">{children}</ul>;
             case 'list-item':
-                return <li key={key}>{children}</li>;
+                return <li key={key} style={{...style, fontSize: `${15 * fontSizeMultiplier}px`}}>{children}</li>;
             case 'heading-one':
-                return <h1 key={key} style={style}>{children}</h1>;
+                return <h1 key={key} style={{...style, fontSize: `${24 * fontSizeMultiplier}px`, fontWeight: 'bold'}}>{children}</h1>;
             case 'heading-two':
-                return <h2 key={key} style={style}>{children}</h2>;
+                return <h2 key={key} style={{...style, fontSize: `${20 * fontSizeMultiplier}px`, fontWeight: 'bold'}}>{children}</h2>;
             default:
                 return <p key={key} style={style}>{children}</p>;
             }
@@ -676,7 +677,8 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
         const nodeWithMarks = node as any;
         
         if (nodeWithMarks.fontSize) {
-            style.fontSize = nodeWithMarks.fontSize; 
+            const baseFontSize = parseFloat(nodeWithMarks.fontSize);
+            style.fontSize = `${baseFontSize * fontSizeMultiplier}px`;
         }
         if (nodeWithMarks.color) {
             style.color = nodeWithMarks.color;
@@ -693,8 +695,11 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
         if (nodeWithMarks.code) el = <code key={key}>{el}</code>;
 
         return el;
-    };
+    }, [fontSizeMultiplier]);
 
+    const renderFormattedContent = useCallback(() => {
+            return value.map((n, i) => renderNode(n, i));
+    }, [value, fontSizeMultiplier, renderNode]);
 
     const scheme = content.bgColor ? generateScheme(content.bgColor) : null;
 
@@ -753,7 +758,7 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
                         
                         <Editable
                             className="text-body flex-1 outline-none m-5"
-                            style={{ }}
+                            style={{ fontSize: `${15 * fontSizeMultiplier}px`, lineHeight: 1.6 }}
                             renderLeaf={renderLeaf}
                             renderElement={renderElement}
                             onKeyDown={handleKeyDown}
@@ -789,7 +794,7 @@ export default function TextBlock({id, content, dims}: TextBlockProps){
                     )}
                     <div 
                         className="text-body flex-1 overflow-hidden p-5"
-                        style={{  }}
+                        style={{ fontSize: `${15 * fontSizeMultiplier}px`, lineHeight: 1.6 }}
                     >
                         {renderFormattedContent()}
                     </div>

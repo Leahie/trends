@@ -99,6 +99,8 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
       }
     };
 
+    // 
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canvasRef, selectedBlockIds, isEditingText, batchDeleteBlocks, clearSelection, undo, redo, onToggleSidebar, pushToHistory, dataMap]);

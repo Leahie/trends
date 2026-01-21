@@ -14,6 +14,7 @@ interface checkBoardBlockIntersection{
 
 }
 export const checkBoardBlockIntersection = ({selectedBlockIds, groupMoveState, setDropTargetBoardBlockId, blocks}: checkBoardBlockIntersection) => {
+    console.log(groupMoveState);
     if (selectedBlockIds.length === 0 || !groupMoveState.isActive) {
         setDropTargetBoardBlockId(null);
         return;
@@ -71,6 +72,7 @@ export const checkBoardBlockIntersection = ({selectedBlockIds, groupMoveState, s
             }
         }
     });
+    console.log(bestMatch)
 
     setDropTargetBoardBlockId(bestMatch ? bestMatch.id : null);
 };

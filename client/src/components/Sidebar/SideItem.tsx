@@ -1,6 +1,6 @@
 import { useSidebar } from "@/context/sidebar";
 import type { Board } from "@/types/types";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CircleDot, CircleDotDashed, Folder, FolderOpen, X } from "lucide-react";
 
 interface SideItemProps { 
@@ -74,6 +74,23 @@ export default function SideItem({
         onDrop(e);
     };
 
+    const sideitemContextRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+            const handlePointerDown = (e: PointerEvent) => {
+                if (!sideitemContextRef.current) return;
+
+                if (!sideitemContextRef.current.contains(e.target as Node)) {
+                setShowMenu(false);
+                }
+            };
+            document.addEventListener("pointerdown", handlePointerDown);
+
+        return () => {
+            document.removeEventListener("pointerdown", handlePointerDown);
+        };
+    }, [setShowMenu]);
+    
     return (
         <li className="relative focus:outline-none">
             <div
@@ -92,6 +109,7 @@ export default function SideItem({
                 transition-all group
                 `}
                 style={{ paddingLeft: `${depth * 12 + 10}px` }}
+                ref = {sideitemContextRef}
             >
                 {children && (
                     <button

@@ -5,7 +5,7 @@ import { useData } from "@/context/data.tsx";
 import { useAuth } from "@/context/auth.tsx";
 import { useTheme } from "@/context/theme.tsx";
 import {generateScheme} from "@/utils/theme.tsx"
-import MoveBlocksModal from "@/components/General/Confirmation.tsxx";
+import MoveBlocksModal from "@/components/General/Confirmation.tsx";
 
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -71,6 +71,7 @@ export default function Canvas(){
         targetBoardBlockId: string;
         targetBoardTitle: string;
     } | null>(null);
+    const [singleBlockMoveState, setSingleBlockMoveState] = useState<{offsetX: number, offsetY: number, isMoving: boolean}>({offsetX: 0, offsetY: 0, isMoving: false});
 
     // Modal Stuff 
     const [title, setTitle] = useState<string>(currentBoard.title);
@@ -110,9 +111,57 @@ export default function Canvas(){
         return () => clearTimeout(timer);
     }, [blocks.length, currentBoard?.id]);
     
+    // Drag and drop stuff
     useEffect(()=>{
-        checkBoardBlockIntersection({selectedBlockIds, groupMoveState, setDropTargetBoardBlockId, blocks})
-    }, [groupMoveState, selectedBlockIds, blocks])
+        // Check intersection for both group moves and single block moves
+        const isMoving = groupMoveState.isActive || singleBlockMoveState.isMoving;
+        const offsetX = groupMoveState.isActive ? groupMoveState.offsetX : singleBlockMoveState.offsetX;
+        const offsetY = groupMoveState.isActive ? groupMoveState.offsetY : singleBlockMoveState.offsetY;
+        
+        checkBoardBlockIntersection({selectedBlockIds, groupMoveState: {isActive: isMoving, offsetX, offsetY}, setDropTargetBoardBlockId, blocks})
+    }, [groupMoveState, singleBlockMoveState, selectedBlockIds, blocks])
+
+    // Detect when drop happens (move stops while over a board block)
+    useEffect(() => {
+        if (!groupMoveState.isActive && !singleBlockMoveState.isMoving && dropTargetBoardBlockId) {
+            handleBoardBlockDrop(dropTargetBoardBlockId);
+        }
+    }, [groupMoveState.isActive, singleBlockMoveState.isMoving, dropTargetBoardBlockId]);
+
+    const handleBoardBlockDrop = (boardBlockId: string) => {
+        const targetBlock = blocks.find(b => b.id === boardBlockId);
+        if (!targetBlock || targetBlock.type !== "board_block") return;
+
+        setPendingMove({
+            blockIds: selectedBlockIds,
+            targetBoardBlockId: boardBlockId,
+            targetBoardTitle: targetBlock.content.title
+        });
+        setMoveModalOpen(true);
+    };
+
+    const handleConfirmMove = async () => {
+        if (!pendingMove) return;
+
+        const success = await pushBlocksToBoard(
+            pendingMove.blockIds,
+            pendingMove.targetBoardBlockId
+        );
+
+        if (success) {
+            clearSelection();
+        }
+
+        setMoveModalOpen(false);
+        setPendingMove(null);
+        setDropTargetBoardBlockId(null);
+    };
+
+    const handleCancelMove = () => {
+        setMoveModalOpen(false);
+        setPendingMove(null);
+        setDropTargetBoardBlockId(null);
+    };
 
     function centerOnBlocks(blocks: Block[]) {
         const canvas = canvasRef.current;
@@ -159,6 +208,14 @@ export default function Canvas(){
             isActive: isMoving,
             offsetX,
             offsetY
+        });
+    };
+
+    const handleSingleBlockMove = (offsetX: number, offsetY: number, isMoving: boolean) => {
+        setSingleBlockMoveState({
+            offsetX,
+            offsetY,
+            isMoving
         });
     };
 
@@ -655,6 +712,10 @@ export default function Canvas(){
                                         shouldResize={(!isPanning && !spacePressed)}
                                         groupMoveState={groupMoveState}
                                         onGroupMove={handleGroupMove}
+                                        onSingleBlockMove={handleSingleBlockMove}
+                                        isDropTarget={dropTargetBoardBlockId === block.id}
+                                        onBoardBlockDrop={() => handleBoardBlockDrop(block.id)}
+                                        isDraggingOverBoard={dropTargetBoardBlockId !== null}
                                     />
                                 ))}
                             </div> 
@@ -703,6 +764,13 @@ export default function Canvas(){
                     setHelpModalOpen(false);
                     await updateCheckedHelp(true);
                 }} 
+            />
+            <MoveBlocksModal
+                open={moveModalOpen}
+                boardTitle={pendingMove?.targetBoardTitle || ""}
+                blockCount={pendingMove?.blockIds.length || 0}
+                onConfirm={handleConfirmMove}
+                onCancel={handleCancelMove}
             />
         </>
     );

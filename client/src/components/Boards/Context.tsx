@@ -224,7 +224,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         >
             <ul className=" w-full py-3">
                 <li></li>
-                <li className="context-li">Add</li>
+                <li className="px-[25px] ">Add</li>
                 <hr className="ml-1 mr-4 text-light-accent/50" />
                 <ul className="">
                     <li className="context-li"
