@@ -1411,7 +1411,6 @@ async function recursiveCopyBoard(db, userId, originalBoardId, now, batch, idMap
   return newBoardId;
 }
 
-// Move block(s) to another board
 router.post("/blocks/move", async(req, res) => {
   try {
     const { blockIds, targetBoardId, offsetX = 0, offsetY = 0 } = req.body;
@@ -1421,37 +1420,28 @@ router.post("/blocks/move", async(req, res) => {
       return res.status(400).send("No block IDs provided");
     }
 
-    if (!targetBoardId) {
-      return res.status(400).send("Target board ID required");
-    }
-
-    // Verify target board
-    const targetBoardDoc = await db.collection("boards").doc(targetBoardId).get();
-    if (!targetBoardDoc.exists) {
-      return res.status(404).send("Target board not found");
-    }
-    const targetBoard = targetBoardDoc.data();
-    if (targetBoard.userId !== userId) {
-      return res.status(403).send("Forbidden");
-    }
-    if (targetBoard.deletedAt !== null) {
-      return res.status(404).send("Target board is deleted");
-    }
-
-    if (targetBoardId) {
-      const isCycle = await wouldCreateCycle(db, userId, boardId, targetBoardId);
-      if (isCycle) {
-        return res.status(400).send("Cannot move a board inside one of its children");
+    // Verify target board exists if moving to a specific board (not root)
+    if (targetBoardId !== null) {
+      const targetBoardDoc = await db.collection("boards").doc(targetBoardId).get();
+      if (!targetBoardDoc.exists) {
+        return res.status(404).send("Target board not found");
+      }
+      const targetBoard = targetBoardDoc.data();
+      if (targetBoard.userId !== userId) {
+        return res.status(403).send("Forbidden");
+      }
+      if (targetBoard.deletedAt !== null) {
+        return res.status(404).send("Target board is deleted");
       }
     }
 
-    // Verify all blocks belong to user
+    // Fetch all blocks
     const blockDocs = await Promise.all(
       blockIds.map(id => db.collection("blocks").doc(id).get())
     );
 
+    // Verify ownership and track source boards
     const sourceBoardIds = new Set();
-
     for (const doc of blockDocs) {
       if (!doc.exists) {
         return res.status(404).send(`Block ${doc.id} not found`);
@@ -1461,180 +1451,75 @@ router.post("/blocks/move", async(req, res) => {
         return res.status(403).send("Forbidden");
       }
       sourceBoardIds.add(block.boardId);
+      
+      // Only board_blocks can be moved to root
+      if (targetBoardId === null && block.type !== 'board_block') {
+        return res.status(400).send("Only board_blocks can be moved to root");
+      }
     }
 
     const batch = db.batch();
     const now = admin.firestore.FieldValue.serverTimestamp();
+    const promotedBoardIds = [];
 
-    // Move blocks to target board with optional offset
-    blockDocs.forEach((doc) => {
+    // Process each block
+    for (const doc of blockDocs) {
       const block = doc.data();
-      batch.update(doc.ref, {
-        boardId: targetBoardId,
-        location: {
-          ...block.location,
-          x: block.location.x + offsetX,
-          y: block.location.y + offsetY
-        },
-        updatedAt: now
-      });
-    });
+
+      if (targetBoardId === null) {
+        // Moving to root: delete the board_block and update its linked board
+        if (block.linkedBoardId) {
+          // Update the linked board to remove parent reference
+          batch.update(db.collection("boards").doc(block.linkedBoardId), {
+            parentBoardBlockId: null,
+            updatedAt: now
+          });
+          promotedBoardIds.push(block.linkedBoardId);
+        }
+        // Delete the board_block itself
+        batch.delete(doc.ref);
+      } else {
+        // Moving to a specific board: update the block's location and boardId
+        batch.update(doc.ref, {
+          boardId: targetBoardId,
+          location: {
+            ...block.location,
+            x: block.location.x + offsetX,
+            y: block.location.y + offsetY
+          },
+          updatedAt: now
+        });
+
+        // If it's a board_block, update its linked board's parent reference
+        if (block.type === 'board_block' && block.linkedBoardId) {
+          batch.update(db.collection("boards").doc(block.linkedBoardId), {
+            parentBoardBlockId: doc.id,
+            updatedAt: now
+          });
+        }
+      }
+    }
 
     // Update timestamps on all affected boards
     sourceBoardIds.forEach(boardId => {
       batch.update(db.collection("boards").doc(boardId), { updatedAt: now });
     });
-    batch.update(db.collection("boards").doc(targetBoardId), { updatedAt: now });
+    if (targetBoardId !== null) {
+      batch.update(db.collection("boards").doc(targetBoardId), { updatedAt: now });
+    }
 
     await batch.commit();
 
     res.send({
       success: true,
-      movedBlockIds: blockIds,
+      movedBlockIds: targetBoardId === null ? [] : blockIds,
+      deletedBlockIds: targetBoardId === null ? blockIds : [],
       targetBoardId,
+      promotedBoardIds,
       sourceBoardIds: Array.from(sourceBoardIds)
     });
   } catch (error) {
-    ;
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-// Copy blocks to clipboard (returns block data for frontend to handle)
-router.post("/blocks/copy", async(req, res) => {
-  try {
-    const { blockIds } = req.body;
-    const userId = req.user.uid;
-
-    if (!blockIds || !Array.isArray(blockIds) || blockIds.length === 0) {
-      return res.status(400).send("No block IDs provided");
-    }
-
-    // Get all blocks
-    const blockDocs = await Promise.all(
-      blockIds.map(id => db.collection("blocks").doc(id).get())
-    );
-
-    const blocks = [];
-    for (const doc of blockDocs) {
-      if (!doc.exists) continue;
-      const block = doc.data();
-      if (block.userId !== userId) {
-        return res.status(403).send("Forbidden");
-      }
-      if (block.deletedAt === null) {
-        blocks.push({ id: doc.id, ...block });
-      }
-    }
-
-    res.send({
-      success: true,
-      blocks
-    });
-  } catch (error) {
-    ;
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-// Paste blocks (create duplicates in target board)
-router.post("/blocks/paste", async(req, res) => {
-  try {
-    const { blocks, targetBoardId, offsetX = 0, offsetY = 0 } = req.body;
-    const userId = req.user.uid;
-
-    if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
-      return res.status(400).send("No blocks provided");
-    }
-
-    if (!targetBoardId) {
-      return res.status(400).send("Target board ID required");
-    }
-
-    // Verify target board
-    const targetBoardDoc = await db.collection("boards").doc(targetBoardId).get();
-    if (!targetBoardDoc.exists) {
-      return res.status(404).send("Target board not found");
-    }
-    const targetBoard = targetBoardDoc.data();
-    if (targetBoard.userId !== userId) {
-      return res.status(403).send("Forbidden");
-    }
-    if (targetBoard.deletedAt !== null) {
-      return res.status(404).send("Target board is deleted");
-    }
-
-    const batch = db.batch();
-    const now = admin.firestore.FieldValue.serverTimestamp();
-    const newBlockIds = [];
-    const linkedBoardsToDuplicate = [];
-
-    // First pass: identify board_blocks that need new linked boards
-    for (const block of blocks) {
-      if (block.type === "board_block" && block.linkedBoardId) {
-        linkedBoardsToDuplicate.push(block.linkedBoardId);
-      }
-    }
-
-    // Duplicate linked boards for board_blocks
-    const linkedBoardMap = {}; // Map old linkedBoardId -> new linkedBoardId
-    for (const oldLinkedBoardId of linkedBoardsToDuplicate) {
-      const linkedBoardDoc = await db.collection("boards").doc(oldLinkedBoardId).get();
-      if (linkedBoardDoc.exists) {
-        const linkedBoard = linkedBoardDoc.data();
-        const newLinkedBoardId = uuidv4();
-        const newLinkedBoard = {
-          ...linkedBoard,
-          id: newLinkedBoardId,
-          createdAt: now,
-          updatedAt: now,
-          deletedAt: null
-        };
-        batch.set(db.collection("boards").doc(newLinkedBoardId), newLinkedBoard);
-        linkedBoardMap[oldLinkedBoardId] = newLinkedBoardId;
-      }
-    }
-
-    // Create new blocks
-    blocks.forEach(block => {
-      const newId = uuidv4();
-      newBlockIds.push(newId);
-
-      const newBlock = {
-        ...block,
-        id: newId,
-        boardId: targetBoardId,
-        userId,
-        location: {
-          ...block.location,
-          x: block.location.x + offsetX,
-          y: block.location.y + offsetY
-        },
-        createdAt: now,
-        updatedAt: now,
-        deletedAt: null
-      };
-
-      // Update linkedBoardId if this is a board_block with a linked board
-      if (block.type === "board_block" && block.linkedBoardId && linkedBoardMap[block.linkedBoardId]) {
-        newBlock.linkedBoardId = linkedBoardMap[block.linkedBoardId];
-      }
-
-      batch.set(db.collection("blocks").doc(newId), newBlock);
-    });
-
-    // Update target board timestamp
-    batch.update(db.collection("boards").doc(targetBoardId), { updatedAt: now });
-
-    await batch.commit();
-
-    res.status(201).send({
-      success: true,
-      pastedBlockIds: newBlockIds,
-      targetBoardId
-    });
-  } catch (error) {
-    ;
+    console.error("Error moving blocks:", error);
     res.status(500).send("Internal Server Error");
   }
 });

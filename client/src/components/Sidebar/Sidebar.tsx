@@ -31,6 +31,11 @@ interface SidebarProps {
   navigate: (path: string) => void;
 }
 
+interface DragInfo {
+  boardId: string;
+  descendants: Set<string>;
+}
+
 function useIsCanvasLayout(pathname: string): boolean {
   if (pathname === '/' || pathname === '/archive') {
     return false;
@@ -38,7 +43,7 @@ function useIsCanvasLayout(pathname: string): boolean {
   return true;
 }
 
-export default function Sidebar(props: SidebarProps){
+export default function Sidebar(props: SidebarProps) {
   const {
     boards,
     blocks,
@@ -59,31 +64,34 @@ export default function Sidebar(props: SidebarProps){
     navigate
   } = props;
 
-  const { getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap} = useData();
+  const { getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap } = useData();
   const { openBoard, open, toggleOpen, clearOpenBoards } = useSidebar();
   
   const {
-  handleDelete,
-  handleTogglePin,
-  handleRename,
-  handleAddChild,
-  handleMoveTo} = useNavOperations({
-  archiveBoard,
-  updateBoard,
-  createBoard,
-  addBlock,
-  blocks,
-  isPinned,
-  pinBoard,
-  unpinBoard,
-  boardsMap
-});
+    handleDelete,
+    handleTogglePin,
+    handleRename,
+    handleAddChild,
+    handleMoveInto,
+    handleMoveBetween,
+    getAllDescendants,
+    isDescendant
+  } = useNavOperations({
+    archiveBoard,
+    updateBoard,
+    createBoard,
+    addBlock,
+    blocks,
+    isPinned,
+    pinBoard,
+    unpinBoard,
+    boardsMap,
+    boards
+  });
 
   useEffect(() => {
-    
     if (currentBoard?.id) {
       openBoard(currentBoard.id);
-      // Open all parent boards in the hierarchy
       let parent = getParent(currentBoard.id);
       while (parent) {
         openBoard(parent.id);
@@ -92,24 +100,20 @@ export default function Sidebar(props: SidebarProps){
     }
   }, [currentBoard?.id, openBoard, getParent]);
 
-  // Pre-load blocks when boards are opened in sidebar
   useEffect(() => {
     const loadOpenBoardBlocks = async () => {
       for (const boardId of Array.from(openBoards)) {
         await loadBoardBlocks(boardId);
       }
     };
-    
     loadOpenBoardBlocks();
   }, [openBoards, loadBoardBlocks]);
 
-  const [draggedBoardId, setDraggedBoardId] = useState<string | null>(null);
-  const [dropZone, setDropZone] = useState<'pinned' | 'boards' | 'canvas' | null>(null);
+  const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(new Set());
   const [pinnedIsOpen, setPinnedIsOpen] = useState<boolean>(true);
 
   const isCanvasLayout = useIsCanvasLayout(location.pathname);
-
 
   const handleSignOut = async () => {
     try {
@@ -127,27 +131,106 @@ export default function Sidebar(props: SidebarProps){
         next.delete(boardId);
       } else {
         next.add(boardId);
-        // Pre-load blocks when expanding
         loadBoardBlocks(boardId);
       }
       return next;
     });
   }, [loadBoardBlocks]);
 
-  const renderBoardTree = useCallback((board: Board, depth: number = 0) => {
-    const children = getChildren(board.id);
+  const handleDragStart = useCallback((e: React.DragEvent, boardId: string) => {
+    const descendants = getAllDescendants(boardId);
+    setDragInfo({ boardId, descendants });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', boardId);
+  }, [getAllDescendants]);
 
-    
+  const handleDragEnd = useCallback(() => {
+    setDragInfo(null);
+  }, []);
+
+  const handleDropInto = useCallback(async (e: React.DragEvent, targetBoardId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!dragInfo) return;
+    if (dragInfo.boardId === targetBoardId) return;
+    if (dragInfo.descendants.has(targetBoardId)) {
+      alert("Cannot move a board into its own descendant!");
+      return;
+    }
+
+    await handleMoveInto(dragInfo.boardId, targetBoardId);
+    setDragInfo(null);
+  }, [dragInfo, handleMoveInto]);
+
+  const handleDropBefore = useCallback(async (
+    e: React.DragEvent, 
+    targetBoardId: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!dragInfo) return;
+    if (dragInfo.boardId === targetBoardId) return;
+
+    // Find the parent of the target board
+    const targetBoard = boardsMap[targetBoardId];
+    const parentBoard = targetBoard?.parentBoardBlockId 
+      ? getParent(targetBoardId)
+      : null;
+
+    const newParentBoardId = parentBoard?.id || null;
+
+    if (newParentBoardId && dragInfo.descendants.has(newParentBoardId)) {
+      alert("Cannot move a board into its own descendant!");
+      return;
+    }
+
+    await handleMoveBetween(dragInfo.boardId, null, newParentBoardId);
+    setDragInfo(null);
+  }, [dragInfo, boardsMap, getParent, handleMoveBetween]);
+
+  const handleDropAfter = useCallback(async (
+    e: React.DragEvent, 
+    targetBoardId: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!dragInfo) return;
+    if (dragInfo.boardId === targetBoardId) return;
+
+    const targetBoard = boardsMap[targetBoardId];
+    const parentBoard = targetBoard?.parentBoardBlockId 
+      ? getParent(targetBoardId)
+      : null;
+
+    const newParentBoardId = parentBoard?.id || null;
+
+    if (newParentBoardId && dragInfo.descendants.has(newParentBoardId)) {
+      alert("Cannot move a board into its own descendant!");
+      return;
+    }
+
+    await handleMoveBetween(dragInfo.boardId, targetBoardId, newParentBoardId);
+    setDragInfo(null);
+  }, [dragInfo, boardsMap, getParent, handleMoveBetween]);
+
+  const renderBoardTree = useCallback((board: Board, depth: number = 0, isLast: boolean = false) => {
+    const children = getChildren(board.id);
     const hasChildren = children.length > 0;
     const isExpanded = expandedBoards.has(board.id);
     const isActive = currentBoard?.id === board.id;
     const pinned = isPinned(board.id);
     const boardIsOpen = isOpen(board.id);
 
-    // Filter children: only show child if it's in openBoards OR parent is expanded
     const visibleChildren = children.filter(child => {
-      return isOpen(child.id) || isExpanded
+      return isOpen(child.id) || isExpanded;
     });
+
+    const isDraggingThis = dragInfo?.boardId === board.id;
+    const isDraggingDescendant = dragInfo?.descendants.has(board.id) || false;
+    const canDropHere = dragInfo && !dragInfo.descendants.has(board.id);
 
     return (
       <SideItem
@@ -162,15 +245,21 @@ export default function Sidebar(props: SidebarProps){
         onRename={() => handleRename(board.id, board.title)}
         onAddChild={() => handleAddChild(board.id)}
         onDragStart={(e) => handleDragStart(e, board.id)}
-        onDragOver={(e) => handleDragOver(e, board.id)}
-        onDrop={(e) => handleDrop(e, board.id)}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => handleDropInto(e, board.id)}
+        onDropBefore={(e) => handleDropBefore(e, board.id)}
+        onDropAfter={(e) => handleDropAfter(e, board.id)}
         onDragEnd={handleDragEnd}
         isOpen={isExpanded}
         isBoardOpen={boardIsOpen}
         onToggleOpen={() => toggleExpanded(board.id)}
+        showDropBefore={!isDraggingThis && !isDraggingDescendant && canDropHere}
+        showDropAfter={!isDraggingThis && !isDraggingDescendant && canDropHere && isLast}
       >
         {hasChildren && visibleChildren.length > 0 && 
-          visibleChildren.map(child => renderBoardTree(child, depth + 1))
+          visibleChildren.map((child, index) => 
+            renderBoardTree(child, depth + 1, index === visibleChildren.length - 1)
+          )
         }
       </SideItem>
     );
@@ -182,6 +271,16 @@ export default function Sidebar(props: SidebarProps){
     isOpen,
     toggleExpanded,
     navigate,
+    handleDelete,
+    handleTogglePin,
+    handleRename,
+    handleAddChild,
+    handleDragStart,
+    handleDropInto,
+    handleDropBefore,
+    handleDropAfter,
+    handleDragEnd,
+    dragInfo
   ]);
 
   const pinnedBoardObjects = useMemo(() => {
@@ -190,254 +289,176 @@ export default function Sidebar(props: SidebarProps){
       .filter(Boolean) as Board[];
   }, [pinnedBoards, boards]);
 
-  // Get only root boards from openBoards
   const visibleRootBoards = useMemo(() => {
     return Array.from(openBoards)
       .map(id => boards.find(b => b.id === id))
       .filter((board): board is Board => board !== undefined && isRootBoard(board.id));
   }, [openBoards, boards, isRootBoard]);
 
-  const handleDragStart = (e: React.DragEvent, boardId: string) => {
-    setDraggedBoardId(boardId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', boardId);
-  };
-
-  const handleDragOver = (e: React.DragEvent, _targetBoardId: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetBoardId: string) => {
-    
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedBoardId || draggedBoardId === targetBoardId) {
-      setDraggedBoardId(null);
-      return;
-    }
-
-    await handleMoveTo(draggedBoardId, targetBoardId);
-    setDraggedBoardId(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedBoardId(null);
-    setDropZone(null);
-  };
-
-  const handlePinnedDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDropZone('pinned');
-  };
-
-  const handlePinnedDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedBoardId) return;
-
-    await pinBoard(draggedBoardId);
-    setDraggedBoardId(null);
-    setDropZone(null);
-  };
-
-  const handleBoardsDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDropZone('boards');
-  };
-  
-  const handleBoardsDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedBoardId) return;
-
-    await handleMoveTo(draggedBoardId, null);
-    setDraggedBoardId(null);
-    setDropZone(null);
-  };
-
-
-
   if (!boards) {
     return <></>;
   }
   
-  return(
+  return (
     <>
-     <Header open={open} setOpen={toggleOpen}/>
-     <div
-      id="hs-sidebar-basic-usage"
-      className={`
+      <Header open={open} setOpen={toggleOpen}/>
+      <div
+        id="hs-sidebar-basic-usage"
+        className={`
           border-highlight/40 border-r
-        h-full
-        ${isCanvasLayout ? 'fixed top-0 start-0 bottom-0 z-60 w-64'
-          : 'relative w-64 shrink-0'
-        }
-        
-        
-        transition-all duration-300 transform 
-        ${open ? "bg-dark" : "hidden"}
-      `}
-      role="dialog"
-      tabIndex={-1}
-      aria-label="Sidebar"
-    > 
-        
-      <div className={`relative flex flex-col h-full max-h-full ${!open && ""}`}>
-        <div className="flex w-full float-right">
-          <button
-            type="button"
-            className="float-right flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
-            data-hs-overlay="#hs-sidebar-basic-usage" 
-            onClick={() => toggleOpen()}
-            tabIndex={-1}
-          >
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 5V19M16 8H18M16 11H18M16 14H18M6.2 19H17.8C18.9201 19 19.4802 19 19.908 18.782C20.2843 18.5903 20.5903 18.2843 20.782 17.908C21 17.4802 21 16.9201 21 15.8V8.2C21 7.0799 21 6.51984 20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V15.8C3 16.9201 3 17.4802 3.21799 17.908C3.40973 18.2843 3.71569 18.5903 4.09202 18.782C4.51984 19 5.07989 19 6.2 19Z" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="sr-only">Close</span>
-          </button>
-          <a
-            type="button"
-            className="flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
-            data-hs-overlay="#hs-sidebar-basic-usage" 
-            href="https://www.patreon.com/posts/bug-reporting-148623744"
-            tabIndex={-1}
-          >
-            <svg fill="var(--color-accent)" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <g data-name="Layer 2">
-                <g data-name="menu-arrow-circle">
-                  <rect width="24" height="24" transform="rotate(180 12 12)" opacity="0"/>
-                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
-                  <path d="M12 6a3.5 3.5 0 0 0-3.5 3.5 1 1 0 0 0 2 0A1.5 1.5 0 1 1 12 11a1 1 0 0 0-1 1v2a1 1 0 0 0 2 0v-1.16A3.49 3.49 0 0 0 12 6z"/>
-                  <circle cx="12" cy="17" r="1"/>
-                </g>
-              </g>
-            </svg>
-            <span className="sr-only">Help</span>
-          </a>
-          <button
-            type="button"
-            className="flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
-            data-hs-overlay="#hs-sidebar-basic-usage" 
-            onClick={() => navigate("https://github.com/Leahie")}
-            tabIndex={-1}
-          >
-            <svg width="800px" height="800px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none">
-              <path fill="var(--color-accent)" fillRule="evenodd" d="M8 1C4.133 1 1 4.13 1 7.993c0 3.09 2.006 5.71 4.787 6.635.35.064.478-.152.478-.337 0-.166-.006-.606-.01-1.19-1.947.423-2.357-.937-2.357-.937-.319-.808-.778-1.023-.778-1.023-.635-.434.048-.425.048-.425.703.05 1.073.72 1.073.72.624 1.07 1.638.76 2.037.582.063-.452.244-.76.444-.935-1.554-.176-3.188-.776-3.188-3.456 0-.763.273-1.388.72-1.876-.072-.177-.312-.888.07-1.85 0 0 .586-.189 1.924.716A6.711 6.711 0 018 4.381c.595.003 1.194.08 1.753.236 1.336-.905 1.923-.717 1.923-.717.382.963.142 1.674.07 1.85.448.49.72 1.114.72 1.877 0 2.686-1.638 3.278-3.197 3.45.251.216.475.643.475 1.296 0 .934-.009 1.688-.009 1.918 0 .187.127.404.482.336A6.996 6.996 0 0015 7.993 6.997 6.997 0 008 1z" clipRule="evenodd"/>
-            </svg>
-            <span className="sr-only">Github</span>
-          </button>
-        </div>
-        
-        <header className="p-4 flex justify-between items-center gap-x-2">
-          <a
-            className="flex-none font-semibold text-xl text-white focus:outline-hidden focus:opacity-80"
-            href="/"
-            aria-label="Brand"
-          >
-            BoardBash
-          </a>
-        </header>
-        
-        <hr className="ml-1 mr-4 text-highlight"></hr>
-       
-
-        <nav className="mt-6 h-full overflow-y-auto text-left">
-          <div className="pb-0 px-2 w-full flex flex-col flex-wrap">
-            {pinnedBoardObjects.length > 0 && (
-              <div
-                className={`mb-4 ${dropZone === 'pinned' ? 'bg-yellow-500/20 border-2 border-yellow-500 rounded' : ''}`}
-                onDragOver={handlePinnedDragOver}
-                onDragLeave={() => setDropZone(null)}
-                onDrop={handlePinnedDrop}
-              >
-                <div className="text-xs text-gray-400 hover:text-white/90 uppercase tracking-wide mb-2 px-2 cursor-pointer flex items-center gap-1" onClick={() => setPinnedIsOpen(!pinnedIsOpen)}>
-                  <span>Pinned</span> {pinnedIsOpen ? <ChevronDown className='w-3 h-3' /> : <ChevronUp className='w-3 h-3'/>}
-                </div>
-                {pinnedIsOpen && 
-                  <ul>
-                  {pinnedBoardObjects.map(board => ( <PinItem
-                    key={board.id}
-                    board={board}
-                    onNavigate={() => navigate(`/boards/${board.id}`)}
-                    onDelete={() => handleDelete(board.id)}
-                    onTogglePin={() => handleTogglePin(board.id)}
-                    onRename={() => handleRename(board.id, board.title)}
-                    // onAddChild not supported
-                    // _onAddChild={() => handleAddChild(board.id)}
-                    onDragStart={(e) => handleDragStart(e, board.id)}
-                    onDragOver={(e) => handleDragOver(e, board.id)}
-                    onDrop={(e) => handleDrop(e, board.id)}
-                    onDragEnd={handleDragEnd}
-                    isBoardOpen = {isOpen(board.id)}
-                    onToggleOpen={() => toggleExpanded(board.id)}
-                  >
-
-                  </PinItem>
-                ))}
-                </ul>
-                }
-                
-              </div>
-            )}
-
-            <div
-              className={`${dropZone === 'boards' ? 'bg-blue-500/20 border-2 border-blue-500 rounded' : ''}`}
-              onDragOver={handleBoardsDragOver}
-              onDragLeave={() => setDropZone(null)}
-              onDrop={handleBoardsDrop}
+          h-full
+          ${isCanvasLayout ? 'fixed top-0 start-0 bottom-0 z-60 w-64'
+            : 'relative w-64 shrink-0'
+          }
+          transition-all duration-300 transform 
+          ${open ? "bg-dark" : "hidden"}
+        `}
+        role="dialog"
+        tabIndex={-1}
+        aria-label="Sidebar"
+      > 
+        <div className={`relative flex flex-col h-full max-h-full ${!open && ""}`}>
+          <div className="flex w-full float-right">
+            <button
+              type="button"
+              className="float-right flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
+              data-hs-overlay="#hs-sidebar-basic-usage" 
+              onClick={() => toggleOpen()}
+              tabIndex={-1}
             >
-               <div className="flex items-center justify-between px-2 mb-2">
-                <div className="text-xs text-gray-400 uppercase tracking-wide">
-                  Boards
-                </div>
-                <div className='flex gap-2'>
-                  <button className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
-                    onClick={async () =>{ const result = await createBoard(); openBoard(result.id)}}
-                  >
-                    Add 
-                  </button>
-                {openBoards.size > 0 && (
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Close all open boards in sidebar?')) {
-                        clearOpenBoards();
-                      }
-                    }}
-                    className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
-                    title="Clear all open boards"
-                  >
-                    Clear
-                  </button>
-                )}
-                </div>
-              </div>
-              <ul>
-                {visibleRootBoards.map(board => renderBoardTree(board, 0))}
-              </ul>
-            </div>
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 5V19M16 8H18M16 11H18M16 14H18M6.2 19H17.8C18.9201 19 19.4802 19 19.908 18.782C20.2843 18.5903 20.5903 18.2843 20.782 17.908C21 17.4802 21 16.9201 21 15.8V8.2C21 7.0799 21 6.51984 20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V15.8C3 16.9201 3 17.4802 3.21799 17.908C3.40973 18.2843 3.71569 18.5903 4.09202 18.782C4.51984 19 5.07989 19 6.2 19Z" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="sr-only">Close</span>
+            </button>
+            <a
+              type="button"
+              className="flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
+              data-hs-overlay="#hs-sidebar-basic-usage" 
+              href="https://www.patreon.com/posts/bug-reporting-148623744"
+              tabIndex={-1}
+            >
+              <svg fill="var(--color-accent)" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <g data-name="Layer 2">
+                  <g data-name="menu-arrow-circle">
+                    <rect width="24" height="24" transform="rotate(180 12 12)" opacity="0"/>
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+                    <path d="M12 6a3.5 3.5 0 0 0-3.5 3.5 1 1 0 0 0 2 0A1.5 1.5 0 1 1 12 11a1 1 0 0 0-1 1v2a1 1 0 0 0 2 0v-1.16A3.49 3.49 0 0 0 12 6z"/>
+                    <circle cx="12" cy="17" r="1"/>
+                  </g>
+                </g>
+              </svg>
+              <span className="sr-only">Help</span>
+            </a>
+            <button
+              type="button"
+              className="flex justify-center items-center m-2 p-1 gap-x-3 size-7 text-white cursor-pointer focus:outline-none"
+              data-hs-overlay="#hs-sidebar-basic-usage" 
+              onClick={() => navigate("https://github.com/Leahie")}
+              tabIndex={-1}
+            >
+              <svg width="800px" height="800px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none">
+                <path fill="var(--color-accent)" fillRule="evenodd" d="M8 1C4.133 1 1 4.13 1 7.993c0 3.09 2.006 5.71 4.787 6.635.35.064.478-.152.478-.337 0-.166-.006-.606-.01-1.19-1.947.423-2.357-.937-2.357-.937-.319-.808-.778-1.023-.778-1.023-.635-.434.048-.425.048-.425.703.05 1.073.72 1.073.72.624 1.07 1.638.76 2.037.582.063-.452.244-.76.444-.935-1.554-.176-3.188-.776-3.188-3.456 0-.763.273-1.388.72-1.876-.072-.177-.312-.888.07-1.85 0 0 .586-.189 1.924.716A6.711 6.711 0 018 4.381c.595.003 1.194.08 1.753.236 1.336-.905 1.923-.717 1.923-.717.382.963.142 1.674.07 1.85.448.49.72 1.114.72 1.877 0 2.686-1.638 3.278-3.197 3.45.251.216.475.643.475 1.296 0 .934-.009 1.688-.009 1.918 0 .187.127.404.482.336A6.996 6.996 0 0015 7.993 6.997 6.997 0 008 1z" clipRule="evenodd"/>
+              </svg>
+              <span className="sr-only">Github</span>
+            </button>
           </div>
-        </nav>
+          
+          <header className="p-4 flex justify-between items-center gap-x-2">
+            <a
+              className="flex-none font-semibold text-xl text-white focus:outline-hidden focus:opacity-80"
+              href="/"
+              aria-label="Brand"
+            >
+              BoardBash
+            </a>
+          </header>
+          
+          <hr className="ml-1 mr-4 text-highlight"></hr>
 
-        <div className="mt-auto p-4 border-t border-highlight">
-          <div className="text-sm text-slate-400 mb-2">
-            {user?.email}
+          <nav className="mt-6 h-full overflow-y-auto text-left">
+            <div className="pb-0 px-2 w-full flex flex-col flex-wrap">
+              {pinnedBoardObjects.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs text-gray-400 hover:text-white/90 uppercase tracking-wide mb-2 px-2 cursor-pointer flex items-center gap-1" onClick={() => setPinnedIsOpen(!pinnedIsOpen)}>
+                    <span>Pinned</span> {pinnedIsOpen ? <ChevronDown className='w-3 h-3' /> : <ChevronUp className='w-3 h-3'/>}
+                  </div>
+                  {pinnedIsOpen && 
+                    <ul>
+                      {pinnedBoardObjects.map(board => (
+                        <PinItem
+                          key={board.id}
+                          board={board}
+                          onNavigate={() => navigate(`/boards/${board.id}`)}
+                          onDelete={() => handleDelete(board.id)}
+                          onTogglePin={() => handleTogglePin(board.id)}
+                          onRename={() => handleRename(board.id, board.title)}
+                          onDragStart={(e) => handleDragStart(e, board.id)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => handleDropInto(e, board.id)}
+                          onDragEnd={handleDragEnd}
+                          isBoardOpen={isOpen(board.id)}
+                          onToggleOpen={() => toggleExpanded(board.id)}
+                        />
+                      ))}
+                    </ul>
+                  }
+                </div>
+              )}
+
+              <div>
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">
+                    Boards
+                  </div>
+                  <div className='flex gap-2'>
+                    <button 
+                      className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
+                      onClick={async () => {
+                        const result = await createBoard();
+                        openBoard(result.id);
+                      }}
+                    >
+                      Add 
+                    </button>
+                    {openBoards.size > 0 && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Close all open boards in sidebar?')) {
+                            clearOpenBoards();
+                          }
+                        }}
+                        className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
+                        title="Clear all open boards"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <ul>
+                  {visibleRootBoards.map((board, index) => 
+                    renderBoardTree(board, 0, index === visibleRootBoards.length - 1)
+                  )}
+                </ul>
+              </div>
+            </div>
+          </nav>
+
+          <div className="mt-auto p-4 border-t border-highlight">
+            <div className="text-sm text-slate-400 mb-2">
+              {user?.email}
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="w-full py-2 px-4 bg-highlight hover:bg-accent text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark"
+              tabIndex={-1}
+            >
+              Sign Out
+            </button>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="w-full py-2 px-4 bg-highlight hover:bg-accent text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark"
-            tabIndex={-1}
-          >
-            Sign Out
-          </button>
         </div>
       </div>
-    </div>
     </>
-    
   );
 }

@@ -18,9 +18,13 @@ interface SideItemProps {
     onDragStart: (e: React.DragEvent) => void; 
     onDragOver: (e: React.DragEvent) => void; 
     onDrop: (e: React.DragEvent) => void;
+    onDropBefore: (e: React.DragEvent) => void;
+    onDropAfter: (e: React.DragEvent) => void;
     onDragEnd: () => void; 
     isBoardOpen: boolean;
-    children?: React.ReactNode
+    children?: React.ReactNode;
+    showDropBefore?: boolean | null;
+    showDropAfter?: boolean | null;
 }
 
 export default function SideItem({
@@ -36,17 +40,23 @@ export default function SideItem({
   onDragStart,
   onDragOver,
   onDrop,
+  onDropBefore,
+  onDropAfter,
   onDragEnd,
   children,
   isOpen,
   onToggleOpen, 
-  isBoardOpen
+  isBoardOpen,
+  showDropBefore,
+  showDropAfter
 }: SideItemProps) {
     const [showMenu, setShowMenu] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [dropBeforeActive, setDropBeforeActive] = useState(false);
+    const [dropAfterActive, setDropAfterActive] = useState(false);
 
-    const {closeBoard,} = useSidebar();
+    const {closeBoard} = useSidebar();
 
     const handleDragStart = (e: React.DragEvent) => {
         setIsDragging(true);
@@ -70,21 +80,36 @@ export default function SideItem({
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDragOver(false);
         onDrop(e);
+    };
+
+    const handleDropBefore = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDropBeforeActive(false);
+        onDropBefore(e);
+    };
+
+    const handleDropAfter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDropAfterActive(false);
+        onDropAfter(e);
     };
 
     const sideitemContextRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-            const handlePointerDown = (e: PointerEvent) => {
-                if (!sideitemContextRef.current) return;
+        const handlePointerDown = (e: PointerEvent) => {
+            if (!sideitemContextRef.current) return;
 
-                if (!sideitemContextRef.current.contains(e.target as Node)) {
+            if (!sideitemContextRef.current.contains(e.target as Node)) {
                 setShowMenu(false);
-                }
-            };
-            document.addEventListener("pointerdown", handlePointerDown);
+            }
+        };
+        document.addEventListener("pointerdown", handlePointerDown);
 
         return () => {
             document.removeEventListener("pointerdown", handlePointerDown);
@@ -93,6 +118,24 @@ export default function SideItem({
     
     return (
         <li className="relative focus:outline-none">
+            {/* Drop zone BEFORE this item */}
+            {showDropBefore && (
+                <div
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        setDropBeforeActive(true);
+                    }}
+                    onDragLeave={() => setDropBeforeActive(false)}
+                    onDrop={handleDropBefore}
+                    className={`h-2 transition-all ${
+                        dropBeforeActive 
+                            ? 'bg-blue-400/50 h-4' 
+                            : 'bg-transparent'
+                    }`}
+                    style={{ paddingLeft: `${depth * 12}px` }}
+                />
+            )}
+
             <div
                 draggable
                 onDragStart={handleDragStart}
@@ -109,7 +152,7 @@ export default function SideItem({
                 transition-all group
                 `}
                 style={{ paddingLeft: `${depth * 12 + 10}px` }}
-                ref = {sideitemContextRef}
+                ref={sideitemContextRef}
             >
                 {children && (
                     <button
@@ -117,7 +160,7 @@ export default function SideItem({
                             e.stopPropagation();
                             onToggleOpen();
                         }}
-                        className="flex items-center justify-center  hover:bg-white/10 rounded focus:outline-none"
+                        className="flex items-center justify-center hover:bg-white/10 rounded focus:outline-none"
                     >
                         {isOpen ? (
                             <FolderOpen className="w-3 h-3" />
@@ -132,10 +175,10 @@ export default function SideItem({
                             e.stopPropagation();
                             onToggleOpen();
                         }}
-                        className="flex items-center justify-center focus:outline-none "
+                        className="flex items-center justify-center focus:outline-none"
                         tabIndex={-1}
                     >
-                      {isBoardOpen && <CircleDot className="w-3 h-3 " />}
+                      {isBoardOpen && <CircleDot className="w-3 h-3" />}
                       {!isBoardOpen && <CircleDotDashed className="w-3 h-3" />}
                     </button>
                 )}
@@ -157,7 +200,7 @@ export default function SideItem({
                     }}
                     className="flex items-center justify-center w-5 h-5 hover:opacity-80 rounded opacity-0 group-hover:opacity-40 focus:outline-none"
                     tabIndex={-1}
-                    >
+                >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                     </svg>
@@ -166,7 +209,7 @@ export default function SideItem({
                 <button 
                     onClick={() => closeBoard(board.id)}
                     className="hover:opacity-80 rounded opacity-0 group-hover:opacity-40 focus:outline-none"
-                     tabIndex={-1}
+                    tabIndex={-1}
                 >
                     <X />
                 </button>
@@ -186,27 +229,46 @@ export default function SideItem({
                             onClick={() => { setShowMenu(false); onAddChild(); }}
                             className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
                         >
-                             Add Child Board
+                            Add Child Board
                         </button>
                         <button
                             onClick={() => { setShowMenu(false); onRename(); }}
                             className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
                         >
-                             Rename
+                            Rename
                         </button>
                         <hr className="border-highlight my-1" />
                         <button
                             onClick={() => { setShowMenu(false); onDelete(); }}
                             className="w-full text-left px-4 py-2 hover:bg-red-600 text-sm text-red-400"
                         >
-                             Delete
+                            Delete
                         </button>
                     </div>
                 )}
             </div>
 
+            {/* Render children */}
             {children && (
                 <ul className="ml-2">{children}</ul>
+            )}
+
+            {/* Drop zone AFTER this item (and its children) */}
+            {showDropAfter && (
+                <div
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        setDropAfterActive(true);
+                    }}
+                    onDragLeave={() => setDropAfterActive(false)}
+                    onDrop={handleDropAfter}
+                    className={`h-2 transition-all ${
+                        dropAfterActive 
+                            ? 'bg-blue-400/50 h-4' 
+                            : 'bg-transparent'
+                    }`}
+                    style={{ paddingLeft: `${depth * 12}px` }}
+                />
             )}
         </li>
     );

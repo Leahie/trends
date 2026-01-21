@@ -7,14 +7,13 @@ export interface GroupMoveState {
 }
 
 interface checkBoardBlockIntersection{
-    selectedBlockIds: String[],
+    selectedBlockIds: string[],
     groupMoveState: GroupMoveState, 
     setDropTargetBoardBlockId: (value: string | null) => void;
     blocks: Block[],
 
 }
 export const checkBoardBlockIntersection = ({selectedBlockIds, groupMoveState, setDropTargetBoardBlockId, blocks}: checkBoardBlockIntersection) => {
-    console.log(groupMoveState);
     if (selectedBlockIds.length === 0 || !groupMoveState.isActive) {
         setDropTargetBoardBlockId(null);
         return;
@@ -72,7 +71,6 @@ export const checkBoardBlockIntersection = ({selectedBlockIds, groupMoveState, s
             }
         }
     });
-    console.log(bestMatch)
 
-    setDropTargetBoardBlockId(bestMatch ? bestMatch.id : null);
+    setDropTargetBoardBlockId(bestMatch?.id ?? null);
 };

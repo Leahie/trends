@@ -12,6 +12,7 @@ interface UseNavOperationsProps {
   pinBoard: (boardId: string) => Promise<boolean>;
   unpinBoard: (boardId: string) => Promise<boolean>;
   boardsMap: Record<string, Board>;
+  boards: Board[];
 }
 
 export function useNavOperations({
@@ -23,16 +24,45 @@ export function useNavOperations({
   isPinned,
   pinBoard,
   unpinBoard,
-  boardsMap
+  boardsMap,
+  boards
 }: UseNavOperationsProps) {
+
+  // Helper to get all descendants of a board
+  const getAllDescendants = useCallback((boardId: string, collected: Set<string> = new Set()): Set<string> => {
+    collected.add(boardId);
+    
+    // Find all board_blocks in this board
+    const boardBlocks = blocks.filter(b => 
+      b.boardId === boardId && 
+      b.type === 'board_block' && 
+      b.linkedBoardId
+    );
+    
+    // Recursively collect descendants
+    boardBlocks.forEach(block => {
+      if (block.linkedBoardId && !collected.has(block.linkedBoardId)) {
+        getAllDescendants(block.linkedBoardId, collected);
+      }
+    });
+    
+    return collected;
+  }, [blocks]);
 
   // Delete operation
   const handleDelete = useCallback(async (boardId: string) => {
-    const confirmed = window.confirm('Are you sure you want to delete this board?');
+    const descendants = getAllDescendants(boardId);
+    const count = descendants.size;
+    
+    const message = count > 1 
+      ? `Are you sure you want to delete this board and its ${count - 1} child board(s)?`
+      : 'Are you sure you want to delete this board?';
+    
+    const confirmed = window.confirm(message);
     if (!confirmed) return false;
 
     return await archiveBoard(boardId);
-  }, [archiveBoard]);
+  }, [archiveBoard, getAllDescendants]);
 
   // Pin/Unpin operation
   const handleTogglePin = useCallback(async (boardId: string) => {
@@ -92,7 +122,7 @@ export function useNavOperations({
   }, [createBoard, addBlock, updateBoard, blocks]);
 
   // Helper function to check for circular hierarchy
-  const isDescendant = (boardId: string, potentialAncestorId: string, boardsMap: Record<string, Board>, blocks: Block[]): boolean => {
+  const isDescendant = useCallback((boardId: string, potentialAncestorId: string): boolean => {
     if (boardId === potentialAncestorId) {
       return true;
     }
@@ -107,73 +137,152 @@ export function useNavOperations({
       return false;
     }
 
-    return isDescendant(boardId, parentBlock.boardId, boardsMap, blocks);
-  };
+    return isDescendant(boardId, parentBlock.boardId);
+  }, [boardsMap, blocks]);
 
-
-  // Move to operation (changes parent-child relationship)
-const handleMoveTo = useCallback(async (boardId: string, targetBoardId: string | null) => {
-  if (targetBoardId === null) {
-    return await updateBoard(boardId, {
-      parentBoardBlockId: null
-    });
-  }
-
-  if (isDescendant(boardId, targetBoardId, boardsMap, blocks)) {
-    alert("Cannot move a board into its own child or descendant!");
-    return false;
-  }
-
-  // Find existing board_block for this board
-  const existingBoardBlock = blocks.find(b => b.linkedBoardId === boardId && b.type === 'board_block');
-  
-  if (existingBoardBlock) {
-    // Move the existing board_block to the target board
-    const result = await api.moveBlocks([existingBoardBlock.id], targetBoardId);
-    return result.success;
-  }
-
-  // No existing board_block, create a new one in the target board
-  const targetBlocks = blocks.filter(b => b.boardId === targetBoardId);
-  const maxZ = Math.max(...targetBlocks.map(b => b.location.zIndex), 0);
-
-  const boardDoc = await api.fetchBoard(boardId);
-  if (!boardDoc.success || !boardDoc.data) return false;
-
-  const boardData = boardDoc.data.board;
-
-  const boardBlock = await addBlock({
-    type: 'board_block',
-    boardId: targetBoardId,
-    linkedBoardId: boardId,
-    content: {
-      title: boardData.title
-    },
-    location: {
-      x: 100,
-      y: 100,
-      width: 300,
-      height: 200,
-      zIndex: maxZ + 1,
-      rotation: 0,
-      scaleX: 1,
-      scaleY: 1
+  // Move board as a child of target board
+  const handleMoveInto = useCallback(async (boardId: string, targetBoardId: string) => {
+    // Check for circular dependency
+    if (isDescendant(targetBoardId, boardId)) {
+      alert("Cannot move a board into its own descendant!");
+      return false;
     }
-  });
 
-  if (!boardBlock) return false;
+    // Find existing board_block for this board
+    const existingBoardBlock = blocks.find(b => b.linkedBoardId === boardId && b.type === 'board_block');
+    
+    if (existingBoardBlock) {
+      // Move the existing board_block to the target board
+      const result = await api.moveBlocks([existingBoardBlock.id], targetBoardId);
+      return result.success;
+    }
 
-  // Update board's parent reference
-  return await updateBoard(boardId, {
-    parentBoardBlockId: boardBlock.id
-  });
-}, [blocks, boardsMap, updateBoard, addBlock]);
-  
-return {
+    // No existing board_block, create a new one in the target board
+    const targetBlocks = blocks.filter(b => b.boardId === targetBoardId);
+    const maxZ = Math.max(...targetBlocks.map(b => b.location.zIndex), 0);
+
+    const boardDoc = await api.fetchBoard(boardId);
+    if (!boardDoc.success || !boardDoc.data) return false;
+
+    const boardData = boardDoc.data.board;
+
+    const boardBlock = await addBlock({
+      type: 'board_block',
+      boardId: targetBoardId,
+      linkedBoardId: boardId,
+      content: {
+        title: boardData.title
+      },
+      location: {
+        x: 100,
+        y: 100,
+        width: 300,
+        height: 200,
+        zIndex: maxZ + 1,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1
+      }
+    });
+
+    if (!boardBlock) return false;
+
+    return await updateBoard(boardId, {
+      parentBoardBlockId: boardBlock.id
+    });
+  }, [blocks, boardsMap, updateBoard, addBlock, isDescendant]);
+
+  // Move board as a sibling (between two boards or to root)
+  const handleMoveBetween = useCallback(async (
+    boardId: string, 
+    afterBoardId: string | null,
+    newParentBoardId: string | null
+  ) => {
+    // Check for circular dependency if moving into a board
+    if (newParentBoardId && isDescendant(newParentBoardId, boardId)) {
+      alert("Cannot move a board into its own descendant!");
+      return false;
+    }
+
+    const movingBoard = boardsMap[boardId];
+    if (!movingBoard) return false;
+
+    const existingBoardBlock = blocks.find(b => b.linkedBoardId === boardId && b.type === 'board_block');
+
+    console.log("this is the new parent board id", newParentBoardId, existingBoardBlock)
+    // If moving to root (newParentBoardId is null)
+    if (newParentBoardId === null) {
+      if (!existingBoardBlock) {
+        // No board_block to move, just update board reference
+        return await updateBoard(boardId, {
+          parentBoardBlockId: null
+        });
+      }
+      // Move the existing board_block to root
+      const result = await api.moveBlocks([existingBoardBlock.id], null);
+      console.log(result)
+      if (result.success){
+        blocks.splice(blocks.indexOf(existingBoardBlock), 1);
+        
+      }
+      return result.success;
+    }
+
+    // Moving to a parent board (newParentBoardId is not null)
+    if (existingBoardBlock && existingBoardBlock.boardId === newParentBoardId) {
+      // Already in the right parent, just need to reorder (handled by backend ordering)
+      return true;
+    }
+
+    if (existingBoardBlock && existingBoardBlock.boardId !== newParentBoardId) {
+      // Move existing board_block to new parent
+      const result = await api.moveBlocks([existingBoardBlock.id], newParentBoardId);
+      return result.success;
+    }
+
+    // Create new board_block in parent
+    const parentBlocks = blocks.filter(b => b.boardId === newParentBoardId);
+    const maxZ = Math.max(...parentBlocks.map(b => b.location.zIndex), 0);
+
+    const boardData = await api.fetchBoard(boardId);
+    if (!boardData.success || !boardData.data) return false;
+
+    const board = boardData.data.board;
+
+    const boardBlock = await addBlock({
+      type: 'board_block',
+      boardId: newParentBoardId,
+      linkedBoardId: boardId,
+      content: {
+        title: board.title
+      },
+      location: {
+        x: 100,
+        y: 100,
+        width: 300,
+        height: 200,
+        zIndex: maxZ + 1,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1
+      }
+    });
+
+    if (!boardBlock) return false;
+
+    return await updateBoard(boardId, {
+      parentBoardBlockId: boardBlock.id
+    });
+  }, [blocks, boardsMap, updateBoard, addBlock, isDescendant]);
+
+  return {
     handleDelete,
     handleTogglePin,
     handleRename,
     handleAddChild,
-    handleMoveTo,
+    handleMoveInto,
+    handleMoveBetween,
+    getAllDescendants,
+    isDescendant
   };
 }

@@ -159,7 +159,7 @@ export default function CropOverlay({ block, onApply, onCancel }: CropOverlayPro
       yRatio: (cropRect.y - offsetY) / imgHeight,
       widthRatio: cropRect.width / imgWidth,
       heightRatio: cropRect.height / imgHeight,
-      scale: imgWidth/containerRect.width,
+      scale: block.location.width/imgWidth,
     };
 
     onApply(crop);

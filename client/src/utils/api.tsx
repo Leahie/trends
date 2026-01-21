@@ -216,12 +216,12 @@ export const api = {
     }
   },
 
-  // move block 
-  async moveBlocks(blockIds: string[], targetBoardId: string, offsetX = 0, offsetY = 0): Promise<ApiResponse<{
-      success: true;
+  // move blocks to target board (works regardless of current board context)
+  async moveBlocks(blockIds: string[], targetBoardId: string | null, offsetX = 0, offsetY = 0): Promise<ApiResponse< {success: true;
       movedBlockIds: string[];
       targetBoardId: string;
       sourceBoardIds: string[];}>>{
+      
     try {
       const {data} = await client.post(`/data/blocks/move`, {
         blockIds: blockIds, 
