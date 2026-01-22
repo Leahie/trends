@@ -221,7 +221,6 @@ export default function Sidebar(props: SidebarProps) {
     const isExpanded = !closedFolders.has(board.id);
     const isActive = currentBoard?.id === board.id;
     const pinned = isPinned(board.id);
-    const boardIsOpen = isOpen(board.id);
 
 
     const isDraggingThis = dragInfo?.boardId === board.id;

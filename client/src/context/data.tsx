@@ -1,4 +1,4 @@
-import {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback, act} from 'react';
+import {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
 import type { ReactNode } from 'react';
 import type { Block, Board, TextBlockType, ImageBlockType, BoardBlockType  } from '../types/types';
 import {api} from "../utils/api"
@@ -6,7 +6,6 @@ import { useAuth } from './auth';
 import { useSidebar } from './sidebar';
 import { v4 as uuidv4 } from 'uuid';
 import { useParams } from "react-router-dom";
-import type { BoardTree } from '@/types/sidebarTreeTypes';
 
 interface DataContextType {
     // Current board

@@ -2,7 +2,6 @@ import type {Board} from "@/types/types"
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useData } from "@/context/data.tsx";
-import { useSidebar } from "@/context/sidebar";
 
 export default function BoardDiv({id, title, updatedAt, userId: _userId, parentBoardBlockId}: Board){
 

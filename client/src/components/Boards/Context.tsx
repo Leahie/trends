@@ -13,7 +13,6 @@ import { useEffect, useRef } from "react";
 import { uploadToFirebase } from "@/hooks/uploadToFirebase";
 import { useAuth } from "@/context/auth";
 import { useEditor } from "@/context/editor";
-import { useSidebar } from "@/context/sidebar";
 export default function Context({x, y, parentId, canvasX, canvasY ,setContextMenu, bringToFront, pushToBack}:
     
     {x:number, y:number, selected:string[], parentId: string, canvasX: number, canvasY: number, 
