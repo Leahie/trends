@@ -1,6 +1,6 @@
 import type {Board} from "@/types/types"
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useData } from "@/context/data.tsx";
 import { useSidebar } from "@/context/sidebar";
 
@@ -8,14 +8,18 @@ export default function BoardDiv({id, title, updatedAt, userId: _userId, parentB
 
     const updatedAtDate = updatedAt instanceof Date ? updatedAt : new Date((updatedAt as any)?._seconds * 1000);
     const navigate = useNavigate();
-    const { getParent, getChildren, updateBoard, archiveBoard, deleteBoard } = useData();
+    const { getParent, getChildren, updateBoard, archiveBoard, deleteBoard, boardsMap } = useData();
     const { openBoard } = useSidebar()
     
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(title);
-    const parent = parentBoardBlockId ? getParent(id) : null;
-    const children = getChildren(id);
+    const [parent, setParent] = useState(parentBoardBlockId ? getParent(id) : null);
+    const [children, setChildren] = useState(getChildren(id));
 
+    useEffect(()=>{
+        setParent(parentBoardBlockId ? getParent(id) : null);
+        setChildren(getChildren(id))
+    }, [boardsMap])
     const handleTitleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         setIsEditing(true);

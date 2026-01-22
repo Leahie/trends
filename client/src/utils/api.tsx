@@ -180,31 +180,24 @@ export const api = {
       }
     }
   },
+  async fetchBlocksByBoard(): Promise<ApiResponse<{blocksByBoard: Record<string, Block[]>}>> {
+    try {
+      const { data } = await client.get(`/data/blocks/by-board`);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error fetching blocks by board:', error);
+      return {
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown Error'
+      };
+    }
+  },
 
   // batch updating blocks 
   async batchUpdateBlocks(updatesArray: Record<string, Partial<Block>>): Promise<ApiResponse<{ updatedBlockIds: string[]; affectedBoards: string[] }>> {
     try {
       ;
       const { data } = await client.patch(`/data/blocks/batch`, updatesArray);
-      ;
-      return { success: true, data };
-    } catch (error) {
-      ;
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown Error'
-      };
-    }
-  },
-
-  // duplicate a block
-  async duplicateBlock(blockId: string, targetBoardId?: string, offsetX?: number, offsetY?: number): Promise<ApiResponse<{ block: Block }>> {
-    try {
-      const { data } = await client.post(`/data/blocks/${blockId}/duplicate`, {
-        targetBoardId,
-        offsetX,
-        offsetY
-      });
       ;
       return { success: true, data };
     } catch (error) {
