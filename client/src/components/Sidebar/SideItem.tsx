@@ -21,7 +21,8 @@ interface SideItemProps {
     onDropBefore: (e: React.DragEvent) => void;
     onDropAfter: (e: React.DragEvent) => void;
     onDragEnd: () => void; 
-    isBoardOpen: boolean;
+    hasChildren: boolean;
+
     children?: React.ReactNode;
     showDropBefore?: boolean | null;
     showDropAfter?: boolean | null;
@@ -43,10 +44,10 @@ export default function SideItem({
   onDropBefore,
   onDropAfter,
   onDragEnd,
+  hasChildren,
   children,
   isOpen,
   onToggleOpen, 
-  isBoardOpen,
   showDropBefore,
   showDropAfter
 }: SideItemProps) {
@@ -56,7 +57,7 @@ export default function SideItem({
     const [dropBeforeActive, setDropBeforeActive] = useState(false);
     const [dropAfterActive, setDropAfterActive] = useState(false);
 
-    const {closeBoard} = useSidebar();
+    const {closeBoard, toggleFolder} = useSidebar();
 
     const handleDragStart = (e: React.DragEvent) => {
         setIsDragging(true);
@@ -154,11 +155,11 @@ export default function SideItem({
                 style={{ paddingLeft: `${depth * 12 + 10}px` }}
                 ref={sideitemContextRef}
             >
-                {children && (
+                {hasChildren && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            onToggleOpen();
+                            toggleFolder(board.id);
                         }}
                         className="flex items-center justify-center hover:bg-white/10 rounded focus:outline-none"
                     >
@@ -178,8 +179,6 @@ export default function SideItem({
                         className="flex items-center justify-center focus:outline-none"
                         tabIndex={-1}
                     >
-                      {isBoardOpen && <CircleDot className="w-3 h-3" />}
-                      {!isBoardOpen && <CircleDotDashed className="w-3 h-3" />}
                     </button>
                 )}
 

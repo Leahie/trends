@@ -8,14 +8,18 @@ interface SidebarContextType {
   open: boolean; 
   toggleOpen: () => void;
 
-  // Session state (localStorage)
-  openBoards: Set<string>;
+  // Session state (localStorage), open boards are only from the root
+  openBoards: Set<string>; 
   toggleBoard: (boardId: string) => void;
   openBoard: (boardId: string) => void;
   closeBoard: (boardId: string) => void;
   isOpen: (boardId: string) => boolean;
   clearOpenBoards: () => void;
-  pruneOpenBoards: (validBoardIds: string[]) => void;
+  pruneOpenBoards: (validBoardIds: string[]) => void; // also prunes open folders
+
+  // Open Folders 
+  closedFolders: Set<string>;
+  toggleFolder: (boardId: string) => void;
 
   // Pinned boards (backend + state)
   pinnedBoards: string[];
@@ -31,6 +35,7 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'sidebar_open_boards';
+const FOLDER_KEY = 'folder_closed_boards';
 const MAX_AGE_MS = 1000 * 60 * 60 * 24; // 24 hours
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
@@ -38,20 +43,28 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState<boolean>(true);
   const [hydrated, setHydrated] = useState(false);
   const [openBoards, setOpenBoards] = useState<Set<string>>(new Set());
+  const [closedFolders, setClosedFolders] = useState<Set<string>>(new Set());
+  
   const [pinnedBoards, setPinnedBoards] = useState<string[]>([]);
   const [lastUserId, setLastUserId] = useState<string | null>(null);
-
+  
   // Clear localStorage when user logs out or changes (only on actual transitions)
   useEffect(() => {
     if (!user && lastUserId) {
       // User logged out (transition from having userId to no user)
       setOpenBoards(new Set());
+      setClosedFolders(new Set());
+
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(FOLDER_KEY);
       setLastUserId(null);
     } else if (user && lastUserId && lastUserId !== user.uid) {
       // User switched accounts (userId changed)
       setOpenBoards(new Set());
+      setClosedFolders(new Set());
+
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(FOLDER_KEY);
       setLastUserId(user.uid);
     } else if (user && !lastUserId) {
       // First login
@@ -62,9 +75,11 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   // Load open boards from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    const storedClosedFolders = localStorage.getItem(FOLDER_KEY);
+    if (stored && storedClosedFolders) {
       try {
         const parsed = JSON.parse(stored);
+        const parsedClosedFolders = JSON.parse(storedClosedFolders);
 
         const isExpired =
           !parsed.savedAt || Date.now() - parsed.savedAt > MAX_AGE_MS;
@@ -72,12 +87,15 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         if (isExpired) {
           ;
           localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(FOLDER_KEY)
         } else {
           setOpenBoards(new Set(parsed.value || []));
+          setClosedFolders(new Set(parsedClosedFolders.value || []))
         } 
       } catch (error) {
         console.error('Failed to parse open boards from localStorage:', error);
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(FOLDER_KEY);
       }
     }
     setHydrated(true);
@@ -106,6 +124,13 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+
+    const payload2 = {
+      value: Array.from(closedFolders)
+    }
+    
+    localStorage.setItem(FOLDER_KEY, JSON.stringify(payload2));
+
   }, [openBoards, hydrated]);
 
   const toggleOpen = () => {
@@ -167,6 +192,18 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     setOpenBoards(prev => new Set(prev).add(boardId));
   }, []);
 
+  const toggleFolder = useCallback((boardId: string) => {
+     setClosedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(boardId)) {
+        next.delete(boardId);
+      } else {
+        next.add(boardId);
+      }
+      return next;
+    });
+  },[]);
+
   const pinBoard = useCallback(async (boardId: string): Promise<boolean> => {
     const result = await api.pinBoard(boardId);
     if (result.success && result.data) {
@@ -205,6 +242,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     return pinnedBoards.includes(boardId);
   }, [pinnedBoards]);
 
+  
   return (
     <SidebarContext.Provider value={{
       open, 
@@ -221,7 +259,9 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       unpinBoard,
       reorderPins,
       isPinned,
-      addNewRootBoard
+      addNewRootBoard,
+      closedFolders,
+      toggleFolder
     }}>
       {children}
     </SidebarContext.Provider>

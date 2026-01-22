@@ -22,9 +22,8 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         pushToBack: (id:string[]) => Promise<void>}){
     const {getIdToken} = useAuth()
     const {dataMap, blocks, updateBlock, removeBlock, addBlock,
-        syncNow, canCreateBoard
+        syncNow, canCreateBoard, openBoardForSidebar
     } = useData();
-    const {openBoard} = useSidebar();
     const {selectedBlockIds, pushToHistory, copyBlocks, 
         cutBlocks, 
         pasteBlocks,
@@ -67,7 +66,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         const success = await addBlock({...block, "location": {...location}, "boardId":parentId});
         if (success != null) {
             if (success.linkedBoardId)
-                await openBoard(success.linkedBoardId);
+                await openBoardForSidebar(success.linkedBoardId);
             setContextMenu(null);
             pushToHistory({}, {success});
         }

@@ -64,8 +64,8 @@ export default function Sidebar(props: SidebarProps) {
     navigate
   } = props;
 
-  const { getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap } = useData();
-  const { openBoard, open, toggleOpen, clearOpenBoards } = useSidebar();
+  const { getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap, openBoardForSidebar } = useData();
+  const { open, toggleOpen, clearOpenBoards, closedFolders } = useSidebar();
   
   const {
     handleDelete,
@@ -90,14 +90,14 @@ export default function Sidebar(props: SidebarProps) {
 
   useEffect(() => {
     if (currentBoard?.id) {
-      openBoard(currentBoard.id);
+      openBoardForSidebar(currentBoard.id);
       let parent = getParent(currentBoard.id);
       while (parent) {
-        openBoard(parent.id);
+        openBoardForSidebar(parent.id);
         parent = getParent(parent.id);
       }
     }
-  }, [currentBoard?.id, openBoard, getParent]);
+  }, [currentBoard?.id, openBoardForSidebar, getParent]);
 
   useEffect(() => {
     const loadOpenBoardBlocks = async () => {
@@ -218,14 +218,11 @@ export default function Sidebar(props: SidebarProps) {
   const renderBoardTree = useCallback((board: Board, depth: number = 0, isLast: boolean = false) => {
     const children = getChildren(board.id);
     const hasChildren = children.length > 0;
-    const isExpanded = expandedBoards.has(board.id);
+    const isExpanded = !closedFolders.has(board.id);
     const isActive = currentBoard?.id === board.id;
     const pinned = isPinned(board.id);
     const boardIsOpen = isOpen(board.id);
 
-    const visibleChildren = children.filter(child => {
-      return isOpen(child.id) || isExpanded;
-    });
 
     const isDraggingThis = dragInfo?.boardId === board.id;
     const isDraggingDescendant = dragInfo?.descendants.has(board.id) || false;
@@ -249,15 +246,15 @@ export default function Sidebar(props: SidebarProps) {
         onDropBefore={(e) => handleDropBefore(e, board.id)}
         onDropAfter={(e) => handleDropAfter(e, board.id)}
         onDragEnd={handleDragEnd}
-        isOpen={isExpanded}
-        isBoardOpen={boardIsOpen}
+        isOpen={isExpanded} // whether the folder is open
         onToggleOpen={() => toggleExpanded(board.id)}
         showDropBefore={!isDraggingThis && !isDraggingDescendant && canDropHere}
         showDropAfter={!isDraggingThis && !isDraggingDescendant && canDropHere && isLast}
+        hasChildren={hasChildren}
       >
-        {hasChildren && visibleChildren.length > 0 && 
-          visibleChildren.map((child, index) => 
-            renderBoardTree(child, depth + 1, index === visibleChildren.length - 1)
+        {hasChildren && children.length > 0 && isExpanded &&
+          children.map((child, index) => 
+            renderBoardTree(child, depth + 1, index === children.length - 1)
           )
         }
       </SideItem>
@@ -292,7 +289,7 @@ export default function Sidebar(props: SidebarProps) {
     return Array.from(openBoards)
       .map(id => boards.find(b => b.id === id))
       .filter((board): board is Board => board !== undefined && isRootBoard(board.id));
-  }, [openBoards, boards, isRootBoard]);
+  }, [openBoards, boards, isRootBoard, closedFolders]);
 
   if (!boards) {
     return <></>;
@@ -396,7 +393,6 @@ export default function Sidebar(props: SidebarProps) {
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={(e) => handleDropInto(e, board.id)}
                           onDragEnd={handleDragEnd}
-                          isBoardOpen={isOpen(board.id)}
                           onToggleOpen={() => toggleExpanded(board.id)}
                         />
                       ))}
@@ -415,7 +411,7 @@ export default function Sidebar(props: SidebarProps) {
                       className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
                       onClick={async () => {
                         const result = await createBoard();
-                        openBoard(result.id);
+                        openBoardForSidebar(result.id);
                       }}
                     >
                       Add 

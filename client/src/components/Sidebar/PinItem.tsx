@@ -15,7 +15,6 @@ interface SideItemProps {
     onDragOver: (e: React.DragEvent) => void; 
     onDrop: (e: React.DragEvent) => void;
     onDragEnd: () => void; 
-    isBoardOpen: boolean;
     children?: React.ReactNode
 }
 

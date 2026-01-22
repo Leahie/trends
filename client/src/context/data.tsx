@@ -1,4 +1,4 @@
-import {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback} from 'react';
+import {useState, useMemo, useRef, useEffect, useContext, createContext, useCallback, act} from 'react';
 import type { ReactNode } from 'react';
 import type { Block, Board, TextBlockType, ImageBlockType, BoardBlockType  } from '../types/types';
 import {api} from "../utils/api"
@@ -65,9 +65,9 @@ interface DataContextType {
     isRootBoard: (boardId: string) => boolean;
     loadBoardBlocks: (boardId: string) => Promise<void>;
 
-    // Sidebar Board Tree 
-    boardTree: BoardTree;
-    openBoardInTree: (boardId: string) => void;
+    // Sidebar Board Tree
+
+    openBoardForSidebar: (boardId: string) => boolean; // returns true or false based on whether it failed
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -75,7 +75,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export function DataProvider({children} : {children : ReactNode}){
     const { id } = useParams();
     const {user} = useAuth();
-    const { pruneOpenBoards } = useSidebar();
+    const { pruneOpenBoards, openBoard, openBoards } = useSidebar();
     const [boards, setBoards] = useState<Board[]>([]);
     const [archivedBoards, setArchivedBoards] = useState<Board[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
@@ -95,11 +95,7 @@ export function DataProvider({children} : {children : ReactNode}){
     const [blocksByBoard, setBlocksByBoard] = useState<Record<string, Block[]>>({});
     const [allBlocks, setAllBlocks] = useState<Block[]>([]);
 
-    // Board Tree structure
-    const [boardTree, setBoardTree] = useState<BoardTree>({
-        nodes: {},
-        rootOrder: []
-    });
+
 
     
     const pendingBlockChanges = useRef<Record<string, Partial<Block> | Partial<TextBlockType> | Partial<ImageBlockType> | Partial<BoardBlockType>>>({});
@@ -231,6 +227,8 @@ export function DataProvider({children} : {children : ReactNode}){
         return Object.fromEntries(boards.map((b) => [b.id, b]));
     }, [boards]);
 
+    // SYNCING
+
     const scheduledSync = useCallback(() => {
         if (syncTimeout.current){
             clearTimeout(syncTimeout.current);
@@ -282,6 +280,46 @@ export function DataProvider({children} : {children : ReactNode}){
 
         return () => clearInterval(interval);
     }, []);
+
+    // SIDEBAR operations 
+    const openBoardForSidebar = (boardid: string) => {
+        let actualBoard: (string | null) = boardid;
+        while (!isRootBoard(actualBoard)){
+            const parent = getParent(boardid);
+            actualBoard = parent != null ? parent.id : null;  
+            if (!actualBoard) return false;
+        }
+        // now actualBoard should be a root boardid
+        if (!openBoards.has(actualBoard)){
+            openBoard(actualBoard);
+        }
+        return true;
+    }
+
+     const getParent = useCallback((boardId: string): Board | null => {
+        const board = boardsMap[boardId];
+        if (!board?.parentBoardBlockId) return null;
+        
+        const parentBlock = allBlocks.find(b => b.id === board.parentBoardBlockId);
+        if (!parentBlock?.boardId) return null;
+        
+        return boardsMap[parentBlock.boardId] || null;
+    }, [boardsMap, allBlocks]);
+
+    const getChildren = useCallback((boardId: string): Board[] => {
+        const boardBlocks = blocksByBoard[boardId] || [];
+        const childBoardBlocks = boardBlocks.filter(
+            b => b.type === 'board_block' && b.linkedBoardId
+        );
+        return childBoardBlocks
+            .map(block => boardsMap[block.linkedBoardId!])
+            .filter(Boolean) as Board[];
+    }, [boardsMap, blocksByBoard]);
+
+    const isRootBoard = useCallback((boardId: string): boolean => {
+        const board = boardsMap[boardId];
+        return board ? !board.parentBoardBlockId : false;
+    }, [boardsMap]);
 
     // Board Operations 
     const canCreateBoard = useMemo(() => {
@@ -690,30 +728,7 @@ export function DataProvider({children} : {children : ReactNode}){
         return false;
     };
 
-    const getParent = useCallback((boardId: string): Board | null => {
-        const board = boardsMap[boardId];
-        if (!board?.parentBoardBlockId) return null;
-        
-        const parentBlock = allBlocks.find(b => b.id === board.parentBoardBlockId);
-        if (!parentBlock?.boardId) return null;
-        
-        return boardsMap[parentBlock.boardId] || null;
-    }, [boardsMap, allBlocks]);
-
-    const getChildren = useCallback((boardId: string): Board[] => {
-        const boardBlocks = blocksByBoard[boardId] || [];
-        const childBoardBlocks = boardBlocks.filter(
-            b => b.type === 'board_block' && b.linkedBoardId
-        );
-        return childBoardBlocks
-            .map(block => boardsMap[block.linkedBoardId!])
-            .filter(Boolean) as Board[];
-    }, [boardsMap, blocksByBoard]);
-
-    const isRootBoard = useCallback((boardId: string): boolean => {
-        const board = boardsMap[boardId];
-        return board ? !board.parentBoardBlockId : false;
-    }, [boardsMap]);
+   
 
     const updateCheckedHelp = async (checked: boolean): Promise<boolean> => {
         const result = await api.updateCheckedHelp(checked);
@@ -738,7 +753,8 @@ export function DataProvider({children} : {children : ReactNode}){
             batchAddBlocks,
             isRootBoard,
             loadBoardBlocks,
-            pushBlocksToBoard
+            pushBlocksToBoard,
+            openBoardForSidebar
             }}>
             {children}
         </DataContext.Provider>

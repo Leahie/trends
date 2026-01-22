@@ -8,8 +8,7 @@ export default function BoardDiv({id, title, updatedAt, userId: _userId, parentB
 
     const updatedAtDate = updatedAt instanceof Date ? updatedAt : new Date((updatedAt as any)?._seconds * 1000);
     const navigate = useNavigate();
-    const { getParent, getChildren, updateBoard, archiveBoard, deleteBoard, boardsMap } = useData();
-    const { openBoard } = useSidebar()
+    const { getParent, getChildren, updateBoard, archiveBoard, deleteBoard, boardsMap, openBoardForSidebar } = useData();
     
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(title);
@@ -74,7 +73,7 @@ export default function BoardDiv({id, title, updatedAt, userId: _userId, parentB
         transition-border duration-300
         hover:cursor-pointer hover:border-light-accent hover:shadow-md shadow-accent
         "
-        onClick={() => { openBoard(id) ;navigate(`/boards/${id}`)}} 
+        onClick={() => { openBoardForSidebar(id) ;navigate(`/boards/${id}`)}} 
         >
             <div className="absolute inset-y-0 left-1 w- -translate-x-1/2 bg-black/30 pointer-events-none"></div>
             <div className="bg-highlight">
