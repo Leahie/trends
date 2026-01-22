@@ -94,7 +94,8 @@ export function DataProvider({children} : {children : ReactNode}){
     const [blocksByBoard, setBlocksByBoard] = useState<Record<string, Block[]>>({});
     const [allBlocks, setAllBlocks] = useState<Block[]>([]);
 
-
+    console.log("blockByBoards",Object.keys(blocksByBoard))
+    console.log(allBlocks)
 
     
     const pendingBlockChanges = useRef<Record<string, Partial<Block> | Partial<TextBlockType> | Partial<ImageBlockType> | Partial<BoardBlockType>>>({});
