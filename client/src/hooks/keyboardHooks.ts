@@ -21,8 +21,7 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
     pushToHistory, clipboard
   } = useEditor();
 
-  const { dataMap, addBlock, batchDeleteBlocks, currentBoard} = useData();
-  const {closeBoard} = useSidebar();
+  const { dataMap, addBlock, batchDeleteBlocks, currentBoard, closeBoardForSidebar} = useData();
   const lastCursorPos = useRef({ x: 0, y: 0 });
   const {getIdToken} = useAuth();
   const lastBlockCopyTime = useRef<number>(0);
@@ -52,7 +51,7 @@ export function useKeyboardShortcuts({ onToggleSidebar, getCurrentCanvasPosition
           e.preventDefault();
           const before: Record<string, any> = {};
           selectedBlockIds.forEach(id => {
-            closeBoard(id)
+            closeBoardForSidebar(id)
             const block = dataMap[id];
             if (block) before[id] = structuredClone(block);
           });

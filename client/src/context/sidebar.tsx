@@ -138,6 +138,8 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleBoard = useCallback((boardId: string) => {
+        console.log("I'm being toggled open", boardId)
+
     setOpenBoards(prev => {
       const next = new Set(prev);
       if (next.has(boardId)) {

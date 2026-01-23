@@ -5,7 +5,7 @@ import {api} from "../utils/api"
 import { useAuth } from './auth';
 import { useSidebar } from './sidebar';
 import { v4 as uuidv4 } from 'uuid';
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 interface DataContextType {
     // Current board
@@ -67,6 +67,7 @@ interface DataContextType {
     // Sidebar Board Tree
 
     openBoardForSidebar: (boardId: string) => boolean; // returns true or false based on whether it failed
+    closeBoardForSidebar: (boardId: string) => boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -74,7 +75,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export function DataProvider({children} : {children : ReactNode}){
     const { id } = useParams();
     const {user} = useAuth();
-    const { pruneOpenBoards, openBoard, openBoards } = useSidebar();
+    const { pruneOpenBoards, openBoard, closeBoard, openBoards } = useSidebar();
     const [boards, setBoards] = useState<Board[]>([]);
     const [archivedBoards, setArchivedBoards] = useState<Board[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
@@ -93,6 +94,8 @@ export function DataProvider({children} : {children : ReactNode}){
     
     const [blocksByBoard, setBlocksByBoard] = useState<Record<string, Block[]>>({});
     const [allBlocks, setAllBlocks] = useState<Block[]>([]);
+
+    const navigate = useNavigate();
 
     console.log("blockByBoards",Object.keys(blocksByBoard))
     console.log(allBlocks)
@@ -296,6 +299,26 @@ export function DataProvider({children} : {children : ReactNode}){
         return true;
     }
 
+    const closeBoardForSidebar = (boardid: string) => {
+        if (!isRootBoard(boardid)) return false;
+
+        if (boardid == currentBoardId){
+            if (openBoards.size > 1){
+                setCurrentBoardId(Array.from(openBoards)[0]);
+                setCurrentBoard(boardsMap[Array.from(openBoards)[0]]);
+            }
+            else{
+                setCurrentBoardId(null);
+                setCurrentBoard(null);
+                navigate("/");
+            }
+            closeBoard(boardid);
+            return true;
+        }
+        closeBoard(boardid);
+        return true;
+    }
+
      const getParent = useCallback((boardId: string): Board | null => {
         const board = boardsMap[boardId];
         if (!board?.parentBoardBlockId) return null;
@@ -351,6 +374,7 @@ export function DataProvider({children} : {children : ReactNode}){
         if (result.success && result.data) {
             const newBoard = result.data.board;
             setBoards((prev:Board[]) => [newBoard, ...prev]);
+            await loadAllBlocksData();
             return newBoard;
         }
         return null;
@@ -754,7 +778,8 @@ export function DataProvider({children} : {children : ReactNode}){
             isRootBoard,
             loadBoardBlocks,
             pushBlocksToBoard,
-            openBoardForSidebar
+            openBoardForSidebar,
+            closeBoardForSidebar
             }}>
             {children}
         </DataContext.Provider>

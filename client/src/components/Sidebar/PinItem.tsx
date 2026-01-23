@@ -35,7 +35,6 @@ export default function PinItem({
     const [isDragging, setIsDragging] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
 
-    const {closeBoard,} = useSidebar();
 
     const handleDragStart = (e: React.DragEvent) => {
         setIsDragging(true);
@@ -120,13 +119,7 @@ export default function PinItem({
                     </svg>
                 </button>
 
-                <button 
-                    onClick={() => closeBoard(board.id)}
-                    className="hover:opacity-80 rounded opacity-0 group-hover:opacity-40"
-                >
-                    <X />
-                </button>
-
+          
                 {showMenu && (
                     <div 
                         className="absolute right-0 top-full mt-1 py-1 w-48 bg-dark border border-highlight rounded-lg shadow-xl z-50"

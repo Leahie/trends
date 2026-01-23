@@ -64,7 +64,7 @@ export default function Sidebar(props: SidebarProps) {
     navigate
   } = props;
 
-  const { getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap, openBoardForSidebar } = useData();
+  const {setCurrentBoardId, getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap, openBoardForSidebar } = useData();
   const { open, toggleOpen, clearOpenBoards, closedFolders } = useSidebar();
   
   const {
@@ -90,6 +90,7 @@ export default function Sidebar(props: SidebarProps) {
 
   useEffect(() => {
     if (currentBoard?.id) {
+      console.log("this the curr board", currentBoard)
       openBoardForSidebar(currentBoard.id);
       let parent = getParent(currentBoard.id);
       while (parent) {
@@ -432,7 +433,13 @@ export default function Sidebar(props: SidebarProps) {
                 </div>
                 <ul>
                   {visibleRootBoards.map((board, index) => 
-                    renderBoardTree(board, 0, index === visibleRootBoards.length - 1)
+                  {
+                    return(
+                      <div className='rootTab'>
+                        {renderBoardTree(board, 0, index === visibleRootBoards.length - 1)}
+                      </div>
+                    )
+                  }
                   )}
                 </ul>
               </div>
