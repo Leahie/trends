@@ -11,10 +11,20 @@ const DEFAULT_THEME = {
   "light-hover": "#D8D8D8",
 };
 
+const MAX_BOARDS = 5
+
 /**
  * Create a new board
  */
 export async function createBoard(title, parentBoardBlockId, userId) {
+
+  const num_boards = await db.collection("boards")
+      .where("userId", "==", userId)
+      .get();
+
+  if (num_boards > 5){
+    throw new Error("Board limit reached. Upgrade your plan to create more boards."); 
+  }
   // If parentBoardBlockId provided, verify it exists and belongs to user
   if (parentBoardBlockId) {
     const parentBlockDoc = await db.collection("blocks").doc(parentBoardBlockId).get();

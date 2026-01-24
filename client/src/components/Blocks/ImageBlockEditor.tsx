@@ -46,27 +46,7 @@ export default function ImageBlockEditor({ id, content, dims }: Props) {
         style={containerStyle}
       />
 
-      {content.subtitle && (
-        <div
-          className="absolute left-0 right-0 bg-dark/90 text-white text-xs px-2 py-1 text-center"
-          style={{ top: "100%", marginTop: "2px", backdropFilter: "blur(4px)" }}
-        >
-          <input
-            value={title}
-            onFocus={() => setIsEditingText(true)}
-            onChange={(e) => {
-              setIsEditingText(true);
-              setTitle(e.target.value);
-            }}
-            onBlur={handleTitleBlur}
-            onKeyDown={handleKeyDown}
-            className="bg-highlight text-xl font-semibold pl-4 py-1 text-left outline-none w-full"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+      
     </>
   );
 }
