@@ -26,7 +26,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
     const {selectedBlockIds, pushToHistory, copyBlocks, 
         cutBlocks, 
         pasteBlocks,
-        clipboard} = useEditor();
+        clipboard, clearSelection} = useEditor();
     
     const fileInputRef = useRef<HTMLInputElement>(null);
     
@@ -96,6 +96,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
     const handleDelete = async () => {
         if (selectedBlockIds.length === 0) return;
 
+        clearSelection();
         const before: Record<string, Block> = {};
         selectedBlockIds.forEach(id => {
             const block = dataMap[id];
@@ -112,6 +113,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
         pushToHistory(before, {});
 
         setContextMenu(null);
+        
     };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,6 +212,7 @@ export default function Context({x, y, parentId, canvasX, canvasY ,setContextMen
             }
             await updateBlock(block.id, updates);
         }
+        setContextMenu(null);
     }
 
     return(

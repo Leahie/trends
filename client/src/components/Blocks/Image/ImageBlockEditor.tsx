@@ -25,9 +25,8 @@ export default function ImageBlockEditor({ id, content, dims }: Props) {
   );
 
   const handleTitleBlur = async () => {
-    await updateBlock(id, {
-      content: { title: title.trim() }
-    });
+    await updateBlock(id, { content: { ...content, title: title.trim() } });
+
     setIsEditingText(false);
   };
 

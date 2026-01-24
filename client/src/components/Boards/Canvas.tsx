@@ -434,6 +434,7 @@ export default function Canvas(){
         }
     };
 
+    console.log("the blocks", blocks)
     // FIXED: Mouse move with correct coordinates
     const handleMouseMove = (e: React.MouseEvent) => {
         if (isPanning) {

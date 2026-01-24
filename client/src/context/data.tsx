@@ -247,6 +247,7 @@ export function DataProvider({children} : {children : ReactNode}){
         if (Object.keys(blockChanges).length === 0) return true;
 
         setIsSyncing(true);
+        console.log("here's what changes", blockChanges)
 
         try {
             const result = await api.batchUpdateBlocks(blockChanges);
@@ -287,13 +288,19 @@ export function DataProvider({children} : {children : ReactNode}){
     // SIDEBAR operations 
     const openBoardForSidebar = (boardid: string) => {
         let actualBoard: (string | null) = boardid;
+        console.log(actualBoard);
+        console.log(boardsMap);
+        console.log(boards);
         while (!isRootBoard(actualBoard)){
             const parent = getParent(boardid);
             actualBoard = parent != null ? parent.id : null;  
+            console.log("the actual board"  , actualBoard);
             if (!actualBoard) return false;
         }
         // now actualBoard should be a root boardid
         if (!openBoards.has(actualBoard)){
+        console.log("the actual board added"  , actualBoard);
+
             openBoard(actualBoard);
         }
         return true;
@@ -377,6 +384,7 @@ export function DataProvider({children} : {children : ReactNode}){
             await loadAllBlocksData();
             return newBoard;
         }
+        
         return null;
     };
 

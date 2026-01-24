@@ -1,7 +1,5 @@
-import { useSidebar } from "@/context/sidebar";
 import type { Board } from "@/types/types";
 import { useState } from "react";
-import { X } from "lucide-react";
 
 interface SideItemProps { 
     board: Board; 

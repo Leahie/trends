@@ -800,7 +800,7 @@ router.patch("/blocks/batch", async (req, res) => {
   try {
     const userId = req.user.uid;
     const updatesArray = req.body;
-
+    console.log("Received batch updates:", updatesArray);
     const result = await batchUpdateBlocks(updatesArray, userId);
     res.send({ success: true, ...result });
   } catch (error) {
