@@ -7,7 +7,7 @@ import { useSidebar } from './sidebar';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useParams } from "react-router-dom";
 
-interface DataContextType {
+export interface DataContextType {
     // Current board
     currentBoard: Board | null;
     setCurrentBoardId: (boardId: string) => void;
@@ -70,7 +70,7 @@ interface DataContextType {
     closeBoardForSidebar: (boardId: string) => boolean;
 }
 
-const DataContext = createContext<DataContextType | undefined>(undefined);
+export const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({children} : {children : ReactNode}){
     const { id } = useParams();

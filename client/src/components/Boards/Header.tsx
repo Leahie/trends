@@ -1,36 +1,38 @@
-import { useEditor } from "@/context/editor";
+import { useOptionalEditor } from "@/context/editor";
 import type { Board } from "@/types/types";
 import { Download, Share } from "lucide-react";
 interface HeaderProps {
-    parent:Board | null;
+    parent?:Board | null;
     title: string;
     scale: number;
     setPan: (arg0: {x:number, y: number}) => void;
-    setTitle: React.Dispatch<React.SetStateAction<string>>;
     setScale: React.Dispatch<React.SetStateAction<number>>;
-    setThemeModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    setShareModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    handleExportPDF: () => Promise<void>;
-    setHelpModalOpen:  React.Dispatch<React.SetStateAction<boolean>>;
 
+    setTitle?: React.Dispatch<React.SetStateAction<string>>;
+    setThemeModalOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    setShareModalOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    handleExportPDF?: () => Promise<void>;
+    setHelpModalOpen?:  React.Dispatch<React.SetStateAction<boolean>>;
+    readonly?: boolean;
 }
-export default function Header({parent, title, setTitle, setScale, scale, setThemeModalOpen, setShareModalOpen, handleExportPDF, setHelpModalOpen}: HeaderProps){
-                    const {setIsEditingText} = useEditor();
+export default function Header({parent, title, setTitle, setScale, scale, setThemeModalOpen, setShareModalOpen, handleExportPDF, setHelpModalOpen, readonly = false}: HeaderProps){
+                const editor = useOptionalEditor();
                     
-                    const handleTitleBlur = async () => {
-                        setIsEditingText(false);
+                const handleTitleBlur = async () => {
+                    editor?.setIsEditingText(false);
                 };
                 const handleTitleKeyDown = (e: React.KeyboardEvent) => {
                     if (e.key === 'Enter') {
                         (e.target as HTMLInputElement).blur();
                     } else if (e.key === 'Escape') {
+                        if(readonly || !setTitle) return;
                         setTitle(title);
                         
                     }
                 };
 
 
-                return (<div className="absolute top-0 w-full gap-2 border-highlight/40 border-b bg-dark/90 z-50 flex justify-end  pt-2 pb-2 px-4 text-primary">
+                return (<div className="w-full gap-2 border-highlight/40 border-b bg-dark/90 z-50 flex items-center justify-end py-2 px-4 text-primary shrink-0">
                     {parent && 
                     (<>
                         <div className="px-3 py-1 border-highlight border-l"><a href={`/boards/${parent.id}`}>{`${parent.title}`}</a></div>
@@ -39,20 +41,34 @@ export default function Header({parent, title, setTitle, setScale, scale, setThe
                     </>
                     )}
 
-                    <input 
-                        type="text"
-                        value={title} 
-                        onFocus={() => setIsEditingText(true)}
-                        onBlur={handleTitleBlur}
-                        onKeyDown={handleTitleKeyDown}
+                    {!readonly ? (
+                            <input
+                                type="text"
+                                value={title}
+                                onFocus={() => editor?.setIsEditingText(true)}
+                                onBlur={handleTitleBlur}
+                                onKeyDown={handleTitleKeyDown}
+                                onChange={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                if (!setTitle) return;
+                                setTitle(e.target.value);
+                                }}
+                                placeholder="Title"
+                                className={`px-3 py-1 border-highlight ${
+                                parent ? "border-r" : "border-x"
+                                } focus:bg-highlight/30 outline-none bg-transparent`}
+                            />
+                            ) : (
+                            <div
+                                className={`px-3 py-1 border-highlight ${
+                                parent ? "border-r" : "border-x"
+                                } text-primary select-text`}
+                            >
+                                {title || "Untitled"}
+                            </div>
+                            )}
 
-                        onChange={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            return setTitle(e.target.value)}}
-                        placeholder="Title"
-                        className = {`px-3 py-1 border-highlight ${parent ? "border-r" : "border-x"} focus:bg-highlight/30 outline-none`}
-                    />      
                     <button 
                         onClick={() => setScale(s => Math.max(s * 0.8, 0.1))} 
                         className="px-3 py-1   rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
@@ -69,19 +85,22 @@ export default function Header({parent, title, setTitle, setScale, scale, setThe
                         +
                     </button>
 
-                    <button 
+                    {!readonly && setThemeModalOpen &&(<button 
                         onClick={() => { setThemeModalOpen(true) }} 
                         className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
                         Theme
-                    </button>
-                    <button
+                    </button>)}
+                    {!readonly && setHelpModalOpen && (
+                        <button
                         onClick={() => setHelpModalOpen(true)}
                         className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
                         Help
                     </button>
-                    <button
+                    )}
+                    {!readonly && setShareModalOpen && (
+<button
                         onClick={() => setShareModalOpen(true)}
                         className="px-3 relative group py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
@@ -109,7 +128,9 @@ export default function Header({parent, title, setTitle, setScale, scale, setThe
                         
                         </span>
                     </button>
-                     <button
+                    )}
+                    {!readonly && handleExportPDF &&(
+                        <button
                         onClick={handleExportPDF}
                         className="relative group px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
@@ -137,6 +158,7 @@ export default function Header({parent, title, setTitle, setScale, scale, setThe
                         
                         </span>
                     </button>
+                    )}
                     
                 </div>)
 }

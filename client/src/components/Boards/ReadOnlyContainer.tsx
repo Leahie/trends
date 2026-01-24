@@ -1,7 +1,7 @@
 import type { BaseBlock, BoardBlockType, ImageBlockType, TextBlockType,  } from "@/types/types";
-import BoardBlock from "@/components/Blocks/BoardBlock";
-import ImageBlock from "@/components/Blocks/ImageBlock";
-import TextBlock from "@/components/Blocks/TextBlock";
+import BoardBlock from "../Blocks/Boards/BoardBlock";
+import ImageBlock from "../Blocks/Image/ImageBlock";
+import TextBlock from "../Blocks/Text/TextBlock";
 
 interface ContainerProps{
   node: BaseBlock,

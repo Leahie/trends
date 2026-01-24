@@ -312,3 +312,10 @@ export function useEditor(){
 }
 
 
+export function useOptionalEditor() {
+  try {
+    return useEditor();
+  } catch {
+    return null;
+  }
+}
