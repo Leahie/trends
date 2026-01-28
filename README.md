@@ -3,7 +3,7 @@
 - ctrl click to enter a block
 ### Future Features
 - Pinning a shared board
-- Size Changeable sidebar 
+- Size changeable sidebar 
 ### Current Look 
 <img width="3840" height="1727" alt="ref1" src="https://github.com/user-attachments/assets/04fff761-a8e9-45cf-a88a-a6c36eaca87d" />
 <img width="3840" height="1735" alt="ref2" src="https://github.com/user-attachments/assets/34c533ec-50f4-4cef-9f0d-709d97292788" />
