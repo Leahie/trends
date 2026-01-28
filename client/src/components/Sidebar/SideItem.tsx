@@ -1,9 +1,8 @@
+import { useData } from "@/context/data";
 import { useSidebar } from "@/context/sidebar";
 import type { Board } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
 import { Folder, FolderOpen, X } from "lucide-react";
-import { useData } from "@/context/data";
-import DraggableItem from "./DraggableItem";
 
 interface SideItemProps {
   board: Board;
@@ -17,16 +16,8 @@ interface SideItemProps {
   onTogglePin: () => void;
   onRename: () => void;
   onAddChild: () => void;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onDropBefore: (e: React.DragEvent) => void;
-  onDropAfter: (e: React.DragEvent) => void;
-  onDragEnd: () => void;
   hasChildren: boolean;
   children?: React.ReactNode;
-  showDropBefore?: boolean | null;
-  showDropAfter?: boolean | null;
 }
 
 export default function SideItem({
@@ -39,18 +30,10 @@ export default function SideItem({
   onTogglePin,
   onRename,
   onAddChild,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDropBefore,
-  onDropAfter,
-  onDragEnd,
   hasChildren,
   children,
   isOpen,
   onToggleOpen,
-  showDropBefore,
-  showDropAfter
 }: SideItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const { closeBoardForSidebar } = useData();
@@ -72,22 +55,8 @@ export default function SideItem({
 
   return (
     <>
-      <div //DraggableItem
-        // onDragStart={onDragStart}
-        // onDragOver={onDragOver}
-        // onDrop={onDrop}
-        // onDropBefore={onDropBefore}
-        // onDropAfter={onDropAfter}
-        // onDragEnd={onDragEnd}
-        // showDropBefore={showDropBefore}
-        // showDropAfter={showDropAfter}
-        // depth={depth}
-        // board={board}
-        className={`
-          mb-1 flex items-center gap-2 py-2 px-2.5 rounded-lg text-sm text-white cursor-pointer
-          ${isActive ? "bg-accent" : ""}
-          hover:bg-highlight/50 group
-        `}
+      <div
+
       >
         <div
           ref={sideitemContextRef}
@@ -187,6 +156,7 @@ export default function SideItem({
               </button>
             </div>
           )}
+          
         </div>
       </div>
 

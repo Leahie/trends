@@ -7,6 +7,7 @@ import { useData } from '@/context/data';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import PinItem from './PinItem';
 import { useNavOperations } from '@/hooks/sidebarHooks';
+import DraggableItem from './DraggableItem';
 
 interface SidebarProps {
   boards: Board[];
@@ -16,7 +17,7 @@ interface SidebarProps {
   isSyncing: boolean;
   archiveBoard: (id: string) => Promise<boolean>;
   updateBoard: (id: string, updates: any) => Promise<boolean>;
-  createBoard: (title?: string, parentId?: string) => Promise<any>;
+  createBoard: (title?: string, parentId?: string, autoOpen?: boolean) => Promise<any>;
   addBlock: (block: any) => Promise<any>;
   logOut: () => Promise<void>;
   openBoards: Set<string>;
@@ -64,8 +65,15 @@ export default function Sidebar(props: SidebarProps) {
     navigate
   } = props;
 
+  const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
+  const [expandedBoards, setExpandedBoards] = useState<Set<string>>(new Set());
+  const [pinnedIsOpen, setPinnedIsOpen] = useState<boolean>(true);
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+
+  const isCanvasLayout = useIsCanvasLayout(location.pathname);
+
   const {setCurrentBoardId, getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap, openBoardForSidebar } = useData();
-  const { open, toggleOpen, clearOpenBoards, closedFolders } = useSidebar();
+  const { open, toggleOpen, clearOpenBoards, closedFolders, moveBoard } = useSidebar();
   
   const {
     handleDelete,
@@ -109,12 +117,7 @@ export default function Sidebar(props: SidebarProps) {
     loadOpenBoardBlocks();
   }, [openBoards, loadBoardBlocks]);
 
-  const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
-  const [expandedBoards, setExpandedBoards] = useState<Set<string>>(new Set());
-  const [pinnedIsOpen, setPinnedIsOpen] = useState<boolean>(true);
-
-  const isCanvasLayout = useIsCanvasLayout(location.pathname);
-
+  
   const handleSignOut = async () => {
     try {
       await logOut();
@@ -229,35 +232,36 @@ export default function Sidebar(props: SidebarProps) {
     const canDropHere = dragInfo && !dragInfo.descendants.has(board.id);
 
     return (
-      <SideItem
+      <DraggableItem
         key={board.id}
         board={board}
-        isActive={isActive}
-        isPinned={pinned}
-        depth={depth}
-        onNavigate={() => navigate(`/boards/${board.id}`)}
-        onDelete={() => handleDelete(board.id)}
-        onTogglePin={() => handleTogglePin(board.id)}
-        onRename={() => handleRename(board.id, board.title)}
-        onAddChild={() => handleAddChild(board.id)}
         onDragStart={(e) => handleDragStart(e, board.id)}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => handleDropInto(e, board.id)}
-        onDropBefore={(e) => handleDropBefore(e, board.id)}
-        onDropAfter={(e) => handleDropAfter(e, board.id)}
         onDragEnd={handleDragEnd}
-        isOpen={isExpanded} // whether the folder is open
-        onToggleOpen={() => toggleExpanded(board.id)}
-        showDropBefore={!isDraggingThis && !isDraggingDescendant && canDropHere}
-        showDropAfter={!isDraggingThis && !isDraggingDescendant && canDropHere && isLast}
-        hasChildren={hasChildren}
+        depth={depth}
       >
-        {hasChildren && children.length > 0 && isExpanded &&
-          children.map((child, index) => 
-            renderBoardTree(child, depth + 1, index === children.length - 1)
-          )
-        }
-      </SideItem>
+        <SideItem
+          board={board}
+          isActive={isActive}
+          isPinned={pinned}
+          depth={depth}
+          onNavigate={() => navigate(`/boards/${board.id}`)}
+          onDelete={() => handleDelete(board.id)}
+          onTogglePin={() => handleTogglePin(board.id)}
+          onRename={() => handleRename(board.id, board.title)}
+          onAddChild={() => handleAddChild(board.id)}
+          isOpen={isExpanded}
+          onToggleOpen={() => toggleExpanded(board.id)}
+          hasChildren={hasChildren}
+        >
+          {hasChildren && children.length > 0 && isExpanded &&
+            children.map((child, index) => 
+              renderBoardTree(child, depth + 1, index === children.length - 1)
+            )
+          }
+        </SideItem>
+      </DraggableItem>
     );
   }, [
     getChildren, 
@@ -410,8 +414,7 @@ export default function Sidebar(props: SidebarProps) {
                     <button 
                       className="text-xs text-gray-400 hover:text-red-100 hover:cursor-pointer transition-colors flex items-center gap-1"
                       onClick={async () => {
-                        const result = await createBoard();
-                        openBoardForSidebar(result.id);
+                        await createBoard(undefined, undefined, true);
                       }}
                     >
                       Add 
@@ -432,15 +435,20 @@ export default function Sidebar(props: SidebarProps) {
                   </div>
                 </div>
                 <ul>
-                  {visibleRootBoards.map((board, index) => 
-                  {
-                    return(
-                      <div className='rootTab'>
-                        {renderBoardTree(board, 0, index === visibleRootBoards.length - 1)}
-                      </div>
-                    )
-                  }
-                  )}
+                  {visibleRootBoards.map((board, index) => (
+                  <DraggableItem
+                      key={board.id}
+                      board={board}
+                      onDragStart={() => setDraggingId(board.id)}
+                      onDropBefore={() => moveBoard(draggingId!, index)}
+                      onDropAfter={() => moveBoard(draggingId!, index + 1)}
+                      onDragEnd={() => setDraggingId(null)}
+                      showDropBefore={true}
+                      showDropAfter={true}
+                    >
+                      {renderBoardTree(board, 0, index === visibleRootBoards.length - 1)}
+                    </DraggableItem>
+                  ))}
                 </ul>
               </div>
             </div>

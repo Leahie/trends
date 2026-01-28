@@ -2,21 +2,21 @@ import type { Board } from "@/types/types";
 import { useState } from "react";
 
 interface DraggableItemProps {
+  board: Board;
   onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onDropBefore: (e: React.DragEvent) => void;
-  onDropAfter: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDropBefore?: (e: React.DragEvent) => void;
+  onDropAfter?: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   showDropBefore?: boolean | null;
   showDropAfter?: boolean | null;
   depth?: number;
   children: React.ReactNode;
-  className?: string;
-  board: Board;
 }
 
 export default function DraggableItem({
+  board,
   onDragStart,
   onDragOver,
   onDrop,
@@ -27,8 +27,6 @@ export default function DraggableItem({
   showDropAfter,
   depth = 0,
   children,
-  className = "",
-  board
 }: DraggableItemProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -48,40 +46,50 @@ export default function DraggableItem({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
-    onDragOver(e);
-    console.log(board);
+    onDragOver?.(e);
   };
 
   const handleDragLeave = () => {
     setIsDragOver(false);
-    console.log(board)
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    onDrop(e);
+    onDrop?.(e);
   };
 
   const handleDropBefore = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDropBeforeActive(false);
-    onDropBefore(e);
+    onDropBefore?.(e);
   };
 
   const handleDropAfter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDropAfterActive(false);
-    onDropAfter(e);
+    onDropAfter?.(e);
   };
 
   return (
-    <li className="relative focus:outline-none">
+    <li 
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={onDrop ? handleDragOver : undefined}
+      onDragLeave={onDrop ? handleDragLeave : undefined}
+      onDrop={onDrop ? handleDrop : undefined}
+      className={`relative focus:outline-none
+        ${isDragOver && onDrop ? "ring-2 ring-blue-400 ring-offset-2" : ""}
+        ${isDragging ? "opacity-50" : ""}
+        transition-all
+      `}
+    >
       {/* Drop zone BEFORE this item */}
-      {showDropBefore && (
+      {showDropBefore && onDropBefore && (
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -96,25 +104,13 @@ export default function DraggableItem({
         />
       )}
 
-      <div
-        draggable
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`
-          ${className}
-          ${isDragOver ? "ring-2 ring-blue-400 ring-offset-2" : ""}
-          ${isDragging ? "opacity-50" : ""}
-          transition-all
-        `}
-      >
+      <div>
         {children}
       </div>
 
+
       {/* Drop zone AFTER this item */}
-      {showDropAfter && (
+      {showDropAfter && onDropAfter && (
         <div
           onDragOver={(e) => {
             e.preventDefault();

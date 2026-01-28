@@ -21,6 +21,10 @@ interface SidebarContextType {
   closedFolders: Set<string>;
   toggleFolder: (boardId: string) => void;
 
+  // Ordered boards
+  orderedBoards: string[] // list of all the openBoards in order 
+  moveBoard: (boardId: string, toIndex: number) => void;
+
   // Pinned boards (backend + state)
   pinnedBoards: string[];
   pinBoard: (boardId: string) => Promise<boolean>;
@@ -44,6 +48,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [openBoards, setOpenBoards] = useState<Set<string>>(new Set());
   const [closedFolders, setClosedFolders] = useState<Set<string>>(new Set());
+  const [orderedBoards, setOrderedBoards] = useState<string[]>([]);
   
   const [pinnedBoards, setPinnedBoards] = useState<string[]>([]);
   const [lastUserId, setLastUserId] = useState<string | null>(null);
@@ -133,6 +138,22 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
   }, [openBoards, hydrated]);
 
+  // Ensure orderedBoards stays the same as openBoards
+  useEffect(() => {
+    setOrderedBoards(prev => {
+      const filtered = prev.filter(id => openBoards.has(id))
+
+      const prevSet = new Set(filtered)
+      const additions: string[] = []
+
+      openBoards.forEach(id => {
+        if (!prevSet.has(id)) additions.push(id)
+      })
+
+      return filtered.concat(additions)
+    })
+  }, [openBoards])
+
   const toggleOpen = () => {
     setOpen((prev) => !prev);
   };
@@ -206,6 +227,18 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     });
   },[]);
 
+  const moveBoard = useCallback((boardId: string, toIndex: number) => {
+    setOrderedBoards(prev => {
+      const from = prev.indexOf(boardId)
+      if (from === -1) return prev
+
+      const next = prev.slice()
+      const [item] = next.splice(from, 1)
+      next.splice(toIndex, 0, item)
+      return next
+    })
+  }, []);
+
   const pinBoard = useCallback(async (boardId: string): Promise<boolean> => {
     const result = await api.pinBoard(boardId);
     if (result.success && result.data) {
@@ -263,7 +296,9 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       isPinned,
       addNewRootBoard,
       closedFolders,
-      toggleFolder
+      toggleFolder,
+      orderedBoards,
+      moveBoard
     }}>
       {children}
     </SidebarContext.Provider>

@@ -85,13 +85,16 @@ export default function Header({parent, title, setTitle, setScale, scale, setThe
                         +
                     </button>
 
-                    {!readonly && setThemeModalOpen &&(<button 
+                    {readonly ? <></> :
+                    <>
+                    {setThemeModalOpen && (<button 
                         onClick={() => { setThemeModalOpen(true) }} 
                         className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
                         Theme
                     </button>)}
-                    {!readonly && setHelpModalOpen && (
+
+                    {setHelpModalOpen && (
                         <button
                         onClick={() => setHelpModalOpen(true)}
                         className="px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
@@ -99,66 +102,70 @@ export default function Header({parent, title, setTitle, setScale, scale, setThe
                         Help
                     </button>
                     )}
-                    {!readonly && setShareModalOpen && (
-<button
+                    
+                    {setShareModalOpen && (
+                    <button
                         onClick={() => setShareModalOpen(true)}
                         className="px-3 relative group py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
                     >
-                        <Share size={18}/>
-                                                <span
-                className="
-                pointer-events-none
-                absolute
-                top-full left-1/2 -translate-x-1/2 translate-y-2
-                whitespace-nowrap
-                rounded-md
-                bg-white/90
-                px-2 py-1
-                text-xs text-black
-                opacity-0
-                scale-95
-                transition-all
-                group-hover:opacity-100
-                group-hover:scale-100
-                "
-            >
-  <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-0 h-0 border-4 border-transparent border-b-white/90" />
-
-                Share 
-                        
-                        </span>
-                    </button>
-                    )}
-                    {!readonly && handleExportPDF &&(
-                        <button
-                        onClick={handleExportPDF}
-                        className="relative group px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
-                    >
-                        <Download size={18}/>
+                        <Share className="p-1" />
                         <span
-                className="
-                pointer-events-none
-                absolute
-                top-full left-1/2 -translate-x-1/2 translate-y-2
-                whitespace-nowrap
-                rounded-md
-                bg-white/90
-                px-2 py-1
-                text-xs text-black
-                opacity-0
-                scale-95
-                transition-all
-                group-hover:opacity-100
-                group-hover:scale-100
-                "
-            >
-  <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-0 h-0 border-4 border-transparent border-b-white/90" />
-
-                Export 
-                        
+                            className="
+                            pointer-events-none
+                            absolute
+                            top-full left-1/2 -translate-x-1/2 translate-y-2
+                            whitespace-nowrap
+                            rounded-md
+                            bg-white/90
+                            px-2 py-1
+                            text-xs text-black
+                            opacity-0
+                            scale-95
+                            transition-all
+                            group-hover:opacity-100
+                            group-hover:scale-100
+                            "
+                        >
+                        <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-0 h-0 border-4 border-transparent border-b-white/90" />
+                                        Share 
                         </span>
                     </button>
                     )}
                     
+                    {handleExportPDF &&(
+                        <button
+                        onClick={handleExportPDF}
+                        className="relative group px-3 py-1 rounded hover:cursor-pointer bg-highlight/50 hover:bg-highlight/30"
+                    >
+                        <Download className="p-1"/>
+                        <span
+                            className="
+                            pointer-events-none
+                            absolute
+                            top-full left-1/2 -translate-x-1/2 translate-y-2
+                            whitespace-nowrap
+                            rounded-md
+                            bg-white/90
+                            px-2 py-1
+                            text-xs text-black
+                            opacity-0
+                            scale-95
+                            transition-all
+                            group-hover:opacity-100
+                            group-hover:scale-100
+                            "
+                        >
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-0 h-0 border-4 border-transparent border-b-white/90" />
+
+                            Export 
+                        
+                        </span>
+                    </button>
+                    )}
+                    </>
+                    
+                    
+                    }
+
                 </div>)
 }

@@ -19,7 +19,7 @@ export interface DataContextType {
 
     loadBoards: () => Promise<void>;
     loadArchivedBoards: () => Promise<void>;
-    createBoard: (title?: string, parentBoardBlockId?:string) => Promise<Board | null>;
+    createBoard: (title?: string, parentBoardBlockId?:string, autoOpen?: boolean) => Promise<Board | null>;
     restoreBoard: (boardId: string) => Promise<boolean>;
     archiveBoard: (boardId: string) => Promise<boolean>;
     deleteBoard: (boardId: string) => Promise<boolean>;
@@ -227,6 +227,7 @@ export function DataProvider({children} : {children : ReactNode}){
     }, [blocks]);
 
     const boardsMap = useMemo(() => {
+        console.log("this is when it updates", Object.fromEntries(boards.map((b) => [b.id, b])));
         return Object.fromEntries(boards.map((b) => [b.id, b]));
     }, [boards]);
 
@@ -285,48 +286,8 @@ export function DataProvider({children} : {children : ReactNode}){
         return () => clearInterval(interval);
     }, []);
 
-    // SIDEBAR operations 
-    const openBoardForSidebar = (boardid: string) => {
-        let actualBoard: (string | null) = boardid;
-        console.log(actualBoard);
-        console.log(boardsMap);
-        console.log(boards);
-        while (!isRootBoard(actualBoard)){
-            const parent = getParent(boardid);
-            actualBoard = parent != null ? parent.id : null;  
-            console.log("the actual board"  , actualBoard);
-            if (!actualBoard) return false;
-        }
-        // now actualBoard should be a root boardid
-        if (!openBoards.has(actualBoard)){
-        console.log("the actual board added"  , actualBoard);
-
-            openBoard(actualBoard);
-        }
-        return true;
-    }
-
-    const closeBoardForSidebar = (boardid: string) => {
-        if (!isRootBoard(boardid)) return false;
-
-        if (boardid == currentBoardId){
-            if (openBoards.size > 1){
-                setCurrentBoardId(Array.from(openBoards)[0]);
-                setCurrentBoard(boardsMap[Array.from(openBoards)[0]]);
-            }
-            else{
-                setCurrentBoardId(null);
-                setCurrentBoard(null);
-                navigate("/");
-            }
-            closeBoard(boardid);
-            return true;
-        }
-        closeBoard(boardid);
-        return true;
-    }
-
-     const getParent = useCallback((boardId: string): Board | null => {
+    // Helper functions for board hierarchy
+    const getParent = useCallback((boardId: string): Board | null => {
         const board = boardsMap[boardId];
         if (!board?.parentBoardBlockId) return null;
         
@@ -350,6 +311,47 @@ export function DataProvider({children} : {children : ReactNode}){
         const board = boardsMap[boardId];
         return board ? !board.parentBoardBlockId : false;
     }, [boardsMap]);
+
+    // SIDEBAR operations 
+    const openBoardForSidebar = useCallback((boardid: string) => {
+        let actualBoard: (string | null) = boardid;
+        console.log(actualBoard);
+        console.log(boardsMap);
+        console.log(boards);    
+        while (!isRootBoard(actualBoard)){
+            const parent = getParent(boardid);
+            actualBoard = parent != null ? parent.id : null;  
+            console.log("the actual board"  , actualBoard);
+            if (!actualBoard) return false;
+        }
+        // now actualBoard should be a root boardid
+        if (!openBoards.has(actualBoard)){
+        console.log("the actual board added"  , actualBoard);
+
+            openBoard(actualBoard);
+        }
+        return true;
+    }, [boardsMap, boards, openBoards, isRootBoard, getParent, openBoard]);
+
+    const closeBoardForSidebar = useCallback((boardid: string) => {
+        if (!isRootBoard(boardid)) return false;
+
+        if (boardid == currentBoardId){
+            if (openBoards.size > 1){
+                setCurrentBoardId(Array.from(openBoards)[0]);
+                setCurrentBoard(boardsMap[Array.from(openBoards)[0]]);
+            }
+            else{
+                setCurrentBoardId(null);
+                setCurrentBoard(null);
+                navigate("/");
+            }
+            closeBoard(boardid);
+            return true;
+        }
+        closeBoard(boardid);
+        return true;
+    }, [isRootBoard, currentBoardId, openBoards, boardsMap, navigate, closeBoard]);
 
     // Board Operations 
     const canCreateBoard = useMemo(() => {
@@ -376,12 +378,51 @@ export function DataProvider({children} : {children : ReactNode}){
         setIsSyncing(false);
     };
 
-    const createBoard = async (title?:string, parentBoardBlockId?: string): Promise<Board | null> => {
+    const createBoard = async (title?:string, parentBoardBlockId?: string, autoOpen: boolean = false): Promise<Board | null> => {
         const result = await api.createBoard(title, parentBoardBlockId);
         if (result.success && result.data) {
             const newBoard = result.data.board;
             setBoards((prev:Board[]) => [newBoard, ...prev]);
             await loadAllBlocksData();
+            
+            // If autoOpen is true, open the board's root in the sidebar
+            if (autoOpen) {
+                // Find the root board for this new board
+                let rootBoardId = newBoard.id;
+                
+                if (newBoard.parentBoardBlockId) {
+                    // Need to traverse up to find the root
+                    // Get updated boards to find parents
+                    const updatedBoards = await api.fetchBoards();
+                    if (updatedBoards.success && updatedBoards.data) {
+                        const tempBoardsMap = Object.fromEntries(updatedBoards.data.boards.map((b: Board) => [b.id, b]));
+                        
+                        // Get all blocks to find parent relationships
+                        const allBlocksResult = await api.fetchBlocks();
+                        if (allBlocksResult.success && allBlocksResult.data) {
+                            const tempAllBlocks = allBlocksResult.data.blocks;
+                            
+                            let currentBoard = newBoard;
+                            while (currentBoard.parentBoardBlockId) {
+                                const parentBlock = tempAllBlocks.find(b => b.id === currentBoard.parentBoardBlockId);
+                                if (!parentBlock?.boardId) break;
+                                
+                                const parentBoard = tempBoardsMap[parentBlock.boardId];
+                                if (!parentBoard) break;
+                                
+                                currentBoard = parentBoard;
+                                rootBoardId = currentBoard.id;
+                            }
+                        }
+                    }
+                }
+                
+                // Open the root board
+                if (!openBoards.has(rootBoardId)) {
+                    openBoard(rootBoardId);
+                }
+            }
+            
             return newBoard;
         }
         
