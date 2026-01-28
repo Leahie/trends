@@ -1,5 +1,5 @@
 // components/SharedBoard.tsx
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, } from 'react-router-dom';
 import { api } from '@/utils/api';
 import type { Board, Block } from '@/types/types';

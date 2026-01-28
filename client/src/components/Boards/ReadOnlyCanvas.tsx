@@ -35,21 +35,6 @@ export default function ReadOnlyCanvas({
     return [...blocks].sort((a, b) => a.location.zIndex - b.location.zIndex);
   }, [blocks]);
 
-  // Convert screen -> canvas coords (useful if later you add hover, etc.)
-  const screenToCanvas = (clientX: number, clientY: number) => {
-    const el = containerRef.current;
-    if (!el) return { x: 0, y: 0 };
-
-    const rect = el.getBoundingClientRect();
-    const mouseX = clientX - rect.left;
-    const mouseY = clientY - rect.top;
-
-    return {
-      x: (mouseX - pan.x) / scale,
-      y: (mouseY - pan.y) / scale,
-    };
-  };
-
   useEffect(() => {
   const el = containerRef.current;
   if (!el) return;

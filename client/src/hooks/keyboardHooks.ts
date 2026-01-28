@@ -5,7 +5,6 @@ import { useAuth } from '@/context/auth';
 
 import { uploadToFirebase } from "@/hooks/uploadToFirebase.ts";
 import type { Block } from '@/types/types';
-import { useSidebar } from '@/context/sidebar';
 
 
 interface KeyboardShortcutsProps {

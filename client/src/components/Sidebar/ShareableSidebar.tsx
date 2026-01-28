@@ -15,7 +15,7 @@ type Props = {
 };
 
 
-export default function SharedSidebar({ tree, currentBoardId, onNavigate, title, isOpen, onToggle}: Props) {
+export default function SharedSidebar({ tree, currentBoardId, onNavigate, isOpen, onToggle}: Props) {
     const navigate = useNavigate();
     
   return (

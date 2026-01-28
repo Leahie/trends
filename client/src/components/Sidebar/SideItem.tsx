@@ -33,7 +33,6 @@ export default function SideItem({
   hasChildren,
   children,
   isOpen,
-  onToggleOpen,
 }: SideItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const { closeBoardForSidebar } = useData();

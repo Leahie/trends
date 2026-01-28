@@ -1,4 +1,3 @@
-import { View } from "lucide-react";
 import { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 

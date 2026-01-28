@@ -33,33 +33,6 @@ export default function PinItem({
     const [isDragging, setIsDragging] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
 
-
-    const handleDragStart = (e: React.DragEvent) => {
-        setIsDragging(true);
-        onDragStart(e);
-    };
-
-    const handleDragEnd = () => {
-        setIsDragging(false);
-        onDragEnd();
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(true);
-        onDragOver(e);
-    };
-
-    const handleDragLeave = () => {
-        setIsDragOver(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
-        onDrop(e);
-    };
-
     return (
         <li className="relative">
             <div

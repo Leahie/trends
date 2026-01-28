@@ -72,7 +72,7 @@ export default function Sidebar(props: SidebarProps) {
 
   const isCanvasLayout = useIsCanvasLayout(location.pathname);
 
-  const {setCurrentBoardId, getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap, openBoardForSidebar } = useData();
+  const {getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap, openBoardForSidebar } = useData();
   const { open, toggleOpen,orderedBoards, clearOpenBoards, closedFolders, moveBoard } = useSidebar();
   
   const {
@@ -219,17 +219,12 @@ export default function Sidebar(props: SidebarProps) {
     setDragInfo(null);
   }, [dragInfo, boardsMap, getParent, handleMoveBetween]);
 
-  const renderBoardTree = useCallback((board: Board, depth: number = 0, isLast: boolean = false) => {
+  const renderBoardTree = useCallback((board: Board, depth: number = 0) => {
     const children = getChildren(board.id);
     const hasChildren = children.length > 0;
     const isExpanded = !closedFolders.has(board.id);
     const isActive = currentBoard?.id === board.id;
     const pinned = isPinned(board.id);
-
-
-    const isDraggingThis = dragInfo?.boardId === board.id;
-    const isDraggingDescendant = dragInfo?.descendants.has(board.id) || false;
-    const canDropHere = dragInfo && !dragInfo.descendants.has(board.id);
 
     return (
       <DraggableItem
