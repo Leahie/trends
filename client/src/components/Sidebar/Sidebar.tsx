@@ -252,8 +252,8 @@ export default function Sidebar(props: SidebarProps) {
           hasChildren={hasChildren}
         >
           {hasChildren && children.length > 0 && isExpanded &&
-            children.map((child, index) => 
-              renderBoardTree(child, depth + 1, index === children.length - 1)
+            children.map((child) => 
+              renderBoardTree(child, depth + 1)
             )
           }
         </SideItem>
@@ -452,7 +452,7 @@ export default function Sidebar(props: SidebarProps) {
                       showDropBefore={true}
                       showDropAfter={true}
                     >
-                      {renderBoardTree(board, 0, index === visibleRootBoards.length - 1)}
+                      {renderBoardTree(board, 0)}
                     </DraggableItem>
                   ))}
                 </ul>

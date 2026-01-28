@@ -22,16 +22,10 @@ export default function PinItem({
   onDelete,
   onTogglePin,
   onRename,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
   children,
   onToggleOpen, 
 }: Omit<SideItemProps, '_onAddChild'>) {
     const [showMenu, setShowMenu] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isDragOver, setIsDragOver] = useState(false);
 
     return (
         <li className="relative">
@@ -42,13 +36,11 @@ export default function PinItem({
                 // onDragOver={handleDragOver}
                 // onDragLeave={handleDragLeave}
                 // onDrop={handleDrop}
-                className={`
+                className="
                 mb-1 flex items-center gap-2 py-2 px-2.5 rounded-lg text-sm text-white cursor-pointer
-                ${isDragOver ? 'bg-highlight/70 border-2 border-blue-400' : ''}
-                ${isDragging ? 'opacity-50' : ''}
                 hover:bg-highlight/50
                 transition-all group
-                `}
+                "
             >
                 {children && (
                     <button
