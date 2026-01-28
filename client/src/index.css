@@ -146,3 +146,21 @@
 .hidden {
   display: none;
 }
+
+/* Custom minimal scrollbar */
+#hs-sidebar-basic-usage nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+#hs-sidebar-basic-usage nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#hs-sidebar-basic-usage nav::-webkit-scrollbar-thumb {
+  background: var(--color-highlight);
+  border-radius: 3px;
+}
+
+#hs-sidebar-basic-usage nav::-webkit-scrollbar-thumb:hover {
+  background: var(--color-light-accent);
+}

@@ -157,7 +157,7 @@ export default function SideItem({
               setShowMenu(false);
               onDelete();
             }}
-            className="w-full text-left px-4 py-2 hover:bg-red-600 text-sm text-red-400"
+            className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm text-red-400"
           >
             Delete
           </button>

@@ -366,7 +366,7 @@ export default function Sidebar(props: SidebarProps) {
             </button>
           </div>
           
-          <header className="p-4 flex justify-between items-center gap-x-2">
+          <header className="p-4 flex justify-between items-baseline gap-x-2">
             <a
               className="flex-none font-semibold text-xl text-white focus:outline-hidden focus:opacity-80"
               href="/"
@@ -374,6 +374,13 @@ export default function Sidebar(props: SidebarProps) {
             >
               BoardBash
             </a>
+             <div className="text-xs text-slate-400 px-4">
+              <p>
+                v1.28.26             
+              </p>  
+
+            </div>
+            
           </header>
           
           <hr className="ml-1 mr-4 text-highlight"></hr>
@@ -462,6 +469,7 @@ export default function Sidebar(props: SidebarProps) {
             <div className="text-sm text-slate-400 mb-2">
               {user?.email}
             </div>
+           
             <button
               onClick={handleSignOut}
               className="w-full py-2 px-4 bg-highlight hover:bg-accent text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark"
@@ -469,6 +477,7 @@ export default function Sidebar(props: SidebarProps) {
             >
               Sign Out
             </button>
+            
           </div>
         </div>
       </div>
