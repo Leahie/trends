@@ -44,6 +44,7 @@ export default function SideItem({
     const handlePointerDown = (e: PointerEvent) => {
       if (!sideitemContextRef.current) return;
       if (!sideitemContextRef.current.contains(e.target as Node)) {
+        console.log("I'm triggerings")
         setShowMenu(false);
       }
     };
@@ -56,7 +57,11 @@ export default function SideItem({
   return (
     <>
       <div
-
+         className={`
+          mb-1 flex items-center gap-2 py-2 px-2.5 rounded-lg text-sm text-white cursor-pointer relative
+          ${isActive ? "bg-accent" : ""}
+          hover:bg-highlight/50 group
+        `}
       >
         <div
           ref={sideitemContextRef}
@@ -89,6 +94,17 @@ export default function SideItem({
             {board.title || "Untitled Board"}
           </span>
 
+            {depth == 0 && (
+            <button
+              onClick={() => closeBoardForSidebar(board.id)}
+              className="hover:opacity-80 rounded opacity-0 group-hover:opacity-40 focus:outline-none"
+              tabIndex={-1}
+            >
+              <X className="py-0.5"/>
+            </button>
+          )}
+          
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -102,61 +118,52 @@ export default function SideItem({
             </svg>
           </button>
 
-          {depth == 0 && (
-            <button
-              onClick={() => closeBoardForSidebar(board.id)}
-              className="hover:opacity-80 rounded opacity-0 group-hover:opacity-40 focus:outline-none"
-              tabIndex={-1}
-            >
-              <X />
-            </button>
-          )}
-
           {showMenu && (
             <div
-              className="absolute right-0 top-full mt-1 py-1 w-48 bg-dark border border-highlight rounded-lg shadow-xl z-50"
+              className="absolute right-0 top-full mt-1 py-1 w-48 bg-dark border border-highlight rounded-lg shadow-xl z-[9999]"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => {
-                  setShowMenu(false);
-                  onTogglePin();
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
-              >
-                {isPinned ? "Unpin" : "Pin"}
-              </button>
-              <button
-                onClick={() => {
-                  setShowMenu(false);
-                  onAddChild();
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
-              >
-                Add Child Board
-              </button>
-              <button
-                onClick={() => {
-                  setShowMenu(false);
-                  onRename();
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
-              >
-                Rename
-              </button>
-              <hr className="border-highlight my-1" />
-              <button
-                onClick={() => {
-                  setShowMenu(false);
-                  onDelete();
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-red-600 text-sm text-red-400"
-              >
-                Delete
-              </button>
-            </div>
-          )}
-          
+          <button
+            onClick={() => {
+              console.log("clicking?")
+              setShowMenu(false);
+              onTogglePin();
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
+          >
+            {isPinned ? "Unpin" : "Pin"}
+          </button>
+          <button
+            onClick={() => {
+              setShowMenu(false);
+              onAddChild();
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
+          >
+            Add Child Board
+          </button>
+          <button
+            onClick={() => {
+              setShowMenu(false);
+              onRename();
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-highlight/50 text-sm"
+          >
+            Rename
+          </button>
+          <hr className="border-highlight my-1" />
+          <button
+            onClick={() => {
+              setShowMenu(false);
+              onDelete();
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-red-600 text-sm text-red-400"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+        
         </div>
       </div>
 

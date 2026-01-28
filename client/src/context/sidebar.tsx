@@ -40,6 +40,7 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'sidebar_open_boards';
 const FOLDER_KEY = 'folder_closed_boards';
+const ORDERED_KEY = 'ordered_boards';
 const MAX_AGE_MS = 1000 * 60 * 60 * 24; // 24 hours
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
@@ -59,17 +60,23 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       // User logged out (transition from having userId to no user)
       setOpenBoards(new Set());
       setClosedFolders(new Set());
+      setOrderedBoards([]);
 
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(FOLDER_KEY);
+      localStorage.removeItem(ORDERED_KEY);
       setLastUserId(null);
     } else if (user && lastUserId && lastUserId !== user.uid) {
       // User switched accounts (userId changed)
       setOpenBoards(new Set());
       setClosedFolders(new Set());
+      setOrderedBoards([]);
+
 
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(FOLDER_KEY);
+      localStorage.removeItem(ORDERED_KEY);
+
       setLastUserId(user.uid);
     } else if (user && !lastUserId) {
       // First login
@@ -81,10 +88,12 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     const storedClosedFolders = localStorage.getItem(FOLDER_KEY);
-    if (stored && storedClosedFolders) {
+    const storedOrderedBoards = localStorage.getItem(ORDERED_KEY);
+    if (stored && storedClosedFolders && storedOrderedBoards) {
       try {
         const parsed = JSON.parse(stored);
         const parsedClosedFolders = JSON.parse(storedClosedFolders);
+        const parsedOrderedBoards = JSON.parse(storedOrderedBoards);
 
         const isExpired =
           !parsed.savedAt || Date.now() - parsed.savedAt > MAX_AGE_MS;
@@ -96,11 +105,14 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         } else {
           setOpenBoards(new Set(parsed.value || []));
           setClosedFolders(new Set(parsedClosedFolders.value || []))
+          console.log("this is the parsed value",parsedOrderedBoards.value )
+          setOrderedBoards(parsedOrderedBoards.value || []);
         } 
       } catch (error) {
         console.error('Failed to parse open boards from localStorage:', error);
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(FOLDER_KEY);
+        localStorage.removeItem(ORDERED_KEY);
       }
     }
     setHydrated(true);
@@ -136,10 +148,20 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     
     localStorage.setItem(FOLDER_KEY, JSON.stringify(payload2));
 
-  }, [openBoards, hydrated]);
+    const payload3 = {
+      value: orderedBoards
+    };
+
+    localStorage.setItem(ORDERED_KEY, JSON.stringify(payload3))
+
+    console.log("I SAVED", JSON.stringify(payload3))
+  }, [openBoards, closedFolders, orderedBoards, hydrated]);
+
 
   // Ensure orderedBoards stays the same as openBoards
   useEffect(() => {
+    if (!hydrated) return; // Don't run during initial hydration
+    
     setOrderedBoards(prev => {
       const filtered = prev.filter(id => openBoards.has(id))
 
@@ -152,7 +174,10 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
       return filtered.concat(additions)
     })
-  }, [openBoards])
+  }, [openBoards, hydrated])
+
+      console.log("these are the orderedBoards", orderedBoards)
+
 
   const toggleOpen = () => {
     setOpen((prev) => !prev);
@@ -312,3 +337,6 @@ export function useSidebar() {
   }
   return context;
 }
+
+
+// I SAVED {"value":["3bd62b0d-4467-45d2-93a9-4851fcfed970","3ef9223a-5c81-46fd-ad03-5c27edecf09e","2d03a2ae-1b12-47ac-a437-17d7be8c140d"]}

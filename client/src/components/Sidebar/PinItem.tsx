@@ -63,12 +63,12 @@ export default function PinItem({
     return (
         <li className="relative">
             <div
-                draggable
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
+                // draggable
+                // onDragStart={handleDragStart}
+                // onDragEnd={handleDragEnd}
+                // onDragOver={handleDragOver}
+                // onDragLeave={handleDragLeave}
+                // onDrop={handleDrop}
                 className={`
                 mb-1 flex items-center gap-2 py-2 px-2.5 rounded-lg text-sm text-white cursor-pointer
                 ${isDragOver ? 'bg-highlight/70 border-2 border-blue-400' : ''}

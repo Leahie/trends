@@ -1,8 +1,10 @@
+import { useData } from "@/context/data";
 import type { Board } from "@/types/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface DraggableItemProps {
   board: Board;
+  draggingId: string | null;
   onDragStart: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent) => void;
@@ -17,6 +19,7 @@ interface DraggableItemProps {
 
 export default function DraggableItem({
   board,
+  draggingId,
   onDragStart,
   onDragOver,
   onDrop,
@@ -28,10 +31,20 @@ export default function DraggableItem({
   depth = 0,
   children,
 }: DraggableItemProps) {
+  const {getParent, getChildren} =  useData();
   const [isDragging, setIsDragging] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [dropBeforeActive, setDropBeforeActive] = useState(false);
   const [dropAfterActive, setDropAfterActive] = useState(false);
+  
+  const [isValid, setIsValid] = useState(true);
+
+  useEffect(() => {
+    console.log("see the bool", board.id, draggingId)
+    console.log(getParent(board.id))
+    const valid =  !draggingId ? false : !(getChildren(draggingId).includes(board));
+    setIsValid(valid)
+  })
 
   const handleDragStart = (e: React.DragEvent) => {
     setIsDragging(true);
@@ -81,12 +94,12 @@ export default function DraggableItem({
       onDragEnd={handleDragEnd}
       onDragOver={onDrop ? handleDragOver : undefined}
       onDragLeave={onDrop ? handleDragLeave : undefined}
-      onDrop={onDrop ? handleDrop : undefined}
-      className={`relative focus:outline-none
-        ${isDragOver && onDrop ? "ring-2 ring-blue-400 ring-offset-2" : ""}
-        ${isDragging ? "opacity-50" : ""}
+      onDrop={(isValid && onDrop) ? handleDrop : undefined}
+      className={`relative focus:outline-none rounded-xl
+        ${isValid && isDragOver && onDrop ? "ring-1 ring-light-accent ring-offset-1 opacity-50" : ""}
+        ${ isDragging ? "opacity-50" : ""}
         transition-all
-      `}
+      `}  
     >
       {/* Drop zone BEFORE this item */}
       {showDropBefore && onDropBefore && (
@@ -97,8 +110,8 @@ export default function DraggableItem({
           }}
           onDragLeave={() => setDropBeforeActive(false)}
           onDrop={handleDropBefore}
-          className={`h-2 transition-all ${
-            dropBeforeActive ? "bg-blue-400/50 h-4" : "bg-transparent"
+          className={`h-1 transition-all ${
+            dropBeforeActive ? "bg-light-accent/50 h-4" : "bg-transparent"
           }`}
           style={{ paddingLeft: `${depth * 12}px` }}
         />
@@ -118,8 +131,8 @@ export default function DraggableItem({
           }}
           onDragLeave={() => setDropAfterActive(false)}
           onDrop={handleDropAfter}
-          className={`h-2 transition-all ${
-            dropAfterActive ? "bg-blue-400/50 h-4" : "bg-transparent"
+          className={`h-1 transition-all ${
+            dropAfterActive ? "bg-light-accent/50 h-4" : "bg-transparent"
           }`}
           style={{ paddingLeft: `${depth * 12}px` }}
         />

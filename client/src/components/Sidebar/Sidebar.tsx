@@ -73,7 +73,7 @@ export default function Sidebar(props: SidebarProps) {
   const isCanvasLayout = useIsCanvasLayout(location.pathname);
 
   const {setCurrentBoardId, getParent, getChildren, isRootBoard, loadBoardBlocks, boardsMap, openBoardForSidebar } = useData();
-  const { open, toggleOpen, clearOpenBoards, closedFolders, moveBoard } = useSidebar();
+  const { open, toggleOpen,orderedBoards, clearOpenBoards, closedFolders, moveBoard } = useSidebar();
   
   const {
     handleDelete,
@@ -235,6 +235,7 @@ export default function Sidebar(props: SidebarProps) {
       <DraggableItem
         key={board.id}
         board={board}
+        draggingId={draggingId}
         onDragStart={(e) => handleDragStart(e, board.id)}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => handleDropInto(e, board.id)}
@@ -280,7 +281,8 @@ export default function Sidebar(props: SidebarProps) {
     handleDropBefore,
     handleDropAfter,
     handleDragEnd,
-    dragInfo
+    dragInfo,
+    draggingId
   ]);
 
   const pinnedBoardObjects = useMemo(() => {
@@ -290,10 +292,10 @@ export default function Sidebar(props: SidebarProps) {
   }, [pinnedBoards, boards]);
 
   const visibleRootBoards = useMemo(() => {
-    return Array.from(openBoards)
+    return orderedBoards
       .map(id => boards.find(b => b.id === id))
       .filter((board): board is Board => board !== undefined && isRootBoard(board.id));
-  }, [openBoards, boards, isRootBoard, closedFolders]);
+  }, [openBoards, orderedBoards, boards, isRootBoard, closedFolders]);
 
   if (!boards) {
     return <></>;
@@ -438,11 +440,13 @@ export default function Sidebar(props: SidebarProps) {
                   {visibleRootBoards.map((board, index) => (
                   <DraggableItem
                       key={board.id}
+                      draggingId={draggingId}
                       board={board}
                       onDragStart={() => setDraggingId(board.id)}
                       onDropBefore={() => moveBoard(draggingId!, index)}
                       onDropAfter={() => moveBoard(draggingId!, index + 1)}
                       onDragEnd={() => setDraggingId(null)}
+
                       showDropBefore={true}
                       showDropAfter={true}
                     >
